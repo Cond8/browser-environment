@@ -6,7 +6,9 @@ type Theme = 'dark' | 'light' | 'system';
 interface SettingsState {
   theme: Theme;
   resolvedTheme: 'dark' | 'light';
+  ollamaUrl: string;
   setTheme: (theme: Theme) => void;
+  setOllamaUrl: (url: string) => void;
   applyTheme: () => void;
 }
 
@@ -22,6 +24,7 @@ export const useSettingsStore = create<SettingsState>()(
     (set, get) => ({
       theme: 'system',
       resolvedTheme: getResolvedTheme('system'),
+      ollamaUrl: 'http://localhost:11434',
       setTheme: theme => {
         set({ theme });
         get().applyTheme();
@@ -32,6 +35,7 @@ export const useSettingsStore = create<SettingsState>()(
           localStorage.theme = theme;
         }
       },
+      setOllamaUrl: url => set({ ollamaUrl: url }),
       applyTheme: () => {
         const t = get().theme;
         const root = document.documentElement;
@@ -48,7 +52,7 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: 'settings-storage',
       // Only persist the theme setting
-      partialize: state => ({ theme: state.theme }),
+      partialize: state => ({ theme: state.theme, ollamaUrl: state.ollamaUrl }),
     },
   ),
 );

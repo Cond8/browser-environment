@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Monitor, Moon, Sun } from "lucide-react"
 import { useSettingsStore } from "../store/settings"
+import { OllamaSettings } from "./ollama-settings"
 
 interface SettingsDialogProps {
   open: boolean
@@ -40,6 +41,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
+          <OllamaSettings />
         </div>
       </DialogContent>
     </Dialog>
