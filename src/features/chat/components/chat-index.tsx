@@ -7,14 +7,17 @@ import { Thread } from './ui/thread';
 export const ChatIndex: React.FC = () => {
   return (
     <ChatProvider>
-      <ThreadPrimitive.Root>
+      <ThreadPrimitive.Root className="h-full">
         <ThreadPrimitive.If empty>
-          <EmptyState />
+          <div className="h-full">
+            <div className="h-full">
+              <EmptyState />
+            </div>
+          </div>
         </ThreadPrimitive.If>
         <ThreadPrimitive.If empty={false}>
-          <div className="flex h-full">
-            {/* Main Chat Area */}
-            <div className="flex-1">
+          <div className="h-full">
+            <div className="h-full">
               <Thread />
             </div>
           </div>

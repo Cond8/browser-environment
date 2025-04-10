@@ -37,10 +37,10 @@ export const UserInput: FC<UserInputProps> = ({
   return (
     <ComposerPrimitive.Root className="focus-within:border-ring/20 flex w-full flex-wrap items-end rounded-lg border-2 border-border bg-background px-2.5 shadow-md transition-colors ease-in hover:border-border-hover">
       <ComposerPrimitive.Input
-        rows={1}
+        rows={3}
         autoFocus={autoFocus}
         placeholder={placeholder}
-        className="placeholder:text-muted-foreground max-h-40 flex-grow resize-none border-none bg-transparent px-2 py-4 text-sm outline-none focus:ring-0 disabled:cursor-not-allowed"
+        className="placeholder:text-muted-foreground max-h-60 flex-grow resize-none border-none bg-transparent px-2 py-4 text-sm outline-none focus:ring-0 disabled:cursor-not-allowed"
         disabled={isSending}
       />
       <ComposerPrimitive.Send asChild>

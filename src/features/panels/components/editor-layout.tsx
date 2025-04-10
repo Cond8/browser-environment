@@ -21,7 +21,9 @@ export const EditorLayout: React.FC = () => {
       {/* Right Panel - Chat */}
       <Panel defaultSize={50} minSize={30}>
         <Card className="h-full rounded-none pt-0">
-          <ChatIndex />
+          <div className="h-full">
+            <ChatIndex />
+          </div>
         </Card>
       </Panel>
     </PanelGroup>
