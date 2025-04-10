@@ -22,10 +22,12 @@ interface ModelParameters {
 interface AssistantState {
   // Model parameters
   parameters: ModelParameters;
+  selectedModel: string | null;
 
   // Actions
   setParameters: (params: Partial<ModelParameters>) => void;
   resetParameters: () => void;
+  setSelectedModel: (model: string | null) => void;
 }
 
 const defaultParameters: ModelParameters = {
@@ -49,6 +51,7 @@ export const useAssistantStore = create<AssistantState>()(
   persist(
     immer(set => ({
       parameters: defaultParameters,
+      selectedModel: null,
 
       setParameters: params => {
         set(state => {
@@ -64,12 +67,28 @@ export const useAssistantStore = create<AssistantState>()(
           state.parameters = defaultParameters;
         });
       },
+
+      setSelectedModel: model => {
+        set(state => {
+          state.selectedModel = model;
+        });
+      },
     })),
     {
       name: 'assistant-storage',
-      // Only persist the parameters
+      // Only persist the essential parameters and selected model
       partialize: state => ({
-        parameters: state.parameters,
+        parameters: {
+          // Core parameters
+          temperature: state.parameters.temperature,
+          topP: state.parameters.topP,
+          topK: state.parameters.topK,
+          numPredict: state.parameters.numPredict,
+          // Advanced parameters
+          repeatPenalty: state.parameters.repeatPenalty,
+          repeatLastN: state.parameters.repeatLastN,
+        },
+        selectedModel: state.selectedModel,
       }),
     },
   ),

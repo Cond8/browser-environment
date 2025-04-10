@@ -1,11 +1,8 @@
 import { CheckCircle2, XCircle } from 'lucide-react';
+import { useOllamaStore } from '../store/ollama-store';
 
-interface ConnectionStatusProps {
-  isConnected: boolean;
-  error: string | null;
-}
-
-export function ConnectionStatus({ isConnected, error }: ConnectionStatusProps) {
+export function ConnectionStatus() {
+  const { isConnected, connectionError } = useOllamaStore();
   return (
     <div className="flex items-center gap-2">
       {isConnected ? (
@@ -19,9 +16,9 @@ export function ConnectionStatus({ isConnected, error }: ConnectionStatusProps) 
           <span className="text-sm">Disconnected</span>
         </div>
       )}
-      {error && (
-        <div className="text-xs text-muted-foreground" title={error}>
-          {error}
+      {connectionError && (
+        <div className="text-xs text-muted-foreground" title={connectionError}>
+          {connectionError}
         </div>
       )}
     </div>

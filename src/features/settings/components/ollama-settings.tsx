@@ -3,12 +3,10 @@ import { Input } from '@/components/ui/input';
 import { ConnectionStatus } from '../../chat/components/connection-status';
 import { useOllamaStore } from '@/features/chat/store/ollama-store';
 import { useEffect } from 'react';
+import { SelectedModel } from '../../chat/components/selected-model';
 
 export function OllamaSettings() {
   const { 
-    service, 
-    isConnected, 
-    connectionError, 
     availableModels, 
     isLoadingModels,
     ollamaUrl,
@@ -33,13 +31,8 @@ export function OllamaSettings() {
         <div className="flex flex-col gap-2">
           <CardTitle className="flex items-center justify-between">
             <span>Ollama Settings</span>
-            <ConnectionStatus isConnected={isConnected} error={connectionError} />
+            <ConnectionStatus />
           </CardTitle>
-          {service.getDefaultModel() && (
-            <div className="text-sm text-muted-foreground">
-              Selected Model: <span className="font-medium">{service.getDefaultModel()}</span>
-            </div>
-          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -56,6 +49,7 @@ export function OllamaSettings() {
             placeholder="http://localhost:11434"
           />
         </div>
+        <SelectedModel />
         {isLoadingModels ? (
           <div className="text-sm text-muted-foreground">Loading available models...</div>
         ) : availableModels.length > 0 ? (

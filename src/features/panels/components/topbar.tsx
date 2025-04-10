@@ -8,8 +8,8 @@ export const TopBar: React.FC = () => {
   const [open, setOpen] = useState(false);
 
   return (
-    <Card className="rounded-none border-b">
-      <div className="h-12 flex items-center justify-between px-4">
+    <Card className="rounded-none border-b bg-background">
+      <div className="h-4 flex items-center justify-between px-4">
         <h1 className="text-lg font-semibold tracking-tight">Cond8 Webview</h1>
 
         <Button variant="ghost" size="icon" onClick={() => setOpen(true)}>

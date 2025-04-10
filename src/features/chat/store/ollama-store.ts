@@ -1,11 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { OllamaService } from '../services/ollama-sdk';
 
 interface OllamaState {
   // Service instance
-  service: OllamaService;
   ollamaUrl: string;
 
   // Connection state
@@ -27,7 +25,6 @@ interface OllamaState {
 export const useOllamaStore = create<OllamaState>()(
   persist(
     immer((set, get) => ({
-      service: new OllamaService(),
       ollamaUrl: 'http://localhost:11434',
       isConnected: false,
       connectionError: null,
@@ -37,7 +34,6 @@ export const useOllamaStore = create<OllamaState>()(
       setOllamaUrl: url => {
         set(state => {
           state.ollamaUrl = url;
-          state.service = new OllamaService({ baseUrl: url });
         });
         // After setting new URL, check connection
         get().checkConnection();
@@ -45,7 +41,6 @@ export const useOllamaStore = create<OllamaState>()(
 
       setService: config => {
         set(state => {
-          state.service = new OllamaService(config);
           if (config.baseUrl) {
             state.ollamaUrl = config.baseUrl;
           }
@@ -56,9 +51,7 @@ export const useOllamaStore = create<OllamaState>()(
 
       checkConnection: async () => {
         try {
-          const service = get().service;
-          // Try to list models as a connection check
-          await service.listModels();
+          
           set(state => {
             state.isConnected = true;
             state.connectionError = null;
@@ -79,6 +72,9 @@ export const useOllamaStore = create<OllamaState>()(
 
         try {
           const service = get().service;
+          if (!service || typeof service.listModels !== 'function') {
+            throw new Error('Ollama service is not properly initialized');
+          }
           const models = await service.listModels();
           set(state => {
             state.availableModels = models;
@@ -102,12 +98,11 @@ export const useOllamaStore = create<OllamaState>()(
     })),
     {
       name: 'ollama-storage',
-      // Only persist the service configuration
+      // Only persist the essential configuration
       partialize: state => ({
         ollamaUrl: state.ollamaUrl,
         service: {
           baseUrl: state.service.baseUrl,
-          defaultModel: state.service.getDefaultModel(),
         },
       }),
     },
