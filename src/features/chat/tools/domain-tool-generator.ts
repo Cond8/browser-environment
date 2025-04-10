@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { zodToOllamaTool } from '../services/ollama-sdk';
+import { zodToOllamaTool } from '../services/ollama-wrapper';
 import { Domain, domainClasses, Interface, Step } from './problem-solver';
 
 // Schema for tool generation

@@ -3,108 +3,100 @@ import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 interface OllamaState {
-  // Service instance
   ollamaUrl: string;
+  models: string[] | null;
+  isLoading: boolean;
+  error: string | null;
+  lastFetched: number | null;
 
-  // Connection state
-  isConnected: boolean;
-  connectionError: string | null;
-
-  // Available models
-  availableModels: string[];
-  isLoadingModels: boolean;
-
-  // Actions
-  setOllamaUrl: (url: string) => void;
-  setService: (config: { baseUrl?: string; defaultModel?: string }) => void;
+  setUrl: (url: string) => void;
   checkConnection: () => Promise<void>;
-  fetchModels: () => Promise<void>;
-  setConnectionError: (error: string | null) => void;
+  fetchModels: (force?: boolean) => Promise<string[]>;
 }
+
+const CACHE_MS = 5 * 60 * 1000;
 
 export const useOllamaStore = create<OllamaState>()(
   persist(
     immer((set, get) => ({
       ollamaUrl: 'http://localhost:11434',
-      isConnected: false,
-      connectionError: null,
-      availableModels: [],
-      isLoadingModels: false,
+      models: null,
+      isLoading: false,
+      error: null,
+      lastFetched: null,
 
-      setOllamaUrl: url => {
+      setUrl: url => {
         set(state => {
           state.ollamaUrl = url;
         });
-        // After setting new URL, check connection
-        get().checkConnection();
-      },
-
-      setService: config => {
-        set(state => {
-          if (config.baseUrl) {
-            state.ollamaUrl = config.baseUrl;
-          }
-        });
-        // After setting new service, check connection
         get().checkConnection();
       },
 
       checkConnection: async () => {
         try {
-          
-          set(state => {
-            state.isConnected = true;
-            state.connectionError = null;
+          const res = await fetch(`${get().ollamaUrl}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: 'llama2',
+              messages: [{ role: 'user', content: 'test' }],
+              stream: false,
+            }),
           });
-        } catch (error) {
+          if (!res.ok) throw new Error('Failed to connect to Ollama');
           set(state => {
-            state.isConnected = false;
-            state.connectionError =
-              error instanceof Error ? error.message : 'Failed to connect to Ollama';
+            state.error = null;
+          });
+        } catch (err) {
+          set(state => {
+            state.error = err instanceof Error ? err.message : 'Unknown error';
           });
         }
       },
 
-      fetchModels: async () => {
-        set(state => {
-          state.isLoadingModels = true;
+      fetchModels: async (force = false) => {
+        const now = Date.now();
+        const state = get();
+
+        if (
+          !force &&
+          state.models &&
+          state.lastFetched &&
+          now - state.lastFetched < CACHE_MS
+        ) {
+          return state.models;
+        }
+
+        set(s => {
+          s.isLoading = true;
+          s.error = null;
         });
 
         try {
-          const service = get().service;
-          if (!service || typeof service.listModels !== 'function') {
-            throw new Error('Ollama service is not properly initialized');
-          }
-          const models = await service.listModels();
-          set(state => {
-            state.availableModels = models;
-            state.isLoadingModels = false;
-          });
-        } catch (error) {
-          set(state => {
-            state.isLoadingModels = false;
-            state.connectionError =
-              error instanceof Error ? error.message : 'Failed to fetch models';
-          });
-        }
-      },
+          const res = await fetch(`${state.ollamaUrl}/api/tags`);
+          if (!res.ok) throw new Error('Failed to fetch models');
+          const json = await res.json();
+          const models = json.models.map((m: { name: string }) => m.name);
 
-      setConnectionError: error => {
-        set(state => {
-          state.connectionError = error;
-          state.isConnected = error === null;
-        });
+          set(s => {
+            s.models = models;
+            s.lastFetched = Date.now();
+            s.isLoading = false;
+          });
+
+          return models;
+        } catch (err) {
+          set(s => {
+            s.isLoading = false;
+            s.error = err instanceof Error ? err.message : 'Unknown error';
+          });
+          throw err;
+        }
       },
     })),
     {
-      name: 'ollama-storage',
-      // Only persist the essential configuration
-      partialize: state => ({
-        ollamaUrl: state.ollamaUrl,
-        service: {
-          baseUrl: state.service.baseUrl,
-        },
-      }),
-    },
-  ),
+      name: 'ollama-store',
+      partialize: state => ({ ollamaUrl: state.ollamaUrl }),
+    }
+  )
 );

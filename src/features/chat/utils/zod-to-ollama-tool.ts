@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { OllamaTool } from '../services/ollama-sdk';
+import { OllamaTool } from '../services/ollama-wrapper';
 
 export function zodToOllamaTool(
   schema: z.ZodType<any>,
@@ -69,4 +69,4 @@ export function zodToOllamaTool(
       },
     },
   };
-} 
+}

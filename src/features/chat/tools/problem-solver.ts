@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { OllamaChatResponse, OllamaService, zodToOllamaTool } from '../services/ollama-sdk';
+import { OllamaChatResponse, OllamaService, zodToOllamaTool } from '../services/ollama-wrapper';
 import { SYSTEM_PROMPT } from '../services/system-prompt';
 
 // Domain-specific class names with descriptions

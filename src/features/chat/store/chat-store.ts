@@ -1,0 +1,152 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
+
+export interface Message {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: number;
+}
+
+export interface Thread {
+  id: string;
+  title: string;
+  messages: Message[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+interface ChatState {
+  threads: Thread[];
+  currentThreadId: string | null;
+  isStreaming: boolean;
+
+  createThread: (initialMessage?: Omit<Message, 'id' | 'timestamp'>) => string;
+  deleteThread: (threadId: string) => void;
+  setCurrentThread: (threadId: string) => void;
+  addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
+  updateThreadTitle: (threadId: string, title: string) => void;
+  startStreaming: () => void;
+  stopStreaming: () => void;
+}
+
+export const useChatStore = create<ChatState>()(
+  persist(
+    immer((set, get) => ({
+      threads: [],
+      currentThreadId: null,
+      isStreaming: false,
+
+      createThread: initialMessage => {
+        const newThreadId = crypto.randomUUID();
+        const now = Date.now();
+
+        const thread: Thread = {
+          id: newThreadId,
+          title: 'New Chat',
+          messages: [],
+          createdAt: now,
+          updatedAt: now,
+        };
+
+        // If an initial user message is provided, add it
+        if (initialMessage) {
+          const msg: Message = {
+            ...initialMessage,
+            id: crypto.randomUUID(),
+            timestamp: now,
+          };
+
+          thread.messages.push(msg);
+
+          if (initialMessage.role === 'user') {
+            thread.title =
+              initialMessage.content.slice(0, 50) +
+              (initialMessage.content.length > 50 ? '...' : '');
+          }
+        }
+
+        set(state => {
+          state.threads.push(thread);
+          state.currentThreadId = newThreadId;
+        });
+
+        return newThreadId;
+      },
+
+      deleteThread: threadId => {
+        set(state => {
+          state.threads = state.threads.filter(t => t.id !== threadId);
+          if (state.currentThreadId === threadId) {
+            state.currentThreadId = state.threads[0]?.id ?? null;
+          }
+        });
+      },
+
+      setCurrentThread: threadId => {
+        set(state => {
+          state.currentThreadId = threadId;
+        });
+      },
+
+      addMessage: message => {
+        const state = get();
+        let threadId = state.currentThreadId;
+
+        // If no current thread, create one automatically
+        if (!threadId) {
+          threadId = get().createThread(message);
+          return;
+        }
+
+        const msg: Message = {
+          ...message,
+          id: crypto.randomUUID(),
+          timestamp: Date.now(),
+        };
+
+        set(state => {
+          const thread = state.threads.find(t => t.id === threadId);
+          if (thread) {
+            thread.messages.push(msg);
+            thread.updatedAt = Date.now();
+
+            if (thread.messages.length === 1 && message.role === 'user') {
+              thread.title =
+                message.content.slice(0, 50) + (message.content.length > 50 ? '...' : '');
+            }
+          }
+        });
+      },
+
+      updateThreadTitle: (threadId, title) => {
+        set(state => {
+          const thread = state.threads.find(t => t.id === threadId);
+          if (thread) {
+            thread.title = title;
+          }
+        });
+      },
+
+      startStreaming: () => {
+        set(state => {
+          state.isStreaming = true;
+        });
+      },
+
+      stopStreaming: () => {
+        set(state => {
+          state.isStreaming = false;
+        });
+      },
+    })),
+    {
+      name: 'chat-storage',
+      partialize: state => ({
+        threads: state.threads,
+        currentThreadId: state.currentThreadId,
+      }),
+    },
+  ),
+);

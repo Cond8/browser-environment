@@ -1,28 +1,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ConnectionStatus } from '../../chat/components/connection-status';
 import { useOllamaStore } from '@/features/chat/store/ollama-store';
-import { useEffect } from 'react';
 import { SelectedModel } from '../../chat/components/selected-model';
 
 export function OllamaSettings() {
-  const { 
-    availableModels, 
-    isLoadingModels,
+  const {
+    models,
+    isLoading,
     ollamaUrl,
-    setOllamaUrl,
-    checkConnection,
-    fetchModels
+    setUrl, // new setter name
+    error,
   } = useOllamaStore();
 
-  // Check connection and fetch models on mount
-  useEffect(() => {
-    checkConnection();
-    fetchModels();
-  }, []);
-
   const handleUrlChange = (url: string) => {
-    setOllamaUrl(url);
+    setUrl(url);
   };
 
   return (
@@ -31,7 +22,6 @@ export function OllamaSettings() {
         <div className="flex flex-col gap-2">
           <CardTitle className="flex items-center justify-between">
             <span>Ollama Settings</span>
-            <ConnectionStatus />
           </CardTitle>
         </div>
       </CardHeader>
@@ -49,17 +39,23 @@ export function OllamaSettings() {
             placeholder="http://localhost:11434"
           />
         </div>
+
         <SelectedModel />
-        {isLoadingModels ? (
+
+        {isLoading ? (
           <div className="text-sm text-muted-foreground">Loading available models...</div>
-        ) : availableModels.length > 0 ? (
+        ) : error ? (
+          <div className="text-sm text-destructive">{error}</div>
+        ) : models && models.length > 0 ? (
           <div className="space-y-2">
             <div className="text-sm font-medium">Available Models</div>
             <div className="text-sm text-muted-foreground">
-              {availableModels.join(', ')}
+              {models.join(', ')}
             </div>
           </div>
-        ) : null}
+        ) : (
+          <div className="text-sm text-muted-foreground">No models available</div>
+        )}
       </CardContent>
     </Card>
   );
