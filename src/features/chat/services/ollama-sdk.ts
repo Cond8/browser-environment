@@ -150,12 +150,16 @@ export function zodToOllamaTool(
 }
 
 export class OllamaService {
-  private baseUrl: string;
+  private _baseUrl: string;
   private defaultModel: string;
 
   constructor(config: { baseUrl?: string; defaultModel?: string } = {}) {
-    this.baseUrl = config.baseUrl || 'http://localhost:11434';
+    this._baseUrl = config.baseUrl || 'http://localhost:11434';
     this.defaultModel = config.defaultModel || 'phi4-mini:latest';
+  }
+
+  get baseUrl(): string {
+    return this._baseUrl;
   }
 
   getDefaultModel(): string {

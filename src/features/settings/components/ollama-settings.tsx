@@ -1,12 +1,31 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ConnectionStatus } from '../../chat/components/connection-status';
-import { useChatSettingsStore } from '@/features/chat/store/chat-settings-store';
+import { useOllamaStore } from '@/features/chat/store/ollama-store';
+import { useEffect } from 'react';
 
 export function OllamaSettings() {
-  const ollamaUrl = useChatSettingsStore(state => state.ollamaUrl);
-  const setOllamaUrl = useChatSettingsStore(state => state.setOllamaUrl);
-  const selectedModel = useChatSettingsStore(state => state.assistantSettings.model);
+  const { 
+    service, 
+    isConnected, 
+    connectionError, 
+    availableModels, 
+    isLoadingModels,
+    ollamaUrl,
+    setOllamaUrl,
+    checkConnection,
+    fetchModels
+  } = useOllamaStore();
+
+  // Check connection and fetch models on mount
+  useEffect(() => {
+    checkConnection();
+    fetchModels();
+  }, []);
+
+  const handleUrlChange = (url: string) => {
+    setOllamaUrl(url);
+  };
 
   return (
     <Card>
@@ -14,11 +33,11 @@ export function OllamaSettings() {
         <div className="flex flex-col gap-2">
           <CardTitle className="flex items-center justify-between">
             <span>Ollama Settings</span>
-            <ConnectionStatus url={ollamaUrl} />
+            <ConnectionStatus isConnected={isConnected} error={connectionError} />
           </CardTitle>
-          {selectedModel && (
+          {service.getDefaultModel() && (
             <div className="text-sm text-muted-foreground">
-              Selected Model: <span className="font-medium">{selectedModel}</span>
+              Selected Model: <span className="font-medium">{service.getDefaultModel()}</span>
             </div>
           )}
         </div>
@@ -33,10 +52,20 @@ export function OllamaSettings() {
           <Input
             id="ollama-url"
             value={ollamaUrl}
-            onChange={e => setOllamaUrl(e.target.value)}
+            onChange={e => handleUrlChange(e.target.value)}
             placeholder="http://localhost:11434"
           />
         </div>
+        {isLoadingModels ? (
+          <div className="text-sm text-muted-foreground">Loading available models...</div>
+        ) : availableModels.length > 0 ? (
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Available Models</div>
+            <div className="text-sm text-muted-foreground">
+              {availableModels.join(', ')}
+            </div>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );
