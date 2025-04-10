@@ -1,38 +1,27 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { useSettingsStore } from "../store/settings"
-import { useEffect, useState } from "react"
-import { CheckCircle2, XCircle } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { ConnectionStatus } from '../../chat/components/connection-status';
+import { useChatSettingsStore } from '@/features/chat/store/chat-settings-store';
 
 export function OllamaSettings() {
-  const { ollamaUrl, setOllamaUrl } = useSettingsStore()
-  const [isConnected, setIsConnected] = useState<boolean | null>(null)
-
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        const response = await fetch(`${ollamaUrl}/api/tags`)
-        setIsConnected(response.ok)
-      } catch (error) {
-        setIsConnected(false)
-      }
-    }
-
-    checkConnection()
-  }, [ollamaUrl])
+  const ollamaUrl = useChatSettingsStore(state => state.ollamaUrl);
+  const setOllamaUrl = useChatSettingsStore(state => state.setOllamaUrl);
+  const selectedModel = useChatSettingsStore(state => state.assistantSettings.model);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          Ollama Settings
-          {isConnected === true && (
-            <CheckCircle2 className="h-5 w-5 text-green-500" />
+        <div className="flex flex-col gap-2">
+          <CardTitle className="flex items-center justify-between">
+            <span>Ollama Settings</span>
+            <ConnectionStatus url={ollamaUrl} />
+          </CardTitle>
+          {selectedModel && (
+            <div className="text-sm text-muted-foreground">
+              Selected Model: <span className="font-medium">{selectedModel}</span>
+            </div>
           )}
-          {isConnected === false && (
-            <XCircle className="h-5 w-5 text-red-500" />
-          )}
-        </CardTitle>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
@@ -40,18 +29,15 @@ export function OllamaSettings() {
             <label htmlFor="ollama-url" className="text-sm font-medium">
               Ollama URL
             </label>
-            <span className="text-xs text-muted-foreground">
-              {isConnected === true ? "Connected" : isConnected === false ? "Not connected" : "Checking..."}
-            </span>
           </div>
           <Input
             id="ollama-url"
             value={ollamaUrl}
-            onChange={(e) => setOllamaUrl(e.target.value)}
+            onChange={e => setOllamaUrl(e.target.value)}
             placeholder="http://localhost:11434"
           />
         </div>
       </CardContent>
     </Card>
-  )
-} 
+  );
+}

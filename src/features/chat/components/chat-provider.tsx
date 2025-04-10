@@ -1,15 +1,21 @@
 import { AssistantRuntimeProvider } from '@assistant-ui/react';
-import { useChatRuntime } from '@assistant-ui/react-ai-sdk';
-import React from 'react';
+import { useVercelUseChatRuntime } from '@assistant-ui/react-ai-sdk';
+import { useChat } from '@ai-sdk/react';
+import React, { useEffect } from 'react';
+import { useChatStore } from '../store/chat-store';
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const runtime = useChatRuntime({
-    api: "/api/chat",
+  const initializeOllamaService = useChatStore(state => state.initializeOllamaService);
+  
+  const chat = useChat({
+    api: '/api/chat',
   });
 
-  return (
-    <AssistantRuntimeProvider runtime={runtime}>
-      {children}
-    </AssistantRuntimeProvider>
-  );
-}; 
+  const runtime = useVercelUseChatRuntime(chat);
+
+  useEffect(() => {
+    initializeOllamaService();
+  }, [initializeOllamaService]);
+
+  return <AssistantRuntimeProvider runtime={runtime}>{children}</AssistantRuntimeProvider>;
+};

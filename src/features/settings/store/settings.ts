@@ -1,14 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
 
 type Theme = 'dark' | 'light' | 'system';
 
 interface SettingsState {
   theme: Theme;
   resolvedTheme: 'dark' | 'light';
-  ollamaUrl: string;
   setTheme: (theme: Theme) => void;
-  setOllamaUrl: (url: string) => void;
   applyTheme: () => void;
 }
 
@@ -21,26 +20,29 @@ const getResolvedTheme = (theme: Theme): 'dark' | 'light' => {
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
-    (set, get) => ({
+    immer((set, get) => ({
       theme: 'system',
       resolvedTheme: getResolvedTheme('system'),
-      ollamaUrl: 'http://localhost:11434',
       setTheme: theme => {
-        set({ theme });
+        set(state => {
+          state.theme = theme;
+          // Update localStorage theme
+          if (theme === 'system') {
+            localStorage.removeItem('theme');
+          } else {
+            localStorage.theme = theme;
+          }
+        });
         get().applyTheme();
-        // Update localStorage theme
-        if (theme === 'system') {
-          localStorage.removeItem('theme');
-        } else {
-          localStorage.theme = theme;
-        }
       },
-      setOllamaUrl: url => set({ ollamaUrl: url }),
       applyTheme: () => {
         const t = get().theme;
         const root = document.documentElement;
         const resolved = getResolvedTheme(t);
-        set({ resolvedTheme: resolved });
+
+        set(state => {
+          state.resolvedTheme = resolved;
+        });
 
         if (resolved === 'dark') {
           root.classList.add('dark');
@@ -48,11 +50,13 @@ export const useSettingsStore = create<SettingsState>()(
           root.classList.remove('dark');
         }
       },
-    }),
+    })),
     {
       name: 'settings-storage',
       // Only persist the theme setting
-      partialize: state => ({ theme: state.theme, ollamaUrl: state.ollamaUrl }),
+      partialize: state => ({
+        theme: state.theme,
+      }),
     },
   ),
 );

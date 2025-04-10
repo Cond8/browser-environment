@@ -1,16 +1,16 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { Monitor, Moon, Sun } from "lucide-react"
-import { useSettingsStore } from "../store/settings"
-import { OllamaSettings } from "./ollama-settings"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Monitor, Moon, Sun } from 'lucide-react';
+import { useSettingsStore } from '../store/settings';
+import { OllamaSettings } from './ollama-settings';
 
 interface SettingsDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
-  const { theme, setTheme } = useSettingsStore()
+  const { theme, setTheme } = useSettingsStore();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -24,7 +24,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <ToggleGroup
               type="single"
               value={theme}
-              onValueChange={(value) => setTheme(value as "light" | "dark" | "system")}
+              onValueChange={value => setTheme(value as 'light' | 'dark' | 'system')}
               className="grid grid-cols-3"
             >
               <ToggleGroupItem value="light" aria-label="Light theme">
@@ -45,5 +45,5 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
         </div>
       </DialogContent>
     </Dialog>
-  )
-} 
+  );
+}

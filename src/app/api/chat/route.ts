@@ -1,26 +1,30 @@
-import { openai } from '@ai-sdk/openai';
-import { jsonSchema, streamText } from 'ai';
+import { OllamaConnectionService } from '@/features/chat/services/ollama-connection-service';
+import { StreamingTextResponse } from 'ai';
 
 export const runtime = 'edge';
-export const maxDuration = 30;
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
-  const { messages, system, tools } = await req.json();
+  const { messages } = await req.json();
 
-  const result = streamText({
-    model: openai('gpt-4o'),
-    messages,
-    // forward system prompt and tools from the frontend
-    system,
-    tools: Object.fromEntries(
-      Object.entries<{ parameters: unknown }>(tools).map(([name, tool]) => [
-        name,
-        {
-          parameters: jsonSchema(tool.parameters!),
-        },
-      ]),
-    ),
-  });
+  const ollamaService = new OllamaConnectionService();
 
-  return result.toDataStreamResponse();
+  const stream = await ollamaService.sendMessageStream(
+    messages.map((msg: any) => ({
+      role: msg.role === 'system' ? 'user' : msg.role,
+      content:
+        typeof msg.content === 'string'
+          ? msg.content
+          : msg.content.map((part: any) => part.text).join(''),
+    })),
+    chunk => {
+      return chunk.message.content;
+    },
+    error => {
+      console.error('Error in Ollama stream:', error);
+      throw error;
+    },
+  );
+
+  return new StreamingTextResponse(stream);
 }

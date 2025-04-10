@@ -1,8 +1,8 @@
 // src/App.tsx
+import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { EditorLayout } from '@/features/panels/components/editor-layout';
 import { TopBar } from '@/features/panels/components/topbar';
-import { ThemeProvider } from '@/components/theme-provider';
 
 export const App = () => (
   <ThemeProvider>
