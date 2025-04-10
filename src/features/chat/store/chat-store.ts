@@ -134,7 +134,7 @@ export const useChatStore = create<ChatState>()(
           }
         }),
 
-      sendMessage: async (content: string) => {
+      sendMessage: async () => {
         const state = useChatStore.getState();
         const ollamaState = useOllamaConnectionStore.getState();
 
@@ -153,14 +153,6 @@ export const useChatStore = create<ChatState>()(
         if (!conversation) {
           throw new Error('Conversation not found');
         }
-
-        // Add user message
-        const userMessageId = crypto.randomUUID();
-        state.addMessage(state.currentConversationId, {
-          content,
-          role: 'user',
-          status: 'completed',
-        });
 
         // Add assistant message placeholder
         const assistantMessageId = crypto.randomUUID();
