@@ -23,4 +23,13 @@ export default defineConfig({
     sourcemap: true,
     minify: 'terser',
   },
+  server: {
+    proxy: {
+      '/api/chat': {
+        target: 'http://localhost:11434',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/api\/chat/, '/api/chat'),
+      },
+    },
+  },
 });

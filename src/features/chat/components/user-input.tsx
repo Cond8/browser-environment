@@ -1,8 +1,8 @@
 import { ComposerPrimitive } from '@assistant-ui/react';
 import { SendHorizontalIcon } from 'lucide-react';
 import { FC, useState } from 'react';
-import { useChatStore } from '../../store/chat-store';
-import { TooltipIconButton } from './tooltip-icon-button';
+import { useChatStore } from '../store/chat-store';
+import { TooltipIconButton } from './ui/tooltip-icon-button';
 
 interface UserInputProps {
   placeholder?: string;

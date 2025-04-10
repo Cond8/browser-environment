@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { OllamaConnectionService, OllamaMessage } from '../services/ollama-connection-service';
-import { useChatSettingsStore } from './chat-settings-store';
+import { OllamaError } from '../services/ollama-sdk';
+import { SYSTEM_PROMPT } from '../services/system-prompt';
+import { useOllamaConnectionStore } from './ollama-conn-store';
 
-export type MessageRole = 'user' | 'assistant';
+export type MessageRole = 'user' | 'assistant' | 'system';
 
 export interface Message {
   id: string;
@@ -30,7 +31,6 @@ export interface Conversation {
 interface ChatState {
   conversations: Conversation[];
   currentConversationId: string | null;
-  ollamaService: OllamaConnectionService | null;
   addMessage: (conversationId: string, message: Omit<Message, 'id' | 'timestamp'>) => void;
   updateMessage: (conversationId: string, messageId: string, updates: Partial<Message>) => void;
   createConversation: (title: string, model?: string, temperature?: number, topP?: number) => void;
@@ -42,7 +42,6 @@ interface ChatState {
     settings: { model?: string; temperature?: number; topP?: number },
   ) => void;
   sendMessage: (content: string) => Promise<void>;
-  initializeOllamaService: () => void;
 }
 
 export const useChatStore = create<ChatState>()(
@@ -50,7 +49,6 @@ export const useChatStore = create<ChatState>()(
     immer(set => ({
       conversations: [],
       currentConversationId: null,
-      ollamaService: null,
 
       addMessage: (conversationId, message) =>
         set(state => {
@@ -82,7 +80,15 @@ export const useChatStore = create<ChatState>()(
           const newConversation: Conversation = {
             id: crypto.randomUUID(),
             title,
-            messages: [],
+            messages: [
+              {
+                id: crypto.randomUUID(),
+                content: SYSTEM_PROMPT,
+                role: 'system',
+                timestamp: Date.now(),
+                status: 'completed',
+              },
+            ],
             createdAt: Date.now(),
             updatedAt: Date.now(),
             isStreaming: false,
@@ -115,36 +121,29 @@ export const useChatStore = create<ChatState>()(
           }
         }),
 
-      updateConversationSettings: (conversationId, settings) =>
+      updateConversationSettings: (
+        conversationId: string,
+        settings: { model?: string; temperature?: number; topP?: number },
+      ) =>
         set(state => {
           const conversation = state.conversations.find(conv => conv.id === conversationId);
           if (conversation) {
-            Object.assign(conversation, settings);
-            conversation.updatedAt = Date.now();
+            if (settings.model) conversation.model = settings.model;
+            if (settings.temperature) conversation.temperature = settings.temperature;
+            if (settings.topP) conversation.topP = settings.topP;
           }
-        }),
-
-      initializeOllamaService: () =>
-        set(state => {
-          const settings = useChatSettingsStore.getState();
-          state.ollamaService = new OllamaConnectionService(
-            settings.ollamaUrl,
-            settings.assistantSettings.model,
-            {
-              temperature: settings.assistantSettings.temperature,
-              top_p: settings.assistantSettings.topP,
-              top_k: settings.assistantSettings.topK,
-              repeat_penalty: settings.assistantSettings.repeatPenalty,
-            },
-          );
         }),
 
       sendMessage: async (content: string) => {
         const state = useChatStore.getState();
-        const settings = useChatSettingsStore.getState();
+        const ollamaState = useOllamaConnectionStore.getState();
 
-        if (!state.currentConversationId || !state.ollamaService) {
+        if (!state.currentConversationId || !ollamaState.ollamaService) {
           throw new Error('No active conversation or Ollama service not initialized');
+        }
+
+        if (!ollamaState.isOllamaAvailable) {
+          throw new Error('Ollama service is not available');
         }
 
         const conversation = state.conversations.find(
@@ -172,7 +171,7 @@ export const useChatStore = create<ChatState>()(
         });
 
         // Convert messages to Ollama format
-        const ollamaMessages: OllamaMessage[] = conversation.messages.map(msg => ({
+        const ollamaMessages = conversation.messages.map(msg => ({
           role: msg.role,
           content: msg.content,
         }));
@@ -180,16 +179,15 @@ export const useChatStore = create<ChatState>()(
         try {
           state.setStreaming(state.currentConversationId, true);
 
-          // Use streaming for real-time updates
-          await state.ollamaService.sendMessageStream(
+          await ollamaState.ollamaService.sendMessageStream(
             ollamaMessages,
-            response => {
+            (response: { message: { content: string } }) => {
               state.updateMessage(state.currentConversationId!, assistantMessageId, {
                 content: response.message.content,
                 status: 'completed',
               });
             },
-            error => {
+            (error: OllamaError) => {
               state.updateMessage(state.currentConversationId!, assistantMessageId, {
                 status: 'error',
                 error: error.message,

@@ -48,9 +48,10 @@ export const useChatSettingsStore = create<ChatSettingsStore>()(
         set(state => {
           Object.assign(state.assistantSettings, settings);
         }),
-      setOllamaUrl: url => set(state => {
-        state.ollamaUrl = url;
-      }),
+      setOllamaUrl: url =>
+        set(state => {
+          state.ollamaUrl = url;
+        }),
       resetOllamaSettings: () =>
         set(state => {
           state.assistantSettings = defaultOllamaSettings;
@@ -84,6 +85,7 @@ export const useChatSettingsStore = create<ChatSettingsStore>()(
       // Only persist the Ollama settings, not the available models
       partialize: state => ({
         ollamaSettings: state.assistantSettings,
+        ollamaUrl: state.ollamaUrl,
       }),
     },
   ),

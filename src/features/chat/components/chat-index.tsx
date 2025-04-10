@@ -1,7 +1,7 @@
 import { ThreadPrimitive } from '@assistant-ui/react';
 import React from 'react';
 import { ChatProvider } from './chat-provider';
-import { EmptyState } from './empty-state';
+import { EmptyState } from './empty-state-screen';
 import { Thread } from './ui/thread';
 
 export const ChatIndex: React.FC = () => {

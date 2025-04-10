@@ -20,7 +20,7 @@ import type { FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { MarkdownText } from './markdown-text';
 import { TooltipIconButton } from './tooltip-icon-button';
-import { UserInput } from './user-input';
+import { UserInput } from '../user-input';
 
 export const Thread: FC = () => {
   return (

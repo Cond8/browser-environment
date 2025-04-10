@@ -3,7 +3,7 @@ import React from 'react';
 import { ConnectionStatus } from './connection-status';
 import { SelectedModel } from './selected-model';
 import { ThreadList } from './ui/thread-list';
-import { UserInput } from './ui/user-input';
+import { UserInput } from './user-input';
 
 export const EmptyState: React.FC = () => {
   return (
