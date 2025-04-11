@@ -131,6 +131,23 @@ export interface OllamaError {
 export type StreamCallback = (response: OllamaStreamResponse) => void;
 
 // -------------------------
+// Model Information
+// -------------------------
+export interface OllamaModel {
+  name: string;
+  modelfile: string;
+  parameters: string;
+  template: string;
+  details: {
+    format: string;
+    family: string;
+    families: string[];
+    parameter_size: string;
+    quantization_level: string;
+  };
+}
+
+// -------------------------
 // Helper Types and Functions
 // -------------------------
 
@@ -162,15 +179,15 @@ export function parseToolCalls(calls: OllamaToolCall[]): ParsedToolCall[] {
   }));
 }
 
-export interface OllamaClient {
-  defaultModel: string;
-  updateConfig: (newConfig: Partial<OllamaConfig>) => void;
-  chatWithTools: (
-    request: OllamaChatRequest & { tools: OllamaTool[] },
-    onMessage: StreamCallback,
-    abortSignal?: AbortSignal,
-  ) => Promise<void>;
-  chat: (request: OllamaChatRequest) => Promise<OllamaStreamResponse>;
-  listModels: () => Promise<string[]>;
-  checkConnection: () => Promise<boolean>;
-}
+// export interface OllamaClient {
+//   defaultModel: string;
+//   updateConfig: (newConfig: Partial<OllamaConfig>) => void;
+//   chatWithTools: (
+//     request: OllamaChatRequest & { tools: OllamaTool[] },
+//     onMessage: StreamCallback,
+//     abortSignal?: AbortSignal,
+//   ) => Promise<void>;
+//   chat: (request: OllamaChatRequest) => Promise<OllamaStreamResponse>;
+//   listModels: () => Promise<string[]>;
+//   checkConnection: () => Promise<boolean>;
+// }

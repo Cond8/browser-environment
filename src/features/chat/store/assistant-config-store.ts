@@ -20,7 +20,9 @@ interface ModelParameters {
 interface AssistantState {
   parameters: ModelParameters;
   selectedModel: string | null;
+  ollamaUrl: string;
 
+  setUrl: (url: string) => void;
   setParameters: (params: Partial<ModelParameters>) => void;
   resetParameters: () => void;
   setSelectedModel: (model: string | null) => void;
@@ -48,12 +50,9 @@ export const useAssistantConfigStore = create<AssistantState>()(
       ollamaUrl: 'http://localhost:11434',
 
       setUrl: url => {
-        console.log('[OllamaStore] Setting URL:', url);
         set(state => {
           state.ollamaUrl = url;
-          state.client.updateConfig({ baseUrl: url });
         });
-        get().checkConnection();
       },
 
       setParameters: params => {
@@ -77,15 +76,9 @@ export const useAssistantConfigStore = create<AssistantState>()(
     {
       name: 'assistant-storage',
       partialize: state => ({
-        parameters: {
-          temperature: state.parameters.temperature,
-          topP: state.parameters.topP,
-          topK: state.parameters.topK,
-          numPredict: state.parameters.numPredict,
-          repeatPenalty: state.parameters.repeatPenalty,
-          repeatLastN: state.parameters.repeatLastN,
-        },
+        parameters: state.parameters,
         selectedModel: state.selectedModel,
+        ollamaUrl: state.ollamaUrl,
       }),
     },
   ),

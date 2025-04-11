@@ -11,33 +11,38 @@ import { cn } from '@/lib/utils';
 import { ChevronDown, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAssistantConfigStore } from '../store/assistant-config-store';
-import { useOllamaStore } from '../store/ollama-store';
+import { OllamaModel } from '../services/ollama-types';
+import { fetchModels } from '../ollama-api/fetch-models';
 
 export function SelectedModel() {
-  const { selectedModel, setSelectedModel } = useAssistantConfigStore();
-  const { models, isLoading, fetchModels, error } = useOllamaStore();
+  const { selectedModel, setSelectedModel, ollamaUrl } = useAssistantConfigStore();
+  const [models, setModels] = useState<OllamaModel[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
+  const loadModels = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      await fetchModels(true);
+      const fetchedModels = await fetchModels(ollamaUrl);
+      setModels(fetchedModels);
     } catch (err) {
-      console.error('Failed to refresh models:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load models');
     } finally {
-      setIsRefreshing(false);
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (!models) {
-      fetchModels().catch(console.error);
-    }
-  }, [models, fetchModels]);
+    loadModels();
+  }, [ollamaUrl]);
+
+  const handleRefresh = () => {
+    loadModels();
+  };
 
   const renderModelList = () => {
-    if (isLoading || isRefreshing) {
+    if (isLoading) {
       return <DropdownMenuItem disabled>Loading models...</DropdownMenuItem>;
     }
 
@@ -51,11 +56,11 @@ export function SelectedModel() {
 
     return models.map(model => (
       <DropdownMenuItem
-        key={model}
-        onClick={() => setSelectedModel(model)}
-        className={cn('cursor-pointer', selectedModel === model && 'bg-accent')}
+        key={model.name}
+        onClick={() => setSelectedModel(model.name)}
+        className={cn('cursor-pointer', selectedModel === model.name && 'bg-accent')}
       >
-        {model}
+        {model.name}
       </DropdownMenuItem>
     ));
   };
@@ -68,7 +73,7 @@ export function SelectedModel() {
             variant="ghost"
             size="sm"
             className="h-7 gap-1.5 px-2 text-xs"
-            disabled={isLoading || isRefreshing}
+            disabled={isLoading}
           >
             {selectedModel || 'Select model'}
             <ChevronDown className="h-3.5 w-3.5" />
@@ -79,10 +84,10 @@ export function SelectedModel() {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={handleRefresh}
-            disabled={isRefreshing || isLoading}
+            disabled={isLoading}
             className="flex items-center gap-2"
           >
-            <RotateCcw className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin')} />
+            <RotateCcw className={cn('h-3.5 w-3.5', isLoading && 'animate-spin')} />
             Refresh models
           </DropdownMenuItem>
         </DropdownMenuContent>

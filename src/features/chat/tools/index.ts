@@ -8,3 +8,4 @@ import { domainToolGeneratorTool } from './domain-tool-generator';
 import { problemSolverTool } from './problem-solver';
 
 export const allTools = [problemSolverTool, domainToolGeneratorTool];
+

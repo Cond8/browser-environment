@@ -47,7 +47,7 @@ export const RecentThreads: React.FC = () => {
               <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  <span>{getTimeAgo(thread.updatedAt)}</span>
+                  <span>{getTimeAgo(thread.messages[thread.messages.length - 1].id)}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <MessageCircle className="h-3 w-3" />

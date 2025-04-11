@@ -2,7 +2,7 @@
 import { OllamaMessage } from '@/features/chat/services/ollama-types.ts';
 import { useAssistantConfigStore } from '../store/assistant-config-store';
 import { useChatStore } from '../store/chat-store';
-import { useOllamaStore } from '../store/ollama-store';
+import { useConnStore } from '../store/conn-store';
 import { allTools } from '../tools';
 
 interface ToolCall {
@@ -15,7 +15,7 @@ interface ToolCall {
 export async function handleToolCall(call: ToolCall, messages: OllamaMessage[]) {
   console.log('[ToolExecutor] Starting handleToolCall:', call);
   const { addMessage } = useChatStore.getState();
-  const { client } = useOllamaStore.getState();
+  const { client } = useConnStore.getState();
   const { selectedModel, parameters } = useAssistantConfigStore.getState();
 
   const tool = allTools.find(t => t.tool.function.name === call.function.name);

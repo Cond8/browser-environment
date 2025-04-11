@@ -22,6 +22,11 @@ export interface ChatStore {
   regenerateAssistantMessage: (replaceId: number) => void;
   addUserMessage: (message: string) => void;
   updateAssistantMessage: (id: number, message: string) => void;
+
+  getRecentThreads: (limit?: number) => Thread[];
+  getTimeAgo: (timestamp: number) => string;
+  getAssistantMessageCount: (threadId: Thread['id']) => number;
+  clearThreads: () => void;
 }
 
 export const useChatStore = create<ChatStore>()(
@@ -109,6 +114,33 @@ export const useChatStore = create<ChatStore>()(
               assistantMessage.content = message;
             }
           }
+        });
+      },
+
+      getRecentThreads: (limit = 5): Thread[] => {
+        const threads = Object.values(useChatStore.getState().threads);
+        return threads.sort((a, b) => b.id - a.id).slice(0, limit);
+      },
+
+      getTimeAgo: (timestamp: number): string => {
+        const seconds = Math.floor((Date.now() - timestamp) / 1000);
+        if (seconds < 60) return `${seconds}s ago`;
+        if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+        return `${Math.floor(seconds / 86400)}d ago`;
+      },
+
+      getAssistantMessageCount: (threadId: Thread['id']): number => {
+        const thread = useChatStore.getState().threads[threadId];
+        return thread
+          ? thread.messages.filter((m: ThreadMessage) => m.role === 'assistant').length
+          : 0;
+      },
+
+      clearThreads: () => {
+        set(state => {
+          state.threads = {};
+          state.currentThreadId = null;
         });
       },
     })),

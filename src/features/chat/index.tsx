@@ -1,6 +1,5 @@
 // src/features/chat/index.tsx
 import React from 'react';
-import { ChatRunner } from './components/_chat-runner';
 import { ChatContent } from './components/chat-content';
 import { ChatTopBar } from './components/chat-top-bar';
 import { UserInput } from './components/user-input';
@@ -13,7 +12,6 @@ export const AssistantPanel: React.FC = () => {
       <ChatTopBar />
       <ChatContent />
       <UserInput />
-      <ChatRunner />
     </div>
   );
 };
