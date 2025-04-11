@@ -1,9 +1,8 @@
-import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Delete, CornerDownLeft } from 'lucide-react';
 import { useState } from 'react';
 import { useChatStore } from '@/features/chat/store/chat-store';
 import { ShortcutsDisplay } from './shortcuts-display';
+import { SelectedModel } from './selected-model';
 
 export function UserInput() {
   const [message, setMessage] = useState('');
@@ -27,14 +26,21 @@ export function UserInput() {
     startStreaming();
   };
 
+  const handleButtonSubmit = () => {
+    handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (!isStreaming) {
-        handleSubmit(e);
-      } else {
-        stopStreaming();
+    if (e.key === 'Enter') {
+      if (e.shiftKey) {
+        e.preventDefault();
+        if (!isStreaming) {
+          handleSubmit(e);
+        } else {
+          stopStreaming();
+        }
       }
+      // Let Enter key create new line by default
     }
   };
 
@@ -49,44 +55,22 @@ export function UserInput() {
         disabled={isStreaming}
       />
       <div className="flex items-center justify-between">
-        <div className="flex gap-2">
+        <SelectedModel />
+        <div className="flex items-center gap-2">
           <ShortcutsDisplay 
-            command="Send message"
-            shortcut="Enter"
-            hide={isStreaming}
-          />
-          <ShortcutsDisplay 
-            command="New line"
-            shortcut="Shift+Enter"
-            chained
-            hide={isStreaming}
-          />
-        </div>
-        <ShortcutsDisplay 
-          command="Stop streaming"
-          shortcut="Shift+Ctrl+Backspace"
-          hide={!isStreaming}
-        />
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
+            command="Stop"
+            shortcut="Shift + Enter"
+            asButton
             onClick={stopStreaming}
-            disabled={!isStreaming}
-          >
-            Stop
-            <Delete className="h-4 w-4 translate-y-[2px]" />
-          </Button>
-          <Button
-            type="submit"
-            variant="default"
-            size="sm"
-            disabled={!message.trim()}
-          >
-            Send
-            <CornerDownLeft className="h-4 w-4" />
-          </Button>
+            hide={!isStreaming}
+          />
+          <ShortcutsDisplay 
+            command="Send"
+            shortcut="Shift + Enter"
+            asButton
+            onClick={handleButtonSubmit}
+            hide={isStreaming}
+          />
         </div>
       </div>
     </form>

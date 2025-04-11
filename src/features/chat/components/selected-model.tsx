@@ -1,15 +1,16 @@
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, ChevronDown } from 'lucide-react';
 import { useAssistantConfigStore } from '../store/assistant-config-store';
 import { useOllamaStore } from '../store/ollama-store';
 import { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 
 export function SelectedModel() {
   const { selectedModel, setSelectedModel } = useAssistantConfigStore();
@@ -20,7 +21,7 @@ export function SelectedModel() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await fetchModels(true); // force = true
+      await fetchModels(true);
     } catch (err) {
       console.error('Failed to refresh models:', err);
     } finally {
@@ -28,7 +29,6 @@ export function SelectedModel() {
     }
   };
 
-  // Optionally prefetch models on mount if not yet loaded
   useEffect(() => {
     if (!models) {
       fetchModels().catch(console.error);
@@ -36,46 +36,57 @@ export function SelectedModel() {
   }, [models, fetchModels]);
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-sm text-muted-foreground">Model:</span>
-      <Select
-        value={selectedModel || ''}
-        onValueChange={setSelectedModel}
-        disabled={isLoading || isRefreshing}
-      >
-        <SelectTrigger className="w-[200px]">
-          <SelectValue placeholder="Select a model" />
-        </SelectTrigger>
-        <SelectContent>
+    <div className="flex items-center gap-1.5">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1.5 px-2 text-xs"
+            disabled={isLoading || isRefreshing}
+          >
+            {selectedModel || 'Select model'}
+            <ChevronDown className="h-3.5 w-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-[200px]">
           {isLoading || isRefreshing ? (
-            <SelectItem value="loading" disabled>
+            <DropdownMenuItem disabled>
               Loading models...
-            </SelectItem>
+            </DropdownMenuItem>
           ) : error ? (
-            <SelectItem value="error" disabled>
+            <DropdownMenuItem disabled>
               {error}
-            </SelectItem>
+            </DropdownMenuItem>
           ) : !models || models.length === 0 ? (
-            <SelectItem value="no-models" disabled>
+            <DropdownMenuItem disabled>
               No models available
-            </SelectItem>
+            </DropdownMenuItem>
           ) : (
             models.map((model) => (
-              <SelectItem key={model} value={model}>
+              <DropdownMenuItem
+                key={model}
+                onClick={() => setSelectedModel(model)}
+                className={cn(
+                  "cursor-pointer",
+                  selectedModel === model && "bg-accent"
+                )}
+              >
                 {model}
-              </SelectItem>
+              </DropdownMenuItem>
             ))
           )}
-        </SelectContent>
-      </Select>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={handleRefresh}
-        disabled={isRefreshing || isLoading}
-      >
-        <RotateCcw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-      </Button>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={handleRefresh}
+            disabled={isRefreshing || isLoading}
+            className="flex items-center gap-2"
+          >
+            <RotateCcw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
+            Refresh models
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
