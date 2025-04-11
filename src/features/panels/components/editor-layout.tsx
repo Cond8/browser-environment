@@ -8,7 +8,7 @@ export const EditorLayout: React.FC = () => {
     <PanelGroup direction="horizontal" className="h-full">
       {/* Left Panel - File Explorer */}
       <Panel defaultSize={50} minSize={30}>
-        <Card className="h-full rounded-none border-r pt-0 bg-background">
+        <Card className="h-full rounded-none border-r py-0 bg-background">
           <div className="p-4">
             <h2 className="text-sm font-semibold mb-2">File Explorer</h2>
             <div className="text-sm text-muted-foreground">File explorer content will go here</div>
@@ -20,7 +20,7 @@ export const EditorLayout: React.FC = () => {
 
       {/* Right Panel - Chat */}
       <Panel defaultSize={50} minSize={30}>
-        <Card className="h-full rounded-none pt-0 bg-background">
+        <Card className="h-full rounded-none py-0 bg-background">
           <div className="h-full">
             <AssistantPanel />
           </div>

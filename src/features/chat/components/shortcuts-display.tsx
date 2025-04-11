@@ -1,6 +1,7 @@
 import { Keyboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { usePlatform } from '@/hooks/use-platform';
 
 interface ShortcutsDisplayProps {
   command: string;
@@ -21,12 +22,16 @@ export function ShortcutsDisplay({
   asButton = false,
   onClick
 }: ShortcutsDisplayProps) {
+  const platform = usePlatform();
+  const modifier = platform === 'mac' ? '⌘' : 'Ctrl+';
+  const displayShortcut = shortcut.replace('⌘', modifier);
+
   const content = (
     <>
       {chained ? <b className="pr-1">/</b> :<Keyboard className="h-3 w-3" />}
       <span>{command}</span>
       <span>•</span>
-      <span>{shortcut}</span>
+      <span>{displayShortcut}</span>
     </>
   );
 
