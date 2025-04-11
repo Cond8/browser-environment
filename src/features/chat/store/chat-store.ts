@@ -1,10 +1,12 @@
-import { OllamaMessage } from '@/features/chat/services/ollama-types.ts';
+import { OllamaMessage, OllamaToolCall } from '@/features/chat/services/ollama-types.ts';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { useStreamStore } from './stream-store';
 
 export interface ThreadMessage extends OllamaMessage {
   id: number;
+  tool_calls?: OllamaToolCall[];
 }
 
 export interface Thread {
@@ -17,11 +19,14 @@ export interface Thread {
 export interface ChatStore {
   currentThreadId: Thread['id'] | null;
   threads: Record<Thread['id'], Thread>;
+  setCurrentThread: (threadId: Thread['id'] | null) => void;
   resetThread: () => void;
   editUserMessage: (replaceId: number, message: string) => void;
   regenerateAssistantMessage: (replaceId: number) => void;
   addUserMessage: (message: string) => void;
   updateAssistantMessage: (id: number, message: string) => void;
+
+  getMessagesUntil: (id: number) => ThreadMessage[];
 
   getRecentThreads: (limit?: number) => Thread[];
   getTimeAgo: (timestamp: number) => string;
@@ -32,8 +37,14 @@ export interface ChatStore {
 export const useChatStore = create<ChatStore>()(
   persist(
     immer(set => ({
-      currentThreadId: null,
-      threads: {},
+      currentThreadId: null as Thread['id'] | null,
+      threads: {} as Record<Thread['id'], Thread>,
+
+      setCurrentThread: (threadId: Thread['id'] | null) => {
+        set(state => {
+          state.currentThreadId = threadId;
+        });
+      },
 
       resetThread: () => {
         set(state => {
@@ -59,6 +70,8 @@ export const useChatStore = create<ChatStore>()(
           messages.push(userMessage, assistantMessage);
           thread.messages = messages;
         });
+
+        useStreamStore.getState().makePartialAssistantMessage(assistantMessage);
       },
 
       regenerateAssistantMessage: (replaceId: number) => {
@@ -75,6 +88,8 @@ export const useChatStore = create<ChatStore>()(
           messages.push(assistantMessage);
           thread.messages = messages;
         });
+
+        useStreamStore.getState().makePartialAssistantMessage(assistantMessage);
       },
 
       addUserMessage: (message: string) => {
@@ -103,6 +118,8 @@ export const useChatStore = create<ChatStore>()(
             thread.messages.push(userMessage, assistantMessage);
           }
         });
+
+        useStreamStore.getState().makePartialAssistantMessage(assistantMessage);
       },
 
       updateAssistantMessage: (id: number, message: string) => {
@@ -142,6 +159,11 @@ export const useChatStore = create<ChatStore>()(
           state.threads = {};
           state.currentThreadId = null;
         });
+      },
+
+      getMessagesUntil: (id: number): ThreadMessage[] => {
+        const thread = useChatStore.getState().threads[useChatStore.getState().currentThreadId!];
+        return thread.messages.filter(m => m.id < id);
       },
     })),
     {

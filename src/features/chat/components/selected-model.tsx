@@ -4,15 +4,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { ChevronDown, RotateCcw } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useAssistantConfigStore } from '../store/assistant-config-store';
-import { OllamaModel } from '../services/ollama-types';
 import { fetchModels } from '../ollama-api/fetch-models';
+import { OllamaModel } from '../services/ollama-types';
+import { useAssistantConfigStore } from '../store/assistant-config-store';
 
 export function SelectedModel() {
   const { selectedModel, setSelectedModel, ollamaUrl } = useAssistantConfigStore();
@@ -36,10 +35,6 @@ export function SelectedModel() {
   useEffect(() => {
     loadModels();
   }, [ollamaUrl]);
-
-  const handleRefresh = () => {
-    loadModels();
-  };
 
   const renderModelList = () => {
     if (isLoading) {
@@ -81,15 +76,6 @@ export function SelectedModel() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-[200px]">
           {renderModelList()}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={handleRefresh}
-            disabled={isLoading}
-            className="flex items-center gap-2"
-          >
-            <RotateCcw className={cn('h-3.5 w-3.5', isLoading && 'animate-spin')} />
-            Refresh models
-          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

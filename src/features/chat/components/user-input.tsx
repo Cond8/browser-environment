@@ -3,28 +3,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/features/chat/store/chat-store';
 import { Send, StopCircle } from 'lucide-react';
 import { useState } from 'react';
+import { useStreamStore } from '../store/stream-store';
 import { SelectedModel } from './selected-model';
 import { ShortcutsDisplay } from './shortcuts-display';
-
 export function UserInput() {
   const [message, setMessage] = useState('');
 
-  const addMessage = useChatStore(state => state.addMessage);
-  const isStreaming = useChatStore(state => state.isStreaming);
-  const stopStreaming = useChatStore(state => state.stopStreaming);
+  const addUserMessage = useChatStore(state => state.addUserMessage);
+  const isStreaming = useStreamStore(state => state.isStreaming);
+  const stopStreaming = useStreamStore(state => state.stopStreaming);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = message.trim();
     if (!trimmed) return;
 
-    console.log('[UserInput] Submitting message:', trimmed);
-    console.log('[UserInput] Current streaming state:', isStreaming);
-
-    addMessage({
-      role: 'user',
-      content: trimmed,
-    });
+    addUserMessage(trimmed);
 
     setMessage('');
   };
@@ -36,27 +30,20 @@ export function UserInput() {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter') {
-      console.log('[UserInput] Enter key pressed, shift:', e.shiftKey);
       if (e.shiftKey) {
-        e.preventDefault();
-        if (!isStreaming) {
-          console.log('[UserInput] Shift+Enter: Submitting message');
-          handleSubmit(e);
-        } else {
-          console.log('[UserInput] Shift+Enter: Stopping stream');
-          stopStreaming();
-        }
+        return;
       }
-      // Let Enter key create new line by default
+      e.preventDefault();
+      if (!isStreaming) {
+        handleSubmit(e);
+      }
     }
   };
-
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-4 border-t">
       <Textarea
         value={message}
         onChange={e => {
-          console.log('[UserInput] Message changed:', e.target.value);
           setMessage(e.target.value);
         }}
         placeholder="Type your message..."

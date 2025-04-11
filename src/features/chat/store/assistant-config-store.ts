@@ -46,7 +46,7 @@ export const useAssistantConfigStore = create<AssistantState>()(
   persist(
     immer(set => ({
       parameters: { ...defaultParameters },
-      selectedModel: null,
+      selectedModel: 'phi4-mini:latest',
       ollamaUrl: 'http://localhost:11434',
 
       setUrl: url => {
