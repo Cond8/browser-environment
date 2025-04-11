@@ -9,11 +9,7 @@ export const ChatContent: React.FC = () => {
 
   if (!currentThread) {
     return (
-      <EmptyChatState
-        title="No chat selected"
-        description="Select a chat or start a new conversation"
-        showShortcuts={true}
-      />
+      <EmptyChatState />
     );
   }
 
