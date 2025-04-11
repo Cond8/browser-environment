@@ -19,13 +19,13 @@ interface ModelParameters {
 
 interface AssistantState {
   parameters: ModelParameters;
-  selectedModel: string | null;
+  selectedModel: string;
   ollamaUrl: string;
 
   setUrl: (url: string) => void;
   setParameters: (params: Partial<ModelParameters>) => void;
   resetParameters: () => void;
-  setSelectedModel: (model: string | null) => void;
+  setSelectedModel: (model: string) => void;
 }
 
 const defaultParameters: ModelParameters = {

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
+import { SYSTEM_PROMPT } from '../services/system-prompt';
 import { allTools } from '../tools';
 import { useAssistantConfigStore } from './assistant-config-store';
 import { ThreadMessage, useChatStore } from './chat-store';
@@ -40,46 +41,28 @@ export const useStreamStore = create<StreamStore>()(
       });
 
       try {
-        const { selectedModel, parameters } = useAssistantConfigStore.getState();
+        const { selectedModel, parameters, ollamaUrl } = useAssistantConfigStore.getState();
         const messages = useChatStore.getState().getMessagesUntil(assistantMessage.id);
 
-        // Transform messages to match Ollama's expected format
         const transformedMessages = messages.map(msg => ({
           role: msg.role,
           content: msg.content,
-          name: msg.name,
-          tool_calls: msg.tool_calls?.map(call => ({
-            id: call.id,
-            type: 'function',
-            function: {
-              name: call.function.name,
-              arguments:
-                typeof call.function.arguments === 'string'
-                  ? JSON.parse(call.function.arguments)
-                  : call.function.arguments,
-            },
-          })),
         }));
 
-        // Transform tools to match Ollama's expected format
-        const transformedTools = allTools.map(tool => ({
-          type: 'function',
-          function: {
-            name: tool.tool.function.name,
-            description: tool.tool.function.description,
-            parameters: tool.tool.function.parameters,
-          },
-        }));
-
-        const response = await fetch('http://localhost:11434/api/chat', {
+        const response = await fetch(`${ollamaUrl}/api/chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: selectedModel || 'phi4-mini:latest',
-            messages: transformedMessages,
-            // tools: transformedTools,
+            model: selectedModel,
+            messages: [
+              {
+                role: 'system',
+                content: SYSTEM_PROMPT
+              },
+              ...transformedMessages,
+            ],
             options: parameters,
             stream: true,
           }),

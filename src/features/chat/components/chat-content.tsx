@@ -15,26 +15,24 @@ export const ChatContent = () => {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="space-y-4">
-        {currentThread.messages.map(message => (
-          <div
-            key={message.id}
-            className={cn('w-full', message.role === 'user' ? 'bg-card' : 'bg-background')}
-          >
-            <p className="whitespace-pre-wrap p-4">{message.content}</p>
+      {currentThread.messages.map(message => (
+        <div
+          key={message.id}
+          className={cn('w-full', message.role === 'user' ? 'bg-card' : 'bg-background')}
+        >
+          <p className="whitespace-pre-wrap p-4">{message.content}</p>
+        </div>
+      ))}
+      {isStreaming && partialMessage && (
+        <div className="bg-background p-4">
+          <p className="whitespace-pre-wrap p-4">{partialMessage.content}</p>
+          <div className="flex space-x-2">
+            <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" />
+            <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:0.2s]" />
+            <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:0.4s]" />
           </div>
-        ))}
-        {isStreaming && partialMessage && (
-          <div className="bg-background p-4">
-            <p className="whitespace-pre-wrap p-4">{partialMessage.content}</p>
-            <div className="flex space-x-2">
-              <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" />
-              <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:0.2s]" />
-              <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:0.4s]" />
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
