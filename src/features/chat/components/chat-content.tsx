@@ -1,10 +1,9 @@
 // src/features/chat/components/chat-content.tsx
-import React from 'react';
 import { useChatStore } from '../store/chat-store';
 import { cn } from '@/lib/utils';
 import { EmptyChatState } from '@/features/chat/components/empty-chat-state';
 
-export const ChatContent: React.FC = () => {
+export const ChatContent = () => {
   const { threads, currentThreadId, isStreaming } = useChatStore();
   const currentThread = threads.find(thread => thread.id === currentThreadId);
 
@@ -40,4 +39,4 @@ export const ChatContent: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};

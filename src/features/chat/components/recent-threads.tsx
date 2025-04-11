@@ -5,7 +5,7 @@ import { useChatStore } from '../store/chat-store';
 import { ShortcutsDisplay } from '@/features/chat/components/shortcuts-display';
 
 export const RecentThreads: React.FC = () => {
-  const { getRecentThreads, getTimeAgo, getAssistantMessageCount } = useChatStore();
+  const { getRecentThreads, getTimeAgo, getAssistantMessageCount, clearThreads } = useChatStore();
   const recentThreads = getRecentThreads(5);
 
   if (recentThreads.length === 0) return (
@@ -22,7 +22,9 @@ export const RecentThreads: React.FC = () => {
           command="Clear history"
           shortcut="⌘⇧⌫"
           className="text-muted-foreground hover:text-destructive"
+          asButton
           icon={Trash2}
+          onClick={clearThreads}
         />
       </div>
       <div className="space-y-2">
