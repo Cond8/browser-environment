@@ -1,4 +1,3 @@
-import ollama from 'ollama/browser';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { allTools } from '../tools';
@@ -72,35 +71,54 @@ export const useStreamStore = create<StreamStore>()(
           },
         }));
 
-        const response = await ollama.chat({
-          model: selectedModel || 'phi4-mini:latests',
-          messages: transformedMessages,
-          tools: transformedTools,
-          options: parameters,
-          stream: true,
+        const response = await fetch('http://localhost:11434/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: selectedModel || 'phi4-mini:latest',
+            messages: transformedMessages,
+            // tools: transformedTools,
+            options: parameters,
+            stream: true,
+          }),
+          signal: abortController.signal,
         });
 
-        let totalLength = 0;
-        const startTime = performance.now();
-
-        for await (const chunk of response) {
-          console.log('Chunk:', chunk.message.content);
-          if (chunk.message?.content) {
-            totalLength += 1;
-            set(state => {
-              if (state.partialAssistantMessage) {
-                state.partialAssistantMessage.content += chunk.message.content;
-              }
-            });
-          }
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const duration = (performance.now() - startTime) / 1000;
-        console.log('Streaming complete', {
-          totalLength,
-          duration: `${duration.toFixed(2)}s`,
-          speed: `${(totalLength / duration).toFixed(2)} chars/s`,
-        });
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error('Response body is null');
+        }
+
+        const decoder = new TextDecoder();
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n').filter(line => line.trim());
+
+          for (const line of lines) {
+            try {
+              const parsed = JSON.parse(line);
+              if (parsed.message?.content) {
+                set(state => {
+                  if (state.partialAssistantMessage) {
+                    state.partialAssistantMessage.content += parsed.message.content;
+                  }
+                });
+              }
+            } catch (e) {
+              console.error('Error parsing chunk:', e);
+            }
+          }
+        }
       } catch (error) {
         console.error('Streaming error:', error);
       } finally {
