@@ -6,6 +6,8 @@ import { UserInput } from './components/user-input';
 import { ChatRunner } from './components/_chat-runner';
 
 export const AssistantPanel: React.FC = () => {
+  console.log('[AssistantPanel] Rendering main chat component');
+  
   return (
     <div className="h-full flex flex-col">
       <ChatTopBar />

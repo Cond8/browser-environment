@@ -1,4 +1,4 @@
-// src/lib/ollama/types/index.ts
+// src/features/chat/services/ollama-types.ts
 
 // -------------------------
 // Configuration
@@ -160,4 +160,17 @@ export function parseToolCalls(calls: OllamaToolCall[]): ParsedToolCall[] {
     name: c.function.name,
     args: JSON.parse(c.function.arguments),
   }));
+}
+
+export interface OllamaClient {
+  defaultModel: string;
+  updateConfig: (newConfig: Partial<OllamaConfig>) => void;
+  chatWithTools: (
+    request: OllamaChatRequest & { tools: OllamaTool[] },
+    onMessage: StreamCallback,
+    abortSignal?: AbortSignal,
+  ) => Promise<void>;
+  chat: (request: OllamaChatRequest) => Promise<OllamaStreamResponse>;
+  listModels: () => Promise<string[]>;
+  checkConnection: () => Promise<boolean>;
 }

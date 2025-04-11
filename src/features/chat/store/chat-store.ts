@@ -8,6 +8,7 @@ export interface Message {
   role: 'user' | 'assistant' | 'system' | 'tool';
   content: string;
   timestamp: number;
+  name?: string; // Optional name property for tool calls
 }
 
 export interface Thread {
@@ -31,6 +32,8 @@ interface ChatState {
   updateThreadTitle: (threadId: string, title: string) => void;
   setIsStreaming: (isStreaming: boolean) => void;
   stopStreaming: () => void;
+  beginAssistantStream: () => void;
+  finalizeAssistantStream: () => void;
   getRecentThreads: (limit?: number) => Thread[];
   getTimeAgo: (timestamp: number) => string;
   getAssistantMessageCount: (threadId: string) => number;
@@ -45,6 +48,7 @@ export const useChatStore = create<ChatState>()(
       isStreaming: false,
 
       createThread: initialMessage => {
+        console.log('[ChatStore] Creating new thread:', initialMessage);
         const newThreadId = crypto.randomUUID();
         const now = Date.now();
 
@@ -78,10 +82,12 @@ export const useChatStore = create<ChatState>()(
           state.currentThreadId = newThreadId;
         });
 
+        console.log('[ChatStore] Created thread:', thread);
         return newThreadId;
       },
 
       deleteThread: threadId => {
+        console.log('[ChatStore] Deleting thread:', threadId);
         set(state => {
           state.threads = state.threads.filter(t => t.id !== threadId);
           if (state.currentThreadId === threadId) {
@@ -91,19 +97,21 @@ export const useChatStore = create<ChatState>()(
       },
 
       setCurrentThread: threadId => {
+        console.log('[ChatStore] Setting current thread:', threadId);
         set(state => {
           state.currentThreadId = threadId;
         });
       },
 
-      addMessage: message => {
+      addMessage: async message => {
+        console.log('[ChatStore] Adding message:', message);
         const state = get();
         let threadId = state.currentThreadId;
 
         // If no current thread, create one automatically
         if (!threadId) {
-          threadId = get().createThread(message);
-          return;
+          console.log('[ChatStore] No current thread, creating one');
+          threadId = get().createThread();
         }
 
         const msg: Message = {
@@ -129,27 +137,25 @@ export const useChatStore = create<ChatState>()(
             }
           }
         });
+        console.log('[ChatStore] Message added to thread:', threadId);
       },
 
       updateLastMessage: content => {
+        console.log('[ChatStore] Updating last message content:', content);
         set(state => {
           const thread = state.threads.find(t => t.id === state.currentThreadId);
           if (thread) {
             const lastMessage = thread.messages[thread.messages.length - 1];
             if (lastMessage && lastMessage.role === 'assistant') {
-              // Create a new message object instead of mutating
-              const updatedMessage = {
-                ...lastMessage,
-                content,
-              };
-              // Create a new messages array with the updated message
-              thread.messages = [...thread.messages.slice(0, -1), updatedMessage];
+              lastMessage.content = content;
+              thread.updatedAt = Date.now();
             }
           }
         });
       },
 
       updateThreadTitle: (threadId, title) => {
+        console.log('[ChatStore] Updating thread title:', { threadId, title });
         set(state => {
           const thread = state.threads.find(t => t.id === threadId);
           if (thread) {
@@ -159,12 +165,40 @@ export const useChatStore = create<ChatState>()(
       },
 
       setIsStreaming: isStreaming => {
+        console.log('[ChatStore] Setting streaming state:', isStreaming);
         set(state => {
           state.isStreaming = isStreaming;
         });
       },
 
       stopStreaming: () => {
+        console.log('[ChatStore] Stopping streaming');
+        set(state => {
+          state.isStreaming = false;
+        });
+      },
+
+      beginAssistantStream: () => {
+        console.log('[ChatStore] Beginning assistant stream');
+        set(state => {
+          state.isStreaming = true;
+          // Add an empty assistant message to start streaming
+          const msg: Message = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: '',
+            timestamp: Date.now(),
+          };
+          const thread = state.threads.find(t => t.id === state.currentThreadId);
+          if (thread) {
+            thread.messages.push(msg);
+            thread.updatedAt = Date.now();
+          }
+        });
+      },
+
+      finalizeAssistantStream: () => {
+        console.log('[ChatStore] Finalizing assistant stream');
         set(state => {
           state.isStreaming = false;
         });
@@ -198,6 +232,7 @@ export const useChatStore = create<ChatState>()(
       },
 
       clearThreads: () => {
+        console.log('[ChatStore] Clearing all threads');
         set(state => {
           state.threads = [];
           state.currentThreadId = null;

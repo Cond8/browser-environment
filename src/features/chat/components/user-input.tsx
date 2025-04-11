@@ -18,6 +18,9 @@ export function UserInput() {
     const trimmed = message.trim();
     if (!trimmed) return;
 
+    console.log('[UserInput] Submitting message:', trimmed);
+    console.log('[UserInput] Current streaming state:', isStreaming);
+
     addMessage({
       role: 'user',
       content: trimmed,
@@ -27,16 +30,20 @@ export function UserInput() {
   };
 
   const handleButtonSubmit = () => {
+    console.log('[UserInput] Button submit triggered');
     handleSubmit({ preventDefault: () => {} } as React.FormEvent);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter') {
+      console.log('[UserInput] Enter key pressed, shift:', e.shiftKey);
       if (e.shiftKey) {
         e.preventDefault();
         if (!isStreaming) {
+          console.log('[UserInput] Shift+Enter: Submitting message');
           handleSubmit(e);
         } else {
+          console.log('[UserInput] Shift+Enter: Stopping stream');
           stopStreaming();
         }
       }
@@ -48,7 +55,10 @@ export function UserInput() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-4 border-t">
       <Textarea
         value={message}
-        onChange={e => setMessage(e.target.value)}
+        onChange={e => {
+          console.log('[UserInput] Message changed:', e.target.value);
+          setMessage(e.target.value);
+        }}
         placeholder="Type your message..."
         className="min-h-[60px] resize-none"
         onKeyDown={handleKeyDown}
@@ -61,7 +71,10 @@ export function UserInput() {
             command="Stop"
             shortcut="Shift + Enter"
             asButton
-            onClick={stopStreaming}
+            onClick={() => {
+              console.log('[UserInput] Stop button clicked');
+              stopStreaming();
+            }}
             hide={!isStreaming}
             icon={StopCircle}
           />
