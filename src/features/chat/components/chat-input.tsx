@@ -1,3 +1,4 @@
+// src/features/chat/components/chat-input.tsx
 import React from 'react';
 
 export const ChatInput: React.FC = () => {

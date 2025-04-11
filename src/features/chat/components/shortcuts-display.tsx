@@ -1,3 +1,4 @@
+// src/features/chat/components/shortcuts-display.tsx
 import { Keyboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';

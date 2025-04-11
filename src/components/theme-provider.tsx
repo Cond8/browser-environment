@@ -1,3 +1,4 @@
+// src/components/theme-provider.tsx
 import { useSettingsStore } from '@/features/settings/store/settings';
 import { useEffect } from 'react';
 

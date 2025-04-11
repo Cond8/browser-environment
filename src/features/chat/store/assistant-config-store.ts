@@ -1,3 +1,4 @@
+// src/features/chat/store/assistant-config-store.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';

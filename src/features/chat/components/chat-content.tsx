@@ -1,3 +1,4 @@
+// src/features/chat/components/chat-content.tsx
 import React from 'react';
 import { useChatStore } from '../store/chat-store';
 import { cn } from '@/lib/utils';

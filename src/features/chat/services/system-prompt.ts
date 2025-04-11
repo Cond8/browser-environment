@@ -1,3 +1,4 @@
+// src/features/chat/services/system-prompt.ts
 export const SYSTEM_PROMPT = `You are an AI assistant that creates recursive workflows. Each workflow has an interface (main contract) and steps (implementation).
 
 Interface properties:

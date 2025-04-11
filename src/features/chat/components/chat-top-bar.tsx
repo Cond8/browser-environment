@@ -1,3 +1,4 @@
+// src/features/chat/components/chat-top-bar.tsx
 import React from 'react';
 import { ShortcutsDisplay } from './shortcuts-display';
 import { useChatStore } from '../store/chat-store';

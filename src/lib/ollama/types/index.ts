@@ -1,4 +1,4 @@
-// Configuration Types
+// src/lib/ollama/types/index.ts
 export interface OllamaConfig {
   baseUrl?: string;
   defaultModel?: string;

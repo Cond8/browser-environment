@@ -1,3 +1,4 @@
+// src/features/panels/components/editor-layout.tsx
 import { Card } from '@/components/ui/card';
 import { AssistantPanel } from '@/features/chat';
 import React from 'react';

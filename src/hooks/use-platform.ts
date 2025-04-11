@@ -1,3 +1,4 @@
+// src/hooks/use-platform.ts
 import { useEffect, useState } from 'react';
 
 export type Platform = 'mac' | 'windows' | 'linux' | 'unknown';

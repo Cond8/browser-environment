@@ -1,3 +1,4 @@
+// src/features/chat/store/ollama-store.ts
 import { OllamaService } from '@/lib/ollama';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';

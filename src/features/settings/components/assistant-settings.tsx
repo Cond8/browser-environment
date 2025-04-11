@@ -1,3 +1,4 @@
+// src/features/settings/components/assistant-settings.tsx
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { useAssistantConfigStore } from '@/features/chat/store/assistant-config-store';

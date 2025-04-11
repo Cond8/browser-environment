@@ -1,3 +1,4 @@
+// src/features/settings/components/settings-dialog.tsx
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Monitor, Moon, Sun } from 'lucide-react';

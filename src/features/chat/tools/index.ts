@@ -1,3 +1,4 @@
+// src/features/chat/tools/index.ts
 
 export * from './domain-tool-generator';
 export * from './problem-solver';

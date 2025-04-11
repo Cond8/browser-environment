@@ -1,3 +1,4 @@
+// src/components/assistant-ui/thread-list.tsx
 import type { FC } from "react";
 import {
   ThreadListItemPrimitive,

@@ -1,3 +1,4 @@
+// src/features/chat/utils/zod-to-ollama-tool.ts
 import { OllamaTool } from '@/lib/ollama';
 import { z } from 'zod';
 

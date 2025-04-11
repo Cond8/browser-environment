@@ -1,3 +1,4 @@
+// src/features/chat/components/chat-box.tsx
 import React, { useState } from 'react';
 import { ChatService } from '../services/chat-service';
 import { useChatStore } from '../store/chat-store';

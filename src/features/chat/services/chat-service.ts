@@ -1,3 +1,4 @@
+// src/features/chat/services/chat-service.ts
 import { OllamaMessage, OllamaStreamResponse, OllamaTool } from '@/lib/ollama';
 import { useAssistantConfigStore } from '../store/assistant-config-store';
 import { Message, useChatStore } from '../store/chat-store';

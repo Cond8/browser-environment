@@ -1,3 +1,4 @@
+// src/features/panels/components/topbar.tsx
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { SettingsDialog } from '@/features/settings/components/settings-dialog';

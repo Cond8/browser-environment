@@ -1,3 +1,4 @@
+// src/features/settings/components/ollama-settings.tsx
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useOllamaStore } from '@/features/chat/store/ollama-store';

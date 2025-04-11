@@ -1,3 +1,4 @@
+// src/components/editor/monaco-editor.tsx
 import { useRef, useEffect } from 'react';
 import Editor, { OnMount, BeforeMount, OnChange } from '@monaco-editor/react';
 import { useEditorStore } from '../../lib/store';

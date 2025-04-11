@@ -1,3 +1,4 @@
+// src/lib/ollama/services/__tests__/ollama-service.test.ts
 import { DEFAULT_CONFIG } from '../../types';
 import { OllamaService } from '../ollama-service';
 

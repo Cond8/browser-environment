@@ -1,3 +1,4 @@
+// src/features/chat/components/shortcuts-cheatsheet.tsx
 import { Keyboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ShortcutsDisplay } from './shortcuts-display';

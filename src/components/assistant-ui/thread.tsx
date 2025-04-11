@@ -1,3 +1,4 @@
+// src/components/assistant-ui/thread.tsx
 import {
   ActionBarPrimitive,
   BranchPickerPrimitive,

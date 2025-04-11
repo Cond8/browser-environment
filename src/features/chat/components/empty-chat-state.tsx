@@ -1,3 +1,4 @@
+// src/features/chat/components/empty-chat-state.tsx
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { ShortcutsCheatsheet } from './shortcuts-cheatsheet';

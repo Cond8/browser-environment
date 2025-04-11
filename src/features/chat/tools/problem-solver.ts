@@ -1,3 +1,4 @@
+// src/features/chat/tools/problem-solver.ts
 import { OllamaChatResponse, OllamaService } from '@/lib/ollama';
 import { z } from 'zod';
 import { SYSTEM_PROMPT } from '../services/system-prompt';

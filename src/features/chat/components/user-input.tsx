@@ -1,3 +1,4 @@
+// src/features/chat/components/user-input.tsx
 import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
 import { useChatStore } from '@/features/chat/store/chat-store';

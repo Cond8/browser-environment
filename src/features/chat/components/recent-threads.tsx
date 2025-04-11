@@ -1,3 +1,4 @@
+// src/features/chat/components/recent-threads.tsx
 import React from 'react';
 import { Clock, MessageCircle } from 'lucide-react';
 import { useChatStore } from '../store/chat-store';
