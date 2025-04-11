@@ -24,9 +24,11 @@ interface ChatState {
 
   createThread: (initialMessage?: Omit<Message, 'id' | 'timestamp'>) => string;
   deleteThread: (threadId: string) => void;
-  setCurrentThread: (threadId: string) => void;
+  setCurrentThread: (threadId: string | null) => void;
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
+  updateLastMessage: (content: string) => void;
   updateThreadTitle: (threadId: string, title: string) => void;
+  setIsStreaming: (isStreaming: boolean) => void;
   stopStreaming: () => void;
   getRecentThreads: (limit?: number) => Thread[];
   getTimeAgo: (timestamp: number) => string;
@@ -127,12 +129,36 @@ export const useChatStore = create<ChatState>()(
         });
       },
 
+      updateLastMessage: content => {
+        set(state => {
+          const thread = state.threads.find(t => t.id === state.currentThreadId);
+          if (thread) {
+            const lastMessage = thread.messages[thread.messages.length - 1];
+            if (lastMessage && lastMessage.role === 'assistant') {
+              // Create a new message object instead of mutating
+              const updatedMessage = {
+                ...lastMessage,
+                content,
+              };
+              // Create a new messages array with the updated message
+              thread.messages = [...thread.messages.slice(0, -1), updatedMessage];
+            }
+          }
+        });
+      },
+
       updateThreadTitle: (threadId, title) => {
         set(state => {
           const thread = state.threads.find(t => t.id === threadId);
           if (thread) {
             thread.title = title;
           }
+        });
+      },
+
+      setIsStreaming: isStreaming => {
+        set(state => {
+          state.isStreaming = isStreaming;
         });
       },
 

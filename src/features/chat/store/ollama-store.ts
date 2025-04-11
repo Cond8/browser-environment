@@ -1,3 +1,4 @@
+import { OllamaService } from '@/lib/ollama';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -8,6 +9,7 @@ interface OllamaState {
   isLoading: boolean;
   error: string | null;
   lastFetched: number | null;
+  ollamaService: OllamaService;
 
   setUrl: (url: string) => void;
   checkConnection: () => Promise<void>;
@@ -24,32 +26,33 @@ export const useOllamaStore = create<OllamaState>()(
       isLoading: false,
       error: null,
       lastFetched: null,
+      ollamaService: new OllamaService(),
 
       setUrl: url => {
         set(state => {
           state.ollamaUrl = url;
+          state.ollamaService.updateConfig({ baseUrl: url });
         });
         get().checkConnection();
       },
 
       checkConnection: async () => {
+        set(state => {
+          state.isLoading = true;
+          state.error = null;
+        });
+
         try {
-          const res = await fetch(`${get().ollamaUrl}/api/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              model: 'llama2',
-              messages: [{ role: 'user', content: 'test' }],
-              stream: false,
-            }),
-          });
-          if (!res.ok) throw new Error('Failed to connect to Ollama');
+          const isConnected = await get().ollamaService.checkConnection();
+
           set(state => {
-            state.error = null;
+            state.error = isConnected ? null : 'Failed to connect to Ollama';
+            state.isLoading = false;
           });
         } catch (err) {
           set(state => {
             state.error = err instanceof Error ? err.message : 'Unknown error';
+            state.isLoading = false;
           });
         }
       },
@@ -58,12 +61,7 @@ export const useOllamaStore = create<OllamaState>()(
         const now = Date.now();
         const state = get();
 
-        if (
-          !force &&
-          state.models &&
-          state.lastFetched &&
-          now - state.lastFetched < CACHE_MS
-        ) {
+        if (!force && state.models && state.lastFetched && now - state.lastFetched < CACHE_MS) {
           return state.models;
         }
 
@@ -73,10 +71,7 @@ export const useOllamaStore = create<OllamaState>()(
         });
 
         try {
-          const res = await fetch(`${state.ollamaUrl}/api/tags`);
-          if (!res.ok) throw new Error('Failed to fetch models');
-          const json = await res.json();
-          const models = json.models.map((m: { name: string }) => m.name);
+          const models = await state.ollamaService.listModels();
 
           set(s => {
             s.models = models;
@@ -97,6 +92,6 @@ export const useOllamaStore = create<OllamaState>()(
     {
       name: 'ollama-store',
       partialize: state => ({ ollamaUrl: state.ollamaUrl }),
-    }
-  )
+    },
+  ),
 );

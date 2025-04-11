@@ -23,8 +23,9 @@ export function ShortcutsDisplay({
   onClick
 }: ShortcutsDisplayProps) {
   const platform = usePlatform();
-  const modifier = platform === 'mac' ? '⌘' : 'Ctrl+';
-  const displayShortcut = shortcut.replace('⌘', modifier);
+  const displayShortcut = shortcut
+    .replace('⌘', platform === 'mac' ? '⌘' : 'Ctrl+')
+    .replace('⇧', platform === 'mac' ? '⇧' : 'Shift+');
 
   const content = (
     <>

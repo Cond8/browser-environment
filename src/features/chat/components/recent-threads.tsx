@@ -1,10 +1,11 @@
 import React from 'react';
 import { Clock, MessageCircle } from 'lucide-react';
 import { useChatStore } from '../store/chat-store';
+import { ShortcutsDisplay } from '@/features/chat/components/shortcuts-display';
 
 export const RecentThreads: React.FC = () => {
   const { getRecentThreads, getTimeAgo, getAssistantMessageCount } = useChatStore();
-  const recentThreads = getRecentThreads();
+  const recentThreads = getRecentThreads(5);
 
   if (recentThreads.length === 0) return (
     <div className="w-full max-w-md mb-8 text-center">
@@ -16,13 +17,20 @@ export const RecentThreads: React.FC = () => {
     <div className="w-full max-w-md mb-8">
       <h4 className="text-sm font-medium mb-4">Recent Conversations</h4>
       <div className="space-y-2">
-        {recentThreads.map((thread) => (
+        {recentThreads.map((thread, index) => (
           <div
             key={thread.id}
             className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer"
           >
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{thread.title}</p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium truncate">{thread.title}</p>
+                <ShortcutsDisplay
+                  command={`Select thread ${index + 1}`}
+                  shortcut={`⌘⇧${index + 1}`}
+                  className="ml-2"
+                />
+              </div>
               <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />

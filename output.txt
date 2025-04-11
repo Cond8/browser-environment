@@ -1,0 +1,408 @@
+diff --git a/src/features/chat/components/empty-chat-state.tsx b/src/features/chat/components/empty-chat-state.tsx
+index 74e82ab..8676bc9 100644
+--- a/src/features/chat/components/empty-chat-state.tsx
++++ b/src/features/chat/components/empty-chat-state.tsx
+@@ -24,7 +24,7 @@ export const EmptyChatState: React.FC<EmptyChatStateProps> = ({
+         <div className="mb-4">
+           <MessageSquare className="h-8 w-8 text-muted-foreground" />
+         </div>
+-        <h3 className="text-lg font-medium">Welcome to Chat</h3>
++        <h3 className="text-lg font-medium">Welcome to Cond8 Chat</h3>
+         <p className="text-sm text-muted-foreground mb-6">Start a new conversation or use the shortcuts below</p>
+       </div>
+       <ShortcutsCheatsheet shortcuts={SHORTCUTS} />
+diff --git a/src/features/chat/services/ollama-wrapper.ts b/src/features/chat/services/ollama-wrapper.ts
+deleted file mode 100644
+index 749142b..0000000
+--- a/src/features/chat/services/ollama-wrapper.ts
++++ /dev/null
+@@ -1,84 +0,0 @@
+-import { DEFAULT_CONFIG, OllamaConfig } from '../types/ollama-config';
+-import { OllamaChatRequest } from '../types/ollama-request';
+-import { OllamaStreamResponse, StreamCallback } from '../types/ollama-response';
+-
+-// Types
+-export interface OllamaTool {
+-  type: 'function';
+-  function: {
+-    name: string;
+-    description: string;
+-    parameters: {
+-      type: 'object';
+-      properties: Record<
+-        string,
+-        {
+-          type: string;
+-          description?: string;
+-          enum?: string[];
+-        }
+-      >;
+-      required?: string[];
+-    };
+-  };
+-}
+-
+-// Utility Functions
+-export function createOllamaConfig(config: OllamaConfig = {}): Required<OllamaConfig> {
+-  return {
+-    ...DEFAULT_CONFIG,
+-    ...config,
+-  };
+-}
+-
+-export async function chatWithTools(
+-  request: OllamaChatRequest & { tools: OllamaTool[] },
+-  onMessage: StreamCallback,
+-  config: OllamaConfig = {},
+-): Promise<void> {
+-  const { baseUrl, defaultModel } = createOllamaConfig(config);
+-  const url = new URL(`${baseUrl}/api/chat`);
+-  const eventSource = new EventSource(url.toString(), {
+-    withCredentials: false,
+-  });
+-
+-  return new Promise((resolve, reject) => {
+-    eventSource.onmessage = event => {
+-      try {
+-        const response = JSON.parse(event.data) as OllamaStreamResponse;
+-        onMessage(response);
+-
+-        if (response.done) {
+-          eventSource.close();
+-          resolve();
+-        }
+-      } catch (error) {
+-        eventSource.close();
+-        reject(error);
+-      }
+-    };
+-
+-    eventSource.onerror = error => {
+-      eventSource.close();
+-      reject(error);
+-    };
+-
+-    fetch(url.toString(), {
+-      method: 'POST',
+-      headers: {
+-        'Content-Type': 'application/json',
+-      },
+-      body: JSON.stringify({
+-        model: request.model || defaultModel,
+-        messages: request.messages,
+-        stream: true,
+-        tools: request.tools,
+-        tool_choice: request.tool_choice || 'auto',
+-        options: request.options,
+-      }),
+-    }).catch(error => {
+-      eventSource.close();
+-      reject(error);
+-    });
+-  });
+-}
+diff --git a/src/features/chat/store/chat-store.ts b/src/features/chat/store/chat-store.ts
+index 817a27f..7ba9ad9 100644
+--- a/src/features/chat/store/chat-store.ts
++++ b/src/features/chat/store/chat-store.ts
+@@ -26,7 +26,9 @@ interface ChatState {
+   deleteThread: (threadId: string) => void;
+   setCurrentThread: (threadId: string) => void;
+   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
++  updateLastMessage: (content: string) => void;
+   updateThreadTitle: (threadId: string, title: string) => void;
++  setIsStreaming: (isStreaming: boolean) => void;
+   stopStreaming: () => void;
+   getRecentThreads: (limit?: number) => Thread[];
+   getTimeAgo: (timestamp: number) => string;
+@@ -127,6 +129,24 @@ export const useChatStore = create<ChatState>()(
+         });
+       },
+ 
++      updateLastMessage: content => {
++        set(state => {
++          const thread = state.threads.find(t => t.id === state.currentThreadId);
++          if (thread) {
++            const lastMessage = thread.messages[thread.messages.length - 1];
++            if (lastMessage && lastMessage.role === 'assistant') {
++              // Create a new message object instead of mutating
++              const updatedMessage = {
++                ...lastMessage,
++                content,
++              };
++              // Create a new messages array with the updated message
++              thread.messages = [...thread.messages.slice(0, -1), updatedMessage];
++            }
++          }
++        });
++      },
++
+       updateThreadTitle: (threadId, title) => {
+         set(state => {
+           const thread = state.threads.find(t => t.id === threadId);
+@@ -136,6 +156,12 @@ export const useChatStore = create<ChatState>()(
+         });
+       },
+ 
++      setIsStreaming: isStreaming => {
++        set(state => {
++          state.isStreaming = isStreaming;
++        });
++      },
++
+       stopStreaming: () => {
+         set(state => {
+           state.isStreaming = false;
+diff --git a/src/features/chat/store/ollama-store.ts b/src/features/chat/store/ollama-store.ts
+index 3f8f496..3a1fc38 100644
+--- a/src/features/chat/store/ollama-store.ts
++++ b/src/features/chat/store/ollama-store.ts
+@@ -1,3 +1,4 @@
++import { OllamaService } from '@/lib/ollama';
+ import { create } from 'zustand';
+ import { persist } from 'zustand/middleware';
+ import { immer } from 'zustand/middleware/immer';
+@@ -8,6 +9,7 @@ interface OllamaState {
+   isLoading: boolean;
+   error: string | null;
+   lastFetched: number | null;
++  ollamaService: OllamaService;
+ 
+   setUrl: (url: string) => void;
+   checkConnection: () => Promise<void>;
+@@ -24,32 +26,33 @@ export const useOllamaStore = create<OllamaState>()(
+       isLoading: false,
+       error: null,
+       lastFetched: null,
++      ollamaService: new OllamaService(),
+ 
+       setUrl: url => {
+         set(state => {
+           state.ollamaUrl = url;
++          state.ollamaService.updateConfig({ baseUrl: url });
+         });
+         get().checkConnection();
+       },
+ 
+       checkConnection: async () => {
++        set(state => {
++          state.isLoading = true;
++          state.error = null;
++        });
++
+         try {
+-          const res = await fetch(`${get().ollamaUrl}/api/chat`, {
+-            method: 'POST',
+-            headers: { 'Content-Type': 'application/json' },
+-            body: JSON.stringify({
+-              model: 'llama2',
+-              messages: [{ role: 'user', content: 'test' }],
+-              stream: false,
+-            }),
+-          });
+-          if (!res.ok) throw new Error('Failed to connect to Ollama');
++          const isConnected = await get().ollamaService.checkConnection();
++
+           set(state => {
+-            state.error = null;
++            state.error = isConnected ? null : 'Failed to connect to Ollama';
++            state.isLoading = false;
+           });
+         } catch (err) {
+           set(state => {
+             state.error = err instanceof Error ? err.message : 'Unknown error';
++            state.isLoading = false;
+           });
+         }
+       },
+@@ -58,12 +61,7 @@ export const useOllamaStore = create<OllamaState>()(
+         const now = Date.now();
+         const state = get();
+ 
+-        if (
+-          !force &&
+-          state.models &&
+-          state.lastFetched &&
+-          now - state.lastFetched < CACHE_MS
+-        ) {
++        if (!force && state.models && state.lastFetched && now - state.lastFetched < CACHE_MS) {
+           return state.models;
+         }
+ 
+@@ -73,10 +71,7 @@ export const useOllamaStore = create<OllamaState>()(
+         });
+ 
+         try {
+-          const res = await fetch(`${state.ollamaUrl}/api/tags`);
+-          if (!res.ok) throw new Error('Failed to fetch models');
+-          const json = await res.json();
+-          const models = json.models.map((m: { name: string }) => m.name);
++          const models = await state.ollamaService.listModels();
+ 
+           set(s => {
+             s.models = models;
+@@ -97,6 +92,6 @@ export const useOllamaStore = create<OllamaState>()(
+     {
+       name: 'ollama-store',
+       partialize: state => ({ ollamaUrl: state.ollamaUrl }),
+-    }
+-  )
++    },
++  ),
+ );
+diff --git a/src/features/chat/tools/domain-tool-generator.ts b/src/features/chat/tools/domain-tool-generator.ts
+index 903586b..88b3c7b 100644
+--- a/src/features/chat/tools/domain-tool-generator.ts
++++ b/src/features/chat/tools/domain-tool-generator.ts
+@@ -1,5 +1,5 @@
+ import { z } from 'zod';
+-import { zodToOllamaTool } from '../services/ollama-wrapper';
++import { zodToOllamaTool } from '../utils/zod-to-ollama-tool';
+ import { Domain, domainClasses, Interface, Step } from './problem-solver';
+ 
+ // Schema for tool generation
+diff --git a/src/features/chat/tools/problem-solver.ts b/src/features/chat/tools/problem-solver.ts
+index d0a1bf4..126c437 100644
+--- a/src/features/chat/tools/problem-solver.ts
++++ b/src/features/chat/tools/problem-solver.ts
+@@ -1,6 +1,7 @@
++import { OllamaChatResponse, OllamaService } from '@/lib/ollama';
+ import { z } from 'zod';
+-import { OllamaChatResponse, OllamaService, zodToOllamaTool } from '../services/ollama-wrapper';
+ import { SYSTEM_PROMPT } from '../services/system-prompt';
++import { zodToOllamaTool } from '../utils/zod-to-ollama-tool';
+ 
+ // Domain-specific class names with descriptions
+ const domainClasses = {
+diff --git a/src/features/chat/types/ollama-config.ts b/src/features/chat/types/ollama-config.ts
+deleted file mode 100644
+index c8802e6..0000000
+--- a/src/features/chat/types/ollama-config.ts
++++ /dev/null
+@@ -1,9 +0,0 @@
+-export interface OllamaConfig {
+-  baseUrl?: string;
+-  defaultModel?: string;
+-}
+-
+-export const DEFAULT_CONFIG: Required<OllamaConfig> = {
+-  baseUrl: 'http://localhost:11434',
+-  defaultModel: 'phi4-mini:latest',
+-};
+diff --git a/src/features/chat/types/ollama-message.ts b/src/features/chat/types/ollama-message.ts
+deleted file mode 100644
+index e40a8a8..0000000
+--- a/src/features/chat/types/ollama-message.ts
++++ /dev/null
+@@ -1,14 +0,0 @@
+-export interface OllamaMessage {
+-  role: 'user' | 'assistant' | 'system';
+-  content: string;
+-  tool_calls?: OllamaToolCall[];
+-}
+-
+-export interface OllamaToolCall {
+-  id: string;
+-  type: 'function';
+-  function: {
+-    name: string;
+-    arguments: string;
+-  };
+-} 
+\ No newline at end of file
+diff --git a/src/features/chat/types/ollama-request.ts b/src/features/chat/types/ollama-request.ts
+deleted file mode 100644
+index 2630952..0000000
+--- a/src/features/chat/types/ollama-request.ts
++++ /dev/null
+@@ -1,17 +0,0 @@
+-import { OllamaMessage } from './ollama-message';
+-import { OllamaTool } from './ollama-tool';
+-
+-export interface OllamaChatRequest {
+-  model: string;
+-  messages: OllamaMessage[];
+-  stream?: boolean;
+-  tools?: OllamaTool[];
+-  tool_choice?: 'auto' | 'none' | { type: 'function'; function: { name: string } };
+-  options?: {
+-    temperature?: number;
+-    top_p?: number;
+-    top_k?: number;
+-    num_predict?: number;
+-    stop?: string[];
+-  };
+-}
+diff --git a/src/features/chat/types/ollama-response.ts b/src/features/chat/types/ollama-response.ts
+deleted file mode 100644
+index f65cb2a..0000000
+--- a/src/features/chat/types/ollama-response.ts
++++ /dev/null
+@@ -1,29 +0,0 @@
+-import { OllamaMessage } from './ollama-message';
+-
+-export interface OllamaChatResponse {
+-  model: string;
+-  created_at: string;
+-  message: OllamaMessage;
+-  done: boolean;
+-  total_duration?: number;
+-  load_duration?: number;
+-  prompt_eval_duration?: number;
+-  eval_duration?: number;
+-}
+-
+-export interface OllamaStreamResponse {
+-  model: string;
+-  created_at: string;
+-  message: OllamaMessage;
+-  done: boolean;
+-  total_duration?: number;
+-  load_duration?: number;
+-  prompt_eval_duration?: number;
+-  eval_duration?: number;
+-}
+-
+-export interface OllamaError {
+-  error: string;
+-}
+-
+-export type StreamCallback = (response: OllamaStreamResponse) => void; 
+\ No newline at end of file
+diff --git a/src/features/chat/types/ollama-tool.ts b/src/features/chat/types/ollama-tool.ts
+deleted file mode 100644
+index 96d07a6..0000000
+--- a/src/features/chat/types/ollama-tool.ts
++++ /dev/null
+@@ -1,19 +0,0 @@
+-export interface OllamaTool {
+-  type: 'function';
+-  function: {
+-    name: string;
+-    description: string;
+-    parameters: {
+-      type: 'object';
+-      properties: Record<
+-        string,
+-        {
+-          type: string;
+-          description?: string;
+-          enum?: string[];
+-        }
+-      >;
+-      required?: string[];
+-    };
+-  };
+-} 
+\ No newline at end of file
+diff --git a/src/features/chat/utils/zod-to-ollama-tool.ts b/src/features/chat/utils/zod-to-ollama-tool.ts
+index dfee448..0a390c6 100644
+--- a/src/features/chat/utils/zod-to-ollama-tool.ts
++++ b/src/features/chat/utils/zod-to-ollama-tool.ts
+@@ -1,5 +1,5 @@
++import { OllamaTool } from '@/lib/ollama';
+ import { z } from 'zod';
+-import { OllamaTool } from '../services/ollama-wrapper';
+ 
+ export function zodToOllamaTool(
+   schema: z.ZodType<any>,
