@@ -27,7 +27,6 @@ interface ChatState {
   setCurrentThread: (threadId: string) => void;
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
   updateThreadTitle: (threadId: string, title: string) => void;
-  startStreaming: () => void;
   stopStreaming: () => void;
   getRecentThreads: (limit?: number) => Thread[];
   getTimeAgo: (timestamp: number) => string;
@@ -119,6 +118,11 @@ export const useChatStore = create<ChatState>()(
               thread.title =
                 message.content.slice(0, 50) + (message.content.length > 50 ? '...' : '');
             }
+
+            // Automatically start streaming when a user message is added
+            if (message.role === 'user') {
+              state.isStreaming = true;
+            }
           }
         });
       },
@@ -129,12 +133,6 @@ export const useChatStore = create<ChatState>()(
           if (thread) {
             thread.title = title;
           }
-        });
-      },
-
-      startStreaming: () => {
-        set(state => {
-          state.isStreaming = true;
         });
       },
 

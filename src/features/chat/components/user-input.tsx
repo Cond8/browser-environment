@@ -9,7 +9,6 @@ export function UserInput() {
 
   const addMessage = useChatStore(state => state.addMessage);
   const isStreaming = useChatStore(state => state.isStreaming);
-  const startStreaming = useChatStore(state => state.startStreaming);
   const stopStreaming = useChatStore(state => state.stopStreaming);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -23,7 +22,6 @@ export function UserInput() {
     });
 
     setMessage('');
-    startStreaming();
   };
 
   const handleButtonSubmit = () => {
