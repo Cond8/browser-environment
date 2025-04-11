@@ -39,7 +39,7 @@ const defaultParameters: ModelParameters = {
   numCtx: 2048,
 };
 
-export const useAssistantStore = create<AssistantState>()(
+export const useAssistantConfigStore = create<AssistantState>()(
   persist(
     immer(set => ({
       parameters: { ...defaultParameters },

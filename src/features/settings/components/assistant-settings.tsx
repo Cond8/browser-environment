@@ -1,12 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { useAssistantStore } from '@/features/chat/store/assistant-store';
+import { useAssistantConfigStore } from '@/features/chat/store/assistant-config-store';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function AssistantSettings() {
-  const { parameters, setParameters, resetParameters } = useAssistantStore();
+  const { parameters, setParameters, resetParameters } = useAssistantConfigStore();
 
   return (
     <Card>

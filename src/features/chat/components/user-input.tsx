@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Square } from 'lucide-react';
+import { Send, Delete, CornerDownLeft } from 'lucide-react';
 import { useState } from 'react';
 import { useChatStore } from '@/features/chat/store/chat-store';
+import { ShortcutsDisplay } from './shortcuts-display';
 
 export function UserInput() {
   const [message, setMessage] = useState('');
@@ -38,7 +39,7 @@ export function UserInput() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 p-4 border-t">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-4 border-t">
       <Textarea
         value={message}
         onChange={e => setMessage(e.target.value)}
@@ -47,18 +48,47 @@ export function UserInput() {
         onKeyDown={handleKeyDown}
         disabled={isStreaming}
       />
-      <Button
-        type="submit"
-        size="icon"
-        className="self-end"
-        onClick={isStreaming ? stopStreaming : undefined}
-      >
-        {isStreaming ? (
-          <Square className="h-4 w-4" />
-        ) : (
-          <Send className="h-4 w-4" />
-        )}
-      </Button>
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2">
+          <ShortcutsDisplay 
+            command="Send message"
+            shortcut="Enter"
+            hide={isStreaming}
+          />
+          <ShortcutsDisplay 
+            command="New line"
+            shortcut="Shift+Enter"
+            chained
+            hide={isStreaming}
+          />
+        </div>
+        <ShortcutsDisplay 
+          command="Stop streaming"
+          shortcut="Shift+Ctrl+Backspace"
+          hide={!isStreaming}
+        />
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={stopStreaming}
+            disabled={!isStreaming}
+          >
+            Stop
+            <Delete className="h-4 w-4 translate-y-[2px]" />
+          </Button>
+          <Button
+            type="submit"
+            variant="default"
+            size="sm"
+            disabled={!message.trim()}
+          >
+            Send
+            <CornerDownLeft className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </form>
   );
 }

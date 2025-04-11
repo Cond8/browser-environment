@@ -7,12 +7,12 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { RotateCcw } from 'lucide-react';
-import { useAssistantStore } from '../store/assistant-store';
+import { useAssistantConfigStore } from '../store/assistant-config-store';
 import { useOllamaStore } from '../store/ollama-store';
 import { useState, useEffect } from 'react';
 
 export function SelectedModel() {
-  const { selectedModel, setSelectedModel } = useAssistantStore();
+  const { selectedModel, setSelectedModel } = useAssistantConfigStore();
   const { models, isLoading, fetchModels, error } = useOllamaStore();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
