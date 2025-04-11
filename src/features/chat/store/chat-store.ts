@@ -29,6 +29,9 @@ interface ChatState {
   updateThreadTitle: (threadId: string, title: string) => void;
   startStreaming: () => void;
   stopStreaming: () => void;
+  getRecentThreads: (limit?: number) => Thread[];
+  getTimeAgo: (timestamp: number) => string;
+  getAssistantMessageCount: (threadId: string) => number;
 }
 
 export const useChatStore = create<ChatState>()(
@@ -139,6 +142,33 @@ export const useChatStore = create<ChatState>()(
         set(state => {
           state.isStreaming = false;
         });
+      },
+
+      getRecentThreads: (limit = 5) => {
+        const state = get();
+        return state.threads.sort((a, b) => b.updatedAt - a.updatedAt).slice(0, limit);
+      },
+
+      getTimeAgo: (timestamp: number) => {
+        const now = Date.now();
+        const diffInMinutes = Math.floor((now - timestamp) / (1000 * 60));
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        const diffInDays = Math.floor(diffInHours / 24);
+
+        if (diffInDays > 0) {
+          return `${diffInDays}d ago`;
+        } else if (diffInHours > 0) {
+          return `${diffInHours}h ago`;
+        } else {
+          return `${diffInMinutes}m ago`;
+        }
+      },
+
+      getAssistantMessageCount: (threadId: string) => {
+        const state = get();
+        const thread = state.threads.find(t => t.id === threadId);
+        if (!thread) return 0;
+        return thread.messages.filter(m => m.role === 'assistant').length;
       },
     })),
     {
