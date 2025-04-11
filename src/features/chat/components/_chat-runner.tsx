@@ -1,3 +1,4 @@
+// src/features/chat/components/_chat-runner.tsx
 import { useEffect, useRef } from 'react';
 import { useChatStore } from '../store/chat-store';
 import { useOllamaStore } from '../store/ollama-store';

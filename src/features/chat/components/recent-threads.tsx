@@ -5,7 +5,7 @@ import { useChatStore } from '../store/chat-store';
 import { ShortcutsDisplay } from '@/features/chat/components/shortcuts-display';
 
 export const RecentThreads: React.FC = () => {
-  const { getRecentThreads, getTimeAgo, getAssistantMessageCount, clearThreads } = useChatStore();
+  const { getRecentThreads, getTimeAgo, getAssistantMessageCount } = useChatStore();
   const recentThreads = getRecentThreads(5);
 
   if (recentThreads.length === 0) return (

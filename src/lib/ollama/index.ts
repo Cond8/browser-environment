@@ -143,6 +143,7 @@ export function createOllamaClient(initialConfig: OllamaConfig = {}) {
   };
 
   return {
+    defaultModel: config.defaultModel,
     updateConfig,
     chatWithTools,
     chat,

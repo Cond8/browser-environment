@@ -1,7 +1,5 @@
 // src/features/chat/tools/problem-solver.ts
-import { OllamaChatResponse, OllamaService } from '@/lib/ollama';
 import { z } from 'zod';
-import { SYSTEM_PROMPT } from '../services/system-prompt';
 import { zodToOllamaTool } from '../services/zod-to-ollama-tool';
 
 // Domain-specific class names with descriptions
@@ -158,38 +156,3 @@ export function createInterface(
 
 // Export domain classes for reference
 export { domainClasses };
-
-// Helper function to create a workflow using the problem solver
-export async function createWorkflow(
-  description: string,
-  ollama: OllamaService,
-): Promise<{ interface: Interface; steps: Step[] }> {
-  try {
-    const response = await ollama.chatWithTools<
-      OllamaChatResponse & { message: { content: string } }
-    >({
-      model: ollama.getDefaultModel(),
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: description },
-      ],
-      tools: [problemSolverTool],
-      tool_choice: { type: 'function', function: { name: 'problem_solver' } },
-    });
-
-    if (!response) {
-      throw new Error('No response from problem solver');
-    }
-
-    const result = JSON.parse(response.message.content);
-    return {
-      interface: result.interface,
-      steps: result.steps,
-    };
-  } catch (error) {
-    console.error('Error creating workflow:', error);
-    throw new Error(
-      `Failed to create workflow: ${error instanceof Error ? error.message : 'Unknown error'}`,
-    );
-  }
-}

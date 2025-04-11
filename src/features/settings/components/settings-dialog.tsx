@@ -1,5 +1,5 @@
 // src/features/settings/components/settings-dialog.tsx
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Monitor, Moon, Sun, Keyboard } from 'lucide-react';
 import { useSettingsStore } from '../store/settings';
@@ -21,9 +21,6 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
-          <DialogDescription>
-            Configure your application settings including theme, interface preferences, and assistant settings.
-          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">

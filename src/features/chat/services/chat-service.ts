@@ -45,13 +45,13 @@ export class ChatService {
       const options = this.getModelOptions(configStore.parameters);
 
       // Get selected model or use default
-      const model = configStore.selectedModel || ollamaStore.ollamaService.config.defaultModel;
+      const model = configStore.selectedModel || ollamaStore.client.defaultModel;
 
       // Setup content accumulator for the assistant's response
       let accumulatedContent = '';
 
       // Send the request using the Ollama service
-      await ollamaStore.ollamaService.chatWithTools(
+      await ollamaStore.client.chatWithTools(
         {
           model,
           messages: ollamaMessages,
