@@ -1,4 +1,8 @@
 // src/lib/ollama/types/index.ts
+
+// -------------------------
+// Configuration
+// -------------------------
 export interface OllamaConfig {
   baseUrl?: string;
   defaultModel?: string;
@@ -9,11 +13,17 @@ export const DEFAULT_CONFIG: Required<OllamaConfig> = {
   defaultModel: 'phi4-mini:latest',
 };
 
+// -------------------------
 // Message Types
+// -------------------------
+
+export type OllamaRole = 'user' | 'assistant' | 'system' | 'tool';
+
 export interface OllamaMessage {
-  role: 'user' | 'assistant' | 'system';
+  role: OllamaRole;
   content: string;
-  images?: string[];
+  name?: string; // used for tool role
+  images?: string[]; // for multimodal support (e.g. llava model)
   tool_calls?: OllamaToolCall[];
 }
 
@@ -26,7 +36,16 @@ export interface OllamaToolCall {
   };
 }
 
-// Tool Types
+// For easier tool handling
+export interface ParsedToolCall {
+  id: string;
+  name: string;
+  args: Record<string, unknown>;
+}
+
+// -------------------------
+// Tool Schema
+// -------------------------
 export interface OllamaTool {
   type: 'function';
   function: {
@@ -47,12 +66,15 @@ export interface OllamaTool {
   };
 }
 
-// Request Types
+// -------------------------
+// Chat Request
+// -------------------------
 export interface OllamaChatRequest {
   model: string;
   messages: OllamaMessage[];
   stream?: boolean;
   format?: 'json';
+  raw?: boolean; // tells the model not to apply formatting or templating
   options?: {
     temperature?: number;
     top_p?: number;
@@ -74,8 +96,10 @@ export interface OllamaChatRequest {
   tool_choice?: 'auto' | 'none' | { type: 'function'; function: { name: string } };
 }
 
-// Response Types
-export interface OllamaChatResponse {
+// -------------------------
+// Chat Response (base)
+// -------------------------
+export interface BaseOllamaResponse {
   model: string;
   created_at: string;
   message: OllamaMessage;
@@ -88,21 +112,52 @@ export interface OllamaChatResponse {
   eval_duration?: number;
 }
 
-export interface OllamaStreamResponse {
-  model: string;
-  created_at: string;
-  message: OllamaMessage;
-  done: boolean;
-  total_duration?: number;
-  load_duration?: number;
-  prompt_eval_count?: number;
-  prompt_eval_duration?: number;
-  eval_count?: number;
-  eval_duration?: number;
-}
+// Single response (non-streaming)
+export interface OllamaChatResponse extends BaseOllamaResponse {}
 
+// Streamed response
+export interface OllamaStreamResponse extends BaseOllamaResponse {}
+
+// Error
 export interface OllamaError {
   error: string;
+  status?: number;
+  details?: unknown;
 }
 
+// -------------------------
+// Streaming Callback
+// -------------------------
 export type StreamCallback = (response: OllamaStreamResponse) => void;
+
+// -------------------------
+// Helper Types and Functions
+// -------------------------
+
+export interface OllamaToolResultMessage {
+  role: 'tool';
+  name: string;
+  content: string;
+}
+
+/**
+ * Creates a tool result message for the chat
+ */
+export function createToolResultMessage(toolName: string, result: unknown): OllamaMessage {
+  return {
+    role: 'tool',
+    name: toolName,
+    content: JSON.stringify(result),
+  };
+}
+
+/**
+ * Parses tool calls into a more convenient format
+ */
+export function parseToolCalls(calls: OllamaToolCall[]): ParsedToolCall[] {
+  return calls.map(c => ({
+    id: c.id,
+    name: c.function.name,
+    args: JSON.parse(c.function.arguments),
+  }));
+}

@@ -3,6 +3,7 @@ import React from 'react';
 import { ChatTopBar } from './components/chat-top-bar';
 import { ChatContent } from './components/chat-content';
 import { UserInput } from './components/user-input';
+import { ChatRunner } from './components/_chat-runner';
 
 export const AssistantPanel: React.FC = () => {
   return (
@@ -10,6 +11,7 @@ export const AssistantPanel: React.FC = () => {
       <ChatTopBar />
       <ChatContent />
       <UserInput />
+      <ChatRunner />
     </div>
   );
 }; 

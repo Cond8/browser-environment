@@ -1,10 +1,12 @@
 // src/features/settings/components/settings-dialog.tsx
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Monitor, Moon, Sun } from 'lucide-react';
+import { Monitor, Moon, Sun, Keyboard } from 'lucide-react';
 import { useSettingsStore } from '../store/settings';
 import { OllamaSettings } from './ollama-settings';
 import { AssistantSettings } from './assistant-settings';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -12,13 +14,16 @@ interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
-  const { theme, setTheme } = useSettingsStore();
+  const { theme, setTheme, showShortcuts, setShowShortcuts } = useSettingsStore();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
+          <DialogDescription>
+            Configure your application settings including theme, interface preferences, and assistant settings.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
@@ -42,6 +47,20 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 <span className="ml-2">System</span>
               </ToggleGroupItem>
             </ToggleGroup>
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">Interface</h3>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Keyboard className="h-4 w-4" />
+                <Label htmlFor="show-shortcuts">Show keyboard shortcuts</Label>
+              </div>
+              <Switch
+                id="show-shortcuts"
+                checked={showShortcuts}
+                onCheckedChange={setShowShortcuts}
+              />
+            </div>
           </div>
           <OllamaSettings />
           <AssistantSettings />

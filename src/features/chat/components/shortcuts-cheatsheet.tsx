@@ -1,5 +1,5 @@
 // src/features/chat/components/shortcuts-cheatsheet.tsx
-import { Keyboard } from 'lucide-react';
+import { Keyboard, LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ShortcutsDisplay } from './shortcuts-display';
 
@@ -7,6 +7,7 @@ interface ShortcutItem {
   command: string;
   shortcut: string;
   chained?: boolean;
+  icon?: LucideIcon;
 }
 
 interface ShortcutsCheatsheetProps {
@@ -28,6 +29,7 @@ export function ShortcutsCheatsheet({ shortcuts, className }: ShortcutsCheatshee
             command={shortcut.command}
             shortcut={shortcut.shortcut}
             chained={shortcut.chained}
+            icon={shortcut.icon || Keyboard}
           />
         ))}
       </div>

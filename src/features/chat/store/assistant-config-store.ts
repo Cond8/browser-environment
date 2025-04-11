@@ -11,7 +11,7 @@ interface ModelParameters {
   repeatPenalty: number;
   repeatLastN: number;
   tfsZ: number;
-  mirostat: number;
+  mirostat: 0 | 1 | 2;
   mirostatEta: number;
   mirostatTau: number;
   numCtx: number;

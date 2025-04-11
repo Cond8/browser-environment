@@ -1,6 +1,6 @@
 // src/features/chat/tools/domain-tool-generator.ts
 import { z } from 'zod';
-import { zodToOllamaTool } from '../utils/zod-to-ollama-tool';
+import { zodToOllamaTool } from '../services/zod-to-ollama-tool';
 import { Domain, domainClasses, Interface, Step } from './problem-solver';
 
 // Schema for tool generation

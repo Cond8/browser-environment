@@ -1,8 +1,9 @@
 // src/features/chat/components/shortcuts-display.tsx
-import { Keyboard } from 'lucide-react';
+import { Keyboard, LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { usePlatform } from '@/hooks/use-platform';
+import { useSettingsStore } from '@/features/settings/store/settings';
 
 interface ShortcutsDisplayProps {
   command: string;
@@ -12,6 +13,7 @@ interface ShortcutsDisplayProps {
   className?: string;
   asButton?: boolean;
   onClick?: () => void;
+  icon?: LucideIcon;
 }
 
 export function ShortcutsDisplay({ 
@@ -21,19 +23,25 @@ export function ShortcutsDisplay({
   hide = false, 
   className,
   asButton = false,
-  onClick
+  onClick,
+  icon: Icon = Keyboard
 }: ShortcutsDisplayProps) {
   const platform = usePlatform();
+  const showShortcuts = useSettingsStore(state => state.showShortcuts);
   const displayShortcut = shortcut
     .replace('⌘', platform === 'mac' ? '⌘' : 'Ctrl+')
     .replace('⇧', platform === 'mac' ? '⇧' : 'Shift+');
 
   const content = (
     <>
-      {chained ? <b className="pr-1">/</b> :<Keyboard className="h-3 w-3" />}
+      {chained ? <b className="pr-1">/</b> : <Icon className="h-3 w-3" />}
       <span>{command}</span>
-      <span>•</span>
-      <span>{displayShortcut}</span>
+      {showShortcuts && (
+        <>
+          <span>•</span>
+          <span>{displayShortcut}</span>
+        </>
+      )}
     </>
   );
 

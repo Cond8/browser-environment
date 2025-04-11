@@ -5,7 +5,7 @@ import { immer } from 'zustand/middleware/immer';
 
 export interface Message {
   id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant' | 'system' | 'tool';
   content: string;
   timestamp: number;
 }
@@ -34,6 +34,7 @@ interface ChatState {
   getRecentThreads: (limit?: number) => Thread[];
   getTimeAgo: (timestamp: number) => string;
   getAssistantMessageCount: (threadId: string) => number;
+  clearThreads: () => void;
 }
 
 export const useChatStore = create<ChatState>()(
@@ -171,7 +172,7 @@ export const useChatStore = create<ChatState>()(
 
       getRecentThreads: (limit = 5) => {
         const state = get();
-        return state.threads.sort((a, b) => b.updatedAt - a.updatedAt).slice(0, limit);
+        return [...state.threads].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, limit);
       },
 
       getTimeAgo: (timestamp: number) => {
@@ -194,6 +195,13 @@ export const useChatStore = create<ChatState>()(
         const thread = state.threads.find(t => t.id === threadId);
         if (!thread) return 0;
         return thread.messages.filter(m => m.role === 'assistant').length;
+      },
+
+      clearThreads: () => {
+        set(state => {
+          state.threads = [];
+          state.currentThreadId = null;
+        });
       },
     })),
     {

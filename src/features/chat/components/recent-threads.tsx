@@ -1,11 +1,11 @@
 // src/features/chat/components/recent-threads.tsx
 import React from 'react';
-import { Clock, MessageCircle } from 'lucide-react';
+import { Clock, MessageCircle, Trash2, Hash } from 'lucide-react';
 import { useChatStore } from '../store/chat-store';
 import { ShortcutsDisplay } from '@/features/chat/components/shortcuts-display';
 
 export const RecentThreads: React.FC = () => {
-  const { getRecentThreads, getTimeAgo, getAssistantMessageCount } = useChatStore();
+  const { getRecentThreads, getTimeAgo, getAssistantMessageCount, clearThreads } = useChatStore();
   const recentThreads = getRecentThreads(5);
 
   if (recentThreads.length === 0) return (
@@ -16,7 +16,15 @@ export const RecentThreads: React.FC = () => {
 
   return (
     <div className="w-full max-w-md mb-8">
-      <h4 className="text-sm font-medium mb-4">Recent Conversations</h4>
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="text-sm font-medium">Recent Conversations</h4>
+        <ShortcutsDisplay
+          command="Clear history"
+          shortcut="⌘⇧⌫"
+          className="text-muted-foreground hover:text-destructive"
+          icon={Trash2}
+        />
+      </div>
       <div className="space-y-2">
         {recentThreads.map((thread, index) => (
           <div
@@ -30,6 +38,7 @@ export const RecentThreads: React.FC = () => {
                   command={`Select thread ${index + 1}`}
                   shortcut={`⌘⇧${index + 1}`}
                   className="ml-2"
+                  icon={Hash}
                 />
               </div>
               <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">

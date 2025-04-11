@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useChatStore } from '@/features/chat/store/chat-store';
 import { ShortcutsDisplay } from './shortcuts-display';
 import { SelectedModel } from './selected-model';
+import { StopCircle, Send } from 'lucide-react';
 
 export function UserInput() {
   const [message, setMessage] = useState('');
@@ -62,6 +63,7 @@ export function UserInput() {
             asButton
             onClick={stopStreaming}
             hide={!isStreaming}
+            icon={StopCircle}
           />
           <ShortcutsDisplay 
             command="Send"
@@ -69,6 +71,7 @@ export function UserInput() {
             asButton
             onClick={handleButtonSubmit}
             hide={isStreaming}
+            icon={Send}
           />
         </div>
       </div>

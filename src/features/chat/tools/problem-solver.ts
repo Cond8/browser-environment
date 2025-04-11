@@ -2,7 +2,7 @@
 import { OllamaChatResponse, OllamaService } from '@/lib/ollama';
 import { z } from 'zod';
 import { SYSTEM_PROMPT } from '../services/system-prompt';
-import { zodToOllamaTool } from '../utils/zod-to-ollama-tool';
+import { zodToOllamaTool } from '../services/zod-to-ollama-tool';
 
 // Domain-specific class names with descriptions
 const domainClasses = {

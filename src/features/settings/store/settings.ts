@@ -8,8 +8,10 @@ type Theme = 'dark' | 'light' | 'system';
 interface SettingsState {
   theme: Theme;
   resolvedTheme: 'dark' | 'light';
+  showShortcuts: boolean;
   setTheme: (theme: Theme) => void;
   applyTheme: () => void;
+  setShowShortcuts: (show: boolean) => void;
 }
 
 const getResolvedTheme = (theme: Theme): 'dark' | 'light' => {
@@ -24,6 +26,7 @@ export const useSettingsStore = create<SettingsState>()(
     immer((set, get) => ({
       theme: 'system',
       resolvedTheme: getResolvedTheme('system'),
+      showShortcuts: true,
       setTheme: theme => {
         set(state => {
           state.theme = theme;
@@ -35,6 +38,11 @@ export const useSettingsStore = create<SettingsState>()(
           }
         });
         get().applyTheme();
+      },
+      setShowShortcuts: show => {
+        set(state => {
+          state.showShortcuts = show;
+        });
       },
       applyTheme: () => {
         const t = get().theme;

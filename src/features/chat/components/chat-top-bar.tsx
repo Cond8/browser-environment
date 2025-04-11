@@ -2,6 +2,7 @@
 import React from 'react';
 import { ShortcutsDisplay } from './shortcuts-display';
 import { useChatStore } from '../store/chat-store';
+import { Plus } from 'lucide-react';
 
 export const ChatTopBar: React.FC = () => {
   const setCurrentThread = useChatStore(state => state.setCurrentThread);
@@ -16,6 +17,7 @@ export const ChatTopBar: React.FC = () => {
         onClick={() => {
           setCurrentThread(null);
         }}
+        icon={Plus}
       />
     </div>
   );
