@@ -1,17 +1,17 @@
 // src/features/chat/components/selected-model.tsx
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { RotateCcw, ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { ChevronDown, RotateCcw } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useAssistantConfigStore } from '../store/assistant-config-store';
 import { useOllamaStore } from '../store/ollama-store';
-import { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
 
 export function SelectedModel() {
   const { selectedModel, setSelectedModel } = useAssistantConfigStore();
@@ -36,6 +36,30 @@ export function SelectedModel() {
     }
   }, [models, fetchModels]);
 
+  const renderModelList = () => {
+    if (isLoading || isRefreshing) {
+      return <DropdownMenuItem disabled>Loading models...</DropdownMenuItem>;
+    }
+
+    if (error) {
+      return <DropdownMenuItem disabled>{error}</DropdownMenuItem>;
+    }
+
+    if (!models || models.length === 0) {
+      return <DropdownMenuItem disabled>No models available</DropdownMenuItem>;
+    }
+
+    return models.map(model => (
+      <DropdownMenuItem
+        key={model}
+        onClick={() => setSelectedModel(model)}
+        className={cn('cursor-pointer', selectedModel === model && 'bg-accent')}
+      >
+        {model}
+      </DropdownMenuItem>
+    ));
+  };
+
   return (
     <div className="flex items-center gap-1.5">
       <DropdownMenu>
@@ -51,39 +75,14 @@ export function SelectedModel() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-[200px]">
-          {isLoading || isRefreshing ? (
-            <DropdownMenuItem disabled>
-              Loading models...
-            </DropdownMenuItem>
-          ) : error ? (
-            <DropdownMenuItem disabled>
-              {error}
-            </DropdownMenuItem>
-          ) : !models || models.length === 0 ? (
-            <DropdownMenuItem disabled>
-              No models available
-            </DropdownMenuItem>
-          ) : (
-            models.map((model) => (
-              <DropdownMenuItem
-                key={model}
-                onClick={() => setSelectedModel(model)}
-                className={cn(
-                  "cursor-pointer",
-                  selectedModel === model && "bg-accent"
-                )}
-              >
-                {model}
-              </DropdownMenuItem>
-            ))
-          )}
+          {renderModelList()}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={handleRefresh}
             disabled={isRefreshing || isLoading}
             className="flex items-center gap-2"
           >
-            <RotateCcw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
+            <RotateCcw className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin')} />
             Refresh models
           </DropdownMenuItem>
         </DropdownMenuContent>

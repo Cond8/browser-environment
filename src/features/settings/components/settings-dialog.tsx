@@ -1,12 +1,12 @@
 // src/features/settings/components/settings-dialog.tsx
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Monitor, Moon, Sun, Keyboard } from 'lucide-react';
-import { useSettingsStore } from '../store/settings';
-import { OllamaSettings } from './ollama-settings';
-import { AssistantSettings } from './assistant-settings';
-import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Keyboard, Monitor, Moon, Sun } from 'lucide-react';
+import { useSettingsStore } from '../store/settings';
+import { AssistantSettings } from './assistant-settings';
+import { OllamaSettings } from './ollama-settings';
 
 interface SettingsDialogProps {
   open: boolean;

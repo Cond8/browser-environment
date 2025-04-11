@@ -1,5 +1,4 @@
 // src/features/chat/services/zod-to-ollama-tool.ts
-import { OllamaTool } from '@/features/chat/services/ollama';
 import { z } from 'zod';
 
 /**
@@ -12,7 +11,7 @@ import { z } from 'zod';
  * @returns An object containing both the OllamaTool and the Zod parser
  * @throws Error if the schema is not a ZodObject or contains unsupported types
  */
-export function zodToOllamaTool<T extends z.ZodType<any>>(
+export function zodToOllamaTool<T extends z.ZodType>(
   schema: T,
   name: string,
   description: string,

@@ -1,9 +1,9 @@
 // src/features/chat/lib/tool-executor.ts
+import { OllamaMessage } from '@/features/chat/services/ollama-types.ts';
 import { useAssistantConfigStore } from '../store/assistant-config-store';
 import { useChatStore } from '../store/chat-store';
 import { useOllamaStore } from '../store/ollama-store';
 import { allTools } from '../tools';
-import { OllamaMessage } from './stream-runner';
 
 interface ToolCall {
   function: {

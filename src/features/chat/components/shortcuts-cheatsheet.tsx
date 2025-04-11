@@ -1,6 +1,6 @@
 // src/features/chat/components/shortcuts-cheatsheet.tsx
-import { Keyboard, LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Keyboard, LucideIcon } from 'lucide-react';
 import { ShortcutsDisplay } from './shortcuts-display';
 
 interface ShortcutItem {
@@ -35,4 +35,4 @@ export function ShortcutsCheatsheet({ shortcuts, className }: ShortcutsCheatshee
       </div>
     </div>
   );
-} 
+}

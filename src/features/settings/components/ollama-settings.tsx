@@ -50,9 +50,7 @@ export function OllamaSettings() {
         ) : models && models.length > 0 ? (
           <div className="space-y-2">
             <div className="text-sm font-medium">Available Models</div>
-            <div className="text-sm text-muted-foreground">
-              {models.join(', ')}
-            </div>
+            <div className="text-sm text-muted-foreground">{models.join(', ')}</div>
           </div>
         ) : (
           <div className="text-sm text-muted-foreground">No models available</div>

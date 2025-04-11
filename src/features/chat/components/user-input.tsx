@@ -1,10 +1,10 @@
 // src/features/chat/components/user-input.tsx
 import { Textarea } from '@/components/ui/textarea';
-import { useState } from 'react';
 import { useChatStore } from '@/features/chat/store/chat-store';
-import { ShortcutsDisplay } from './shortcuts-display';
+import { Send, StopCircle } from 'lucide-react';
+import { useState } from 'react';
 import { SelectedModel } from './selected-model';
-import { StopCircle, Send } from 'lucide-react';
+import { ShortcutsDisplay } from './shortcuts-display';
 
 export function UserInput() {
   const [message, setMessage] = useState('');
@@ -67,7 +67,7 @@ export function UserInput() {
       <div className="flex items-center justify-between">
         <SelectedModel />
         <div className="flex items-center gap-2">
-          <ShortcutsDisplay 
+          <ShortcutsDisplay
             command="Stop"
             shortcut="Shift + Enter"
             asButton
@@ -78,7 +78,7 @@ export function UserInput() {
             hide={!isStreaming}
             icon={StopCircle}
           />
-          <ShortcutsDisplay 
+          <ShortcutsDisplay
             command="Send"
             shortcut="Shift + Enter"
             asButton

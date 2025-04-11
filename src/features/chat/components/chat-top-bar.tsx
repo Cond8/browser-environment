@@ -1,8 +1,8 @@
 // src/features/chat/components/chat-top-bar.tsx
-import React from 'react';
-import { ShortcutsDisplay } from './shortcuts-display';
-import { useChatStore } from '../store/chat-store';
 import { Plus } from 'lucide-react';
+import React from 'react';
+import { useChatStore } from '../store/chat-store';
+import { ShortcutsDisplay } from './shortcuts-display';
 
 export const ChatTopBar: React.FC = () => {
   const setCurrentThread = useChatStore(state => state.setCurrentThread);
@@ -21,4 +21,4 @@ export const ChatTopBar: React.FC = () => {
       />
     </div>
   );
-}; 
+};

@@ -1,18 +1,19 @@
 // src/features/chat/components/recent-threads.tsx
-import React from 'react';
-import { Clock, MessageCircle, Trash2, Hash } from 'lucide-react';
-import { useChatStore } from '../store/chat-store';
 import { ShortcutsDisplay } from '@/features/chat/components/shortcuts-display';
+import { Clock, Hash, MessageCircle, Trash2 } from 'lucide-react';
+import React from 'react';
+import { useChatStore } from '../store/chat-store';
 
 export const RecentThreads: React.FC = () => {
   const { getRecentThreads, getTimeAgo, getAssistantMessageCount, clearThreads } = useChatStore();
   const recentThreads = getRecentThreads(5);
 
-  if (recentThreads.length === 0) return (
-    <div className="w-full max-w-md mb-8 text-center">
-      <span className="text-sm text-muted-foreground">No recent conversations</span>
-    </div>
-  );
+  if (recentThreads.length === 0)
+    return (
+      <div className="w-full max-w-md mb-8 text-center">
+        <span className="text-sm text-muted-foreground">No recent conversations</span>
+      </div>
+    );
 
   return (
     <div className="w-full max-w-md mb-8">
@@ -59,4 +60,4 @@ export const RecentThreads: React.FC = () => {
       </div>
     </div>
   );
-}; 
+};

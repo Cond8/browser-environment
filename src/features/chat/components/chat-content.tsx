@@ -1,28 +1,25 @@
 // src/features/chat/components/chat-content.tsx
-import { useChatStore } from '../store/chat-store';
-import { cn } from '@/lib/utils';
 import { EmptyChatState } from '@/features/chat/components/empty-chat-state';
+import { cn } from '@/lib/utils';
+import { useChatStore } from '../store/chat-store';
 
 export const ChatContent = () => {
   const { threads, currentThreadId, isStreaming } = useChatStore();
   const currentThread = threads.find(thread => thread.id === currentThreadId);
 
   if (!currentThread) {
-    return (
-      <EmptyChatState />
-    );
+    return <EmptyChatState />;
   }
+
+  console.log(currentThread.messages);
 
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="space-y-4">
-        {currentThread.messages.map((message) => (
+        {currentThread.messages.map(message => (
           <div
             key={message.id}
-            className={cn(
-              'w-full',
-              message.role === 'user' ? 'bg-card' : 'bg-background'
-            )}
+            className={cn('w-full', message.role === 'user' ? 'bg-card' : 'bg-background')}
           >
             <p className="whitespace-pre-wrap p-4">{message.content}</p>
           </div>

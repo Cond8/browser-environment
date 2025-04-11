@@ -45,6 +45,16 @@ export const useAssistantConfigStore = create<AssistantState>()(
     immer(set => ({
       parameters: { ...defaultParameters },
       selectedModel: null,
+      ollamaUrl: 'http://localhost:11434',
+
+      setUrl: url => {
+        console.log('[OllamaStore] Setting URL:', url);
+        set(state => {
+          state.ollamaUrl = url;
+          state.client.updateConfig({ baseUrl: url });
+        });
+        get().checkConnection();
+      },
 
       setParameters: params => {
         set(state => {

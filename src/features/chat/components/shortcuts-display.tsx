@@ -1,9 +1,9 @@
 // src/features/chat/components/shortcuts-display.tsx
-import { Keyboard, LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { usePlatform } from '@/hooks/use-platform';
 import { useSettingsStore } from '@/features/settings/store/settings';
+import { usePlatform } from '@/hooks/use-platform';
+import { cn } from '@/lib/utils';
+import { Keyboard, LucideIcon } from 'lucide-react';
 
 interface ShortcutsDisplayProps {
   command: string;
@@ -16,15 +16,15 @@ interface ShortcutsDisplayProps {
   icon?: LucideIcon;
 }
 
-export function ShortcutsDisplay({ 
-  command, 
-  shortcut, 
-  chained = false, 
-  hide = false, 
+export function ShortcutsDisplay({
+  command,
+  shortcut,
+  chained = false,
+  hide = false,
   className,
   asButton = false,
   onClick,
-  icon: Icon = Keyboard
+  icon: Icon = Keyboard,
 }: ShortcutsDisplayProps) {
   const platform = usePlatform();
   const showShortcuts = useSettingsStore(state => state.showShortcuts);
@@ -48,16 +48,12 @@ export function ShortcutsDisplay({
   const classes = cn(
     'flex items-center gap-1 text-xs text-muted-foreground transition-opacity duration-200',
     hide ? 'opacity-0 w-0' : 'opacity-100 w-auto',
-    className
+    className,
   );
 
   if (asButton) {
     return (
-      <Button
-        variant="ghost"
-        size="sm"
-        asChild
-      >
+      <Button variant="ghost" size="sm" asChild>
         <div className={classes} onClick={onClick}>
           {content}
         </div>
@@ -65,9 +61,5 @@ export function ShortcutsDisplay({
     );
   }
 
-  return (
-    <div className={classes}>
-      {content}
-    </div>
-  );
-} 
+  return <div className={classes}>{content}</div>;
+}

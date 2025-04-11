@@ -1,10 +1,10 @@
 // src/features/settings/components/assistant-settings.tsx
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { useAssistantConfigStore } from '@/features/chat/store/assistant-config-store';
-import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAssistantConfigStore } from '@/features/chat/store/assistant-config-store';
+import { RefreshCw } from 'lucide-react';
 
 export function AssistantSettings() {
   const { parameters, setParameters, resetParameters } = useAssistantConfigStore();
@@ -14,12 +14,7 @@ export function AssistantSettings() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Assistant Parameters</CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={resetParameters}
-            className="h-8 w-8 p-0"
-          >
+          <Button variant="ghost" size="sm" onClick={resetParameters} className="h-8 w-8 p-0">
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
@@ -30,7 +25,7 @@ export function AssistantSettings() {
             <TabsTrigger value="core">Core Parameters</TabsTrigger>
             <TabsTrigger value="advanced">Advanced Parameters</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="core" className="space-y-6">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -258,4 +253,4 @@ export function AssistantSettings() {
       </CardContent>
     </Card>
   );
-} 
+}
