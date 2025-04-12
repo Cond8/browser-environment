@@ -1,4 +1,4 @@
-// src/features/cond8/_core/Metadata/hooks.ts
+// src/lib/cond8/_core/Metadata/hooks.ts
 import { CoreRedprint } from '../CoreDomain';
 
 export abstract class MetaHook {

@@ -1,4 +1,4 @@
-// src/features/cond8/scratch files/example-derived-director.js
+// src/lib/cond8/scratch files/example-derived-director.js
 import {
   CoreBlueprint,
   CoreRedprint,

@@ -1,4 +1,4 @@
-// src/features/cond8/_core/utils/fn-promise-like.ts
+// src/lib/cond8/_core/utils/fn-promise-like.ts
 export function isPromiseLike<T>(value: unknown): value is Promise<T> {
   return (
     value !== null &&

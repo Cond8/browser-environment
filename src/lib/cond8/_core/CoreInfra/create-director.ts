@@ -1,4 +1,4 @@
-// src/features/cond8/_core/CoreInfra/create-director.ts
+// src/lib/cond8/_core/CoreInfra/create-director.ts
 import { CoreBlueprint, CoreRedprint } from '../CoreDomain/index.ts';
 import { LifecyclePayload, Vacuum } from '../Lifecycle/Vacuum.ts';
 import { filterMetaHooksDirector } from '../Metadata/filter-meta-hooks.ts';

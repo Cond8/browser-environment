@@ -1,9 +1,7 @@
 // src/features/chat/store/stream-store.ts
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import { streamAssistantMessages } from '../services/stream-assistant-messages';
-import { SYSTEM_PROMPT } from '../services/prompts-system';
-import { useAssistantConfigStore } from './assistant-config-store';
+import { streamWorkflowChain } from '../ollama-api/workflow-chain';
 import { ThreadMessage, useChatStore } from './chat-store';
 import { useCodeStore } from './yaml-store';
 
@@ -52,41 +50,7 @@ export const useStreamStore = create<StreamStore>()(
       });
 
       try {
-        const { selectedModel, parameters, ollamaUrl } = useAssistantConfigStore.getState();
-        const messages = useChatStore.getState().getMessagesUntil(assistantMessage.id);
-
-        const transformedMessages = messages.map(msg => ({
-          role: msg.role,
-          content: msg.content,
-        }));
-
-        const response = await fetch(`${ollamaUrl}/api/chat`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: selectedModel,
-            messages: [
-              {
-                role: 'system',
-                content: SYSTEM_PROMPT(),
-              },
-              ...transformedMessages,
-            ],
-            options: parameters,
-            stream: true,
-          }),
-          signal: abortController.signal,
-        });
-
-        if (!response.ok) {
-          const errorBody = await response.text();
-          console.error('Streaming API error response:', errorBody);
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        for await (const chunk of streamAssistantMessages(response)) {
+        for await (const chunk of streamWorkflowChain(assistantMessage, abortController)) {
           switch (chunk.type) {
             case 'text':
               get().addPartialMessage(chunk.content); // ✅ always raw model output

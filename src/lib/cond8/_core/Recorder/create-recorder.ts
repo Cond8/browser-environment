@@ -1,4 +1,4 @@
-// src/features/cond8/_core/Recorder/create-recorder.ts
+// src/lib/cond8/_core/Recorder/create-recorder.ts
 import { CoreBlueprint } from '../CoreDomain/index.ts';
 import { CouldPromise, isPromiseLike } from '../utils/fn-promise-like.ts';
 import { C8LayerObserver, C8ProxyHandlerFactory, createC8ProxyHandler } from './C8ProxyHandler.ts';

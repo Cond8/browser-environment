@@ -1,4 +1,4 @@
-// src/features/cond8/_core/CoreDomain/Services/StrictObjectKVService.ts
+// src/lib/cond8/_core/CoreDomain/Services/StrictObjectKVService.ts
 import { StrictKVBlueprintSync } from '../Blueprints/StrictKVBlueprint-Sync.ts';
 
 export class StrictObjectKVService<

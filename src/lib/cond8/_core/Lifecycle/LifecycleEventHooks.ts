@@ -1,4 +1,4 @@
-// src/features/cond8/_core/Lifecycle/LifecycleEventHooks.ts
+// src/lib/cond8/_core/Lifecycle/LifecycleEventHooks.ts
 import { CoreRedprint } from '../CoreDomain/index.ts';
 import { Recorder } from '../Recorder/create-recorder.ts';
 import { CouldPromise } from '../utils/fn-promise-like.ts';

@@ -1,4 +1,4 @@
-// src/features/cond8/_core/utils/fn-stringify.ts
+// src/lib/cond8/_core/utils/fn-stringify.ts
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const fnStringify = (anyFn?: (...args: any[]) => any) => {
   if (!anyFn) {

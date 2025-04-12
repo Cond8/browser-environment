@@ -1,4 +1,4 @@
-// src/features/cond8/_core/CoreDomain/index.ts
+// src/lib/cond8/_core/CoreDomain/index.ts
 export * from './Blueprints/CoreBlueprint.ts';
 export * from './Blueprints/LifecycleBlueprint.ts';
 export * from './Blueprints/StrictKVBlueprint-Async.ts';

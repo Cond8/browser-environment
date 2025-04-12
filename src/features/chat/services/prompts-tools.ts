@@ -1,3 +1,4 @@
+// src/features/chat/services/prompts-tools.ts
 export const TOOL_PROMPT_INTERFACE_PHASE = (
   userMessage: string,
 ) => `You are an AI assistant that defines structured YAML workflows in a recursive multi-phase process.

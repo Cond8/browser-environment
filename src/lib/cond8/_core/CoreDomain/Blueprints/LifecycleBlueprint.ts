@@ -1,4 +1,4 @@
-// src/features/cond8/_core/CoreDomain/Blueprints/LifecycleBlueprint.ts
+// src/lib/cond8/_core/CoreDomain/Blueprints/LifecycleBlueprint.ts
 import { CoreBlueprint } from './CoreBlueprint.ts';
 
 export enum LifecycleRuntime {

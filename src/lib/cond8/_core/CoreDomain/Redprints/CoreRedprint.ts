@@ -1,4 +1,4 @@
-// src/features/cond8/_core/CoreDomain/Redprints/CoreRedprint.ts
+// src/lib/cond8/_core/CoreDomain/Redprints/CoreRedprint.ts
 import { CoreBlueprint } from '../Blueprints/CoreBlueprint.ts';
 import { StrictKVBlueprintSync } from '../Blueprints/StrictKVBlueprint-Sync.ts';
 import { StrictKVBlueprint } from '../Blueprints/StrictKVBlueprint.ts';

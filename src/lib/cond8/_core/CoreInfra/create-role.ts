@@ -1,4 +1,4 @@
-// src/features/cond8/_core/CoreInfra/create-role.ts
+// src/lib/cond8/_core/CoreInfra/create-role.ts
 import { CoreRedprint } from '../CoreDomain/Redprints/CoreRedprint.ts';
 import { LifecyclePayload } from '../Lifecycle/Vacuum.ts';
 import { MetaHook } from '../Metadata/hooks.ts';
