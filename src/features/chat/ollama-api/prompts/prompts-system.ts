@@ -74,6 +74,7 @@ The interface section defines the workflow's contract and must include:
   - Clear, concise descriptions (<10 words)
   - Must specify all required inputs
   - Each input must have a type and description
+  - Leave empty if no inputs are required
 
 - \`outputs\`: 
   - List of expected output variables
@@ -81,6 +82,7 @@ The interface section defines the workflow's contract and must include:
   - Must match final step's output exactly
   - All outputs must be produced by the workflow
   - Each output must have a type and description
+  - Leave empty if no outputs are required
 
 ---
 
