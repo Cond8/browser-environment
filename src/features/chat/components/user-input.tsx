@@ -8,7 +8,7 @@ import { SelectedModel } from './selected-model';
 import { ShortcutsDisplay } from './shortcuts-display';
 export function UserInput() {
   const [message, setMessage] = useState(
-    'Write a simple workflow with a single step to test chat features',
+    'I want to classify emails as spam or not spam',
   );
 
   const addUserMessage = useChatStore(state => state.addUserMessage);
@@ -58,7 +58,7 @@ export function UserInput() {
         <div className="flex items-center gap-2">
           <ShortcutsDisplay
             command="Stop"
-            shortcut="Shift + Enter"
+            shortcut="Shift+Enter"
             asButton
             onClick={() => {
               console.log('[UserInput] Stop button clicked');
@@ -69,7 +69,7 @@ export function UserInput() {
           />
           <ShortcutsDisplay
             command="Send"
-            shortcut="Shift + Enter"
+            shortcut="Shift+Enter"
             asButton
             onClick={handleButtonSubmit}
             hide={isStreaming}
