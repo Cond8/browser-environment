@@ -1,3 +1,4 @@
+// src/features/chat/store/yaml-store.ts
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 

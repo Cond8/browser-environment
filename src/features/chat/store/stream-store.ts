@@ -1,7 +1,8 @@
+// src/features/chat/store/stream-store.ts
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { streamAssistantMessages } from '../services/stream-assistant-messages';
-import { SYSTEM_PROMPT } from '../services/system-prompts';
+import { SYSTEM_PROMPT } from '../services/prompts-system';
 import { useAssistantConfigStore } from './assistant-config-store';
 import { ThreadMessage, useChatStore } from './chat-store';
 import { useCodeStore } from './yaml-store';

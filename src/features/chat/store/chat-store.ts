@@ -1,3 +1,4 @@
+// src/features/chat/store/chat-store.ts
 import { OllamaMessage, OllamaToolCall } from '@/features/chat/services/ollama-types.ts';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';

@@ -1,3 +1,4 @@
+// src/features/chat/components/yaml-editor.tsx
 import { useStreamStore } from '@/features/chat/store/stream-store';
 import Editor from '@monaco-editor/react';
 import { useEffect, useRef } from 'react';

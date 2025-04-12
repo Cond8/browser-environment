@@ -1,0 +1,41 @@
+DIRECTOR locate_user_from_ip_and_email (
+  GOAL "Estimate user location using IP address and email metadata"
+  RETURN email_address, ip_address
+)
+
+PARSE extract_ip_from_email (
+  GOAL "Extract IP address from the email headers if present"
+  INPUT email_address
+  TOOL email.parse_headers_for_ip
+  RETURN email_ip
+)
+
+FETCH get_geo_from_ip (
+  GOAL "Determine location using the request IP address"
+  INPUT ip_address
+  TOOL geo.fetch_location_by_ip
+  RETURN geo_from_ip
+)
+
+FETCH get_geo_from_email_ip (
+  GOAL "Determine location using the IP extracted from email"
+  INPUT email_ip
+  TOOL geo.fetch_location_by_ip
+  RETURN geo_from_email_ip
+)
+
+ANALYZE compare_ip_sources (
+  GOAL "Compare direct IP and email-derived IP for consistency"
+  INPUT geo_from_ip, geo_from_email_ip
+  TOOL geo.locations
+  RETURN consistency_score
+)
+
+SELECT choose_best_geo_location (
+  GOAL "Pick the most likely accurate location"
+  INPUT geo_from_ip, geo_from_email_ip, consistency_score
+  TOOL geo.select_best_match
+  RETURN best_location
+)
+
+RETURN best_location

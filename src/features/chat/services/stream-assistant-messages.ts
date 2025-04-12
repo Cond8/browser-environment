@@ -1,3 +1,4 @@
+// src/features/chat/services/stream-assistant-messages.ts
 export type StreamYield =
   | { type: 'text'; content: string }
   | { type: 'start_yaml' }
