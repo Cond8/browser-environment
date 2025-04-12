@@ -8,10 +8,10 @@ import { useCodeStore } from './yaml-store';
 interface StreamStore {
   currentMessageId: number | null;
   isStreaming: boolean;
-  partialAssistantMessages: Record<number, ThreadMessage>;
+  insideYaml: boolean;
+  abortController: AbortController | null;
+  partialMessages: Record<number, ThreadMessage>;
   partialYamls: Record<number, string>;
-  insideYamlFlags: Record<number, boolean>;
-  abortControllers: Record<number, AbortController>;
   errors: Record<number, string | null>;
 
   setCurrentMessageId: (messageId: number | null) => void;
@@ -36,10 +36,10 @@ export const useStreamStore = create<StreamStore>()(
   immer((set, get) => ({
     currentMessageId: null,
     isStreaming: false,
-    partialAssistantMessages: {},
+    insideYaml: false,
+    abortController: null,
+    partialMessages: {},
     partialYamls: {},
-    insideYamlFlags: {},
-    abortControllers: {},
     errors: {},
 
     setCurrentMessageId: (messageId: number | null) =>
@@ -59,13 +59,13 @@ export const useStreamStore = create<StreamStore>()(
 
     stopStreaming: (messageId: number) => {
       set(state => {
-        if (state.abortControllers[messageId]) {
-          state.abortControllers[messageId].abort();
-          delete state.abortControllers[messageId];
+        if (state.abortController) {
+          state.abortController.abort();
+          state.abortController = null;
         }
         state.isStreaming = false;
         delete state.partialYamls[messageId];
-        delete state.insideYamlFlags[messageId];
+        state.insideYaml = false;
       });
     },
 
@@ -75,10 +75,10 @@ export const useStreamStore = create<StreamStore>()(
       set(state => {
         state.currentMessageId = null;
         state.isStreaming = true;
-        state.partialAssistantMessages = {};
+        state.partialMessages = {};
         state.partialYamls = {};
-        state.insideYamlFlags = {};
-        state.abortControllers = {};
+        state.insideYaml = false;
+        state.abortController = abortController;
         state.errors = {};
       });
 
@@ -88,17 +88,17 @@ export const useStreamStore = create<StreamStore>()(
           switch (chunk.type) {
             case 'text':
               get().addPartialMessage(chunk.id, chunk.content);
-              if (get().insideYamlFlags[chunk.id]) get().appendToYaml(chunk.id, chunk.content);
+              if (get().insideYaml) get().appendToYaml(chunk.id, chunk.content);
               break;
             case 'start_yaml':
               set(state => {
-                state.insideYamlFlags[chunk.id] = true;
+                state.insideYaml = true;
                 state.partialYamls[chunk.id] ||= '';
               });
               break;
             case 'end_yaml':
               set(state => {
-                state.insideYamlFlags[chunk.id] = false;
+                state.insideYaml = false;
               });
               get().commitYamlToCodeStore(chunk.id);
               break;
@@ -115,24 +115,24 @@ export const useStreamStore = create<StreamStore>()(
         set(state => {
           state.currentMessageId = null;
           state.isStreaming = false;
-          state.partialAssistantMessages = {};
+          state.partialMessages = {};
           state.partialYamls = {};
-          state.insideYamlFlags = {};
-          state.abortControllers = {};
+          state.insideYaml = false;
+          state.abortController = null;
         });
       }
     },
 
     addPartialMessage: (messageId: number, message: string) =>
       set(state => {
-        if (state.partialAssistantMessages[messageId]) {
-          state.partialAssistantMessages[messageId].content += message;
+        if (state.partialMessages[messageId]) {
+          state.partialMessages[messageId].content += message;
         }
       }),
 
     clearPartialAssistantMessage: (messageId: number) =>
       set(state => {
-        delete state.partialAssistantMessages[messageId];
+        delete state.partialMessages[messageId];
       }),
 
     setPartialYaml: (messageId: number, yaml: string) =>
