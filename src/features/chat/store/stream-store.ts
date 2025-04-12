@@ -4,7 +4,7 @@ import { streamAssistantMessages } from '../services/stream-assistant-messages';
 import { SYSTEM_PROMPT } from '../services/system-prompts';
 import { useAssistantConfigStore } from './assistant-config-store';
 import { ThreadMessage, useChatStore } from './chat-store';
-import { useCodeStore } from './code-store';
+import { useCodeStore } from './yaml-store';
 
 interface StreamStore {
   isStreaming: boolean;
