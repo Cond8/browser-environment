@@ -1,6 +1,7 @@
 // src/features/panels/components/editor-layout.tsx
 import { Card } from '@/components/ui/card';
 import { AssistantPanel } from '@/features/chat';
+import { YamlEditor } from '@/features/chat/components/yaml-editor';
 import React from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
@@ -10,10 +11,7 @@ export const EditorLayout: React.FC = () => {
       {/* Left Panel - File Explorer */}
       <Panel defaultSize={50} minSize={30}>
         <Card className="h-full rounded-none border-r py-0 bg-background">
-          <div className="p-4">
-            <h2 className="text-sm font-semibold mb-2">File Explorer</h2>
-            <div className="text-sm text-muted-foreground">File explorer content will go here</div>
-          </div>
+          <YamlEditor />
         </Card>
       </Panel>
 

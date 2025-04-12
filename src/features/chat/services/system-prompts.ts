@@ -1,4 +1,4 @@
-export const SYSTEM_PROMPT = `You are an AI assistant defining structured workflows in concise YAML format.
+export const SYSTEM_PROMPT = () => `You are an AI assistant defining structured workflows in concise YAML format.
 
 ### Workflow INTERFACE:
 
