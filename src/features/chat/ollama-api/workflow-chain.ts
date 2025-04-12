@@ -1,12 +1,65 @@
 import { SYSTEM_PROMPT } from '../services/prompts-system';
 import { TOOL_PROMPT_INTERFACE_PHASE, TOOL_PROMPT_STEPS_PHASE } from '../services/prompts-tools';
 import { useAssistantConfigStore } from '../store/assistant-config-store';
-import { ThreadMessage, useChatStore } from '../store/chat-store';
+import { useChatStore } from '../store/chat-store';
 
 export type StreamYield =
-  | { type: 'text'; content: string }
-  | { type: 'start_yaml' }
-  | { type: 'end_yaml' };
+  | { type: 'text'; content: string, id: number }
+  | { type: 'start_yaml', id: number }
+  | { type: 'end_yaml', id: number };
+
+export async function* streamWorkflowChain(
+  abortController: AbortController,
+): AsyncGenerator<StreamYield, void, unknown> {
+  const { selectedModel, parameters, ollamaUrl } = useAssistantConfigStore.getState();
+
+  const interfaceAssistantMessage = useChatStore.getState().addEmptyAssistantMessage();
+  const messages = useChatStore.getState().getMessagesUntil(interfaceAssistantMessage.id);
+
+  if (messages.length > 1) {
+    throw new Error('Workflow chain only supports one message');
+  }
+
+  const streamResponse = createStreamResponse(ollamaUrl, abortController);
+
+  // Phase 1: Interface Generation
+  const interfaceResponse = yield* streamResponse({
+    model: selectedModel,
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT() },
+      { role: 'user', content: TOOL_PROMPT_INTERFACE_PHASE(messages[0].content) },
+    ],
+    options: parameters,
+    stream: true,
+  });
+
+  useChatStore.getState().updateAssistantMessage(interfaceAssistantMessage.id, interfaceResponse);
+
+  if (abortController.signal.aborted) {
+    return;
+  }
+
+  const stepsAssistantMessage = useChatStore.getState().addEmptyAssistantMessage();
+
+  // Phase 2: Steps Generation
+  const stepsResponse = yield* streamResponse({
+    model: selectedModel,
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT() },
+      { role: 'user', content: messages[0].content },
+      { role: 'assistant', content: interfaceResponse },
+      { role: 'user', content: TOOL_PROMPT_STEPS_PHASE() },
+    ],
+    options: parameters,
+    stream: true,
+  });
+
+  useChatStore.getState().updateAssistantMessage(stepsAssistantMessage.id, stepsResponse);
+
+  if (abortController.signal.aborted) {
+    return;
+  }
+}
 
 function createStreamResponse(url: string, abortController: AbortController) {
   return async function* streamOllamaResponse(
@@ -54,15 +107,15 @@ function createStreamResponse(url: string, abortController: AbortController) {
             if (insideYaml && normalized.includes('`')) {
               lookbehindBuffer = '';
               insideYaml = false;
-              yield { type: 'end_yaml' };
+              yield { type: 'end_yaml', id: body.id };
             }
 
-            yield { type: 'text', content };
+            yield { type: 'text', content, id: body.id };
 
             if (!insideYaml && normalized.includes('```yaml')) {
               lookbehindBuffer = '';
               insideYaml = true;
-              yield { type: 'start_yaml' };
+              yield { type: 'start_yaml', id: body.id };
             }
 
             if (lookbehindBuffer.length > 1000) {
@@ -81,56 +134,4 @@ function createStreamResponse(url: string, abortController: AbortController) {
     }
     return buffer;
   };
-}
-
-export async function* streamWorkflowChain(
-  assistantMessage: ThreadMessage,
-  abortController: AbortController,
-): AsyncGenerator<StreamYield, void, unknown> {
-  const { selectedModel, parameters, ollamaUrl } = useAssistantConfigStore.getState();
-  const messages = useChatStore.getState().getMessagesUntil(assistantMessage.id);
-
-  if (messages.length > 1) {
-    throw new Error('Workflow chain only supports one message');
-  }
-
-  const streamResponse = createStreamResponse(ollamaUrl, abortController);
-
-  // Phase 1: Interface Generation
-  const interfaceResponse = yield* streamResponse({
-    model: selectedModel,
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT() },
-      { role: 'user', content: TOOL_PROMPT_INTERFACE_PHASE(messages[0].content) },
-    ],
-    options: parameters,
-    stream: true,
-  });
-
-  useChatStore.getState().updateAssistantMessage(assistantMessage.id, interfaceResponse);
-
-  if (abortController.signal.aborted) {
-    return;
-  }
-
-  const stepsAssistantMessage = useChatStore.getState().addEmptyAssistantMessage();
-
-  // Phase 2: Steps Generation
-  const stepsResponse = yield* streamResponse({
-    model: selectedModel,
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT() },
-      { role: 'user', content: messages[0].content },
-      { role: 'assistant', content: interfaceResponse },
-      { role: 'user', content: TOOL_PROMPT_STEPS_PHASE() },
-    ],
-    options: parameters,
-    stream: true,
-  });
-
-  useChatStore.getState().updateAssistantMessage(stepsAssistantMessage.id, stepsResponse);
-
-  if (abortController.signal.aborted) {
-    return;
-  }
-}
+};

@@ -22,8 +22,6 @@ export interface ChatStore {
   threads: Record<Thread['id'], Thread>;
   setCurrentThread: (threadId: Thread['id'] | null) => void;
   resetThread: () => void;
-  editUserMessage: (replaceId: number, message: string) => void;
-  regenerateAssistantMessage: (replaceId: number) => void;
   addUserMessage: (message: string) => void;
   addEmptyAssistantMessage: () => ThreadMessage;
   updateAssistantMessage: (id: number, message: string) => void;
@@ -54,30 +52,8 @@ export const useChatStore = create<ChatStore>()(
         });
       },
 
-      editUserMessage: (replaceId: number, message: string) => {
-        const id = Date.now();
-        const userMessage: ThreadMessage = {
-          id,
-          role: 'user',
-          content: message,
-        };
-        const assistantMessage: ThreadMessage = {
-          id: id + 1,
-          role: 'assistant',
-          content: '',
-        };
-        set(state => {
-          const thread = state.threads[state.currentThreadId!];
-          const messages = thread.messages.filter(m => m.id < replaceId);
-          messages.push(userMessage, assistantMessage);
-          thread.messages = messages;
-        });
-
-        useStreamStore.getState().startChain(assistantMessage);
-      },
-
       addEmptyAssistantMessage: () => {
-        const id = Date.now()
+        const id = Date.now();
         const assistantMessage: ThreadMessage = {
           id,
           role: 'assistant',
@@ -90,24 +66,6 @@ export const useChatStore = create<ChatStore>()(
         return assistantMessage;
       },
 
-      regenerateAssistantMessage: (replaceId: number) => {
-        const id = Date.now();
-        const assistantMessage: ThreadMessage = {
-          id,
-          role: 'assistant',
-          content: '',
-        };
-
-        set(state => {
-          const thread = state.threads[state.currentThreadId!];
-          const messages = thread.messages.filter(m => m.id < replaceId);
-          messages.push(assistantMessage);
-          thread.messages = messages;
-        });
-
-        useStreamStore.getState().startChain(assistantMessage);
-      },
-
       addUserMessage: (message: string) => {
         const id = Date.now();
         const userMessage: ThreadMessage = {
@@ -115,27 +73,22 @@ export const useChatStore = create<ChatStore>()(
           role: 'user',
           content: message,
         };
-        const assistantMessage: ThreadMessage = {
-          id: id + 1,
-          role: 'assistant',
-          content: '',
-        };
         set(state => {
           if (!state.currentThreadId) {
             state.currentThreadId = id;
             state.threads[id] = {
               id,
               title: 'New Thread',
-              messages: [userMessage, assistantMessage],
+              messages: [userMessage],
               error: null,
             };
           } else {
             const thread = state.threads[state.currentThreadId];
-            thread.messages.push(userMessage, assistantMessage);
+            thread.messages.push(userMessage);
           }
         });
 
-        useStreamStore.getState().startChain(assistantMessage);
+        useStreamStore.getState().startChain();
       },
 
       updateAssistantMessage: (id: number, message: string) => {

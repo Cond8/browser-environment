@@ -6,133 +6,155 @@ import { ThreadMessage } from './chat-store';
 import { useCodeStore } from './yaml-store';
 
 interface StreamStore {
+  currentMessageId: number | null;
   isStreaming: boolean;
-  partialAssistantMessage: ThreadMessage | null;
-  abortController: AbortController | null;
-  partialYaml: string | null;
-  insideYaml: boolean;
-  stopStreaming: () => void;
-  startChain: (assistantMessage: ThreadMessage) => void;
-  addPartialMessage: (message: string) => void;
-  clearPartialAssistantMessage: () => void;
-  appendToYaml: (chunk: string) => void;
-  setPartialYaml: (yaml: string) => void;
-  clearYaml: () => void;
+  partialAssistantMessages: Record<number, ThreadMessage>;
+  partialYamls: Record<number, string>;
+  insideYamlFlags: Record<number, boolean>;
+  abortControllers: Record<number, AbortController>;
+  errors: Record<number, string | null>;
+
+  setCurrentMessageId: (messageId: number | null) => void;
+
+  setError: (messageId: number, error: string | null) => void;
+  clearErrors: () => void;
+
+  stopStreaming: (messageId: number) => void;
+  startChain: () => void;
+
+  addPartialMessage: (messageId: number, message: string) => void;
+  clearPartialAssistantMessage: (messageId: number) => void;
+
+  appendToYaml: (messageId: number, chunk: string) => void;
+  setPartialYaml: (messageId: number, yaml: string) => void;
+  clearYaml: (messageId: number) => void;
+
   commitYamlToCodeStore: (messageId: number) => void;
 }
 
 export const useStreamStore = create<StreamStore>()(
   immer((set, get) => ({
+    currentMessageId: null,
     isStreaming: false,
-    partialAssistantMessage: null,
-    partialYaml: null,
-    abortController: null,
-    insideYaml: false,
+    partialAssistantMessages: {},
+    partialYamls: {},
+    insideYamlFlags: {},
+    abortControllers: {},
+    errors: {},
 
-    stopStreaming: () => {
+    setCurrentMessageId: (messageId: number | null) =>
       set(state => {
-        if (state.abortController) {
-          state.abortController.abort();
-          state.abortController = null;
+        state.currentMessageId = messageId;
+      }),
+
+    setError: (messageId, error) =>
+      set(state => {
+        state.errors[messageId] = error;
+      }),
+
+    clearErrors: () =>
+      set(state => {
+        state.errors = {};
+      }),
+
+    stopStreaming: (messageId: number) => {
+      set(state => {
+        if (state.abortControllers[messageId]) {
+          state.abortControllers[messageId].abort();
+          delete state.abortControllers[messageId];
         }
         state.isStreaming = false;
-        state.partialYaml = null;
-        state.insideYaml = false;
+        delete state.partialYamls[messageId];
+        delete state.insideYamlFlags[messageId];
       });
     },
 
-    startChain: async (assistantMessage: ThreadMessage) => {
+    startChain: async () => {
       const abortController = new AbortController();
 
       set(state => {
-        state.partialAssistantMessage = { ...assistantMessage, content: '' };
-        state.partialYaml = null;
+        state.currentMessageId = null;
         state.isStreaming = true;
-        state.abortController = abortController;
-        state.insideYaml = false;
+        state.partialAssistantMessages = {};
+        state.partialYamls = {};
+        state.insideYamlFlags = {};
+        state.abortControllers = {};
+        state.errors = {};
       });
 
       try {
-        for await (const chunk of streamWorkflowChain(assistantMessage, abortController)) {
+        for await (const chunk of streamWorkflowChain(abortController)) {
+          get().setCurrentMessageId(chunk.id);
           switch (chunk.type) {
             case 'text':
-              get().addPartialMessage(chunk.content); // ✅ always raw model output
-              if (get().insideYaml) get().appendToYaml(chunk.content); // ✅ side effect
+              get().addPartialMessage(chunk.id, chunk.content);
+              if (get().insideYamlFlags[chunk.id]) get().appendToYaml(chunk.id, chunk.content);
               break;
             case 'start_yaml':
-              if (!get().insideYaml) {
-                set(state => {
-                  state.insideYaml = true;
-                  state.partialYaml = state.partialYaml || '';
-                });
-              }
+              set(state => {
+                state.insideYamlFlags[chunk.id] = true;
+                state.partialYamls[chunk.id] ||= '';
+              });
               break;
             case 'end_yaml':
-              if (get().insideYaml) {
-                set(state => {
-                  state.insideYaml = false;
-                });
-                get().commitYamlToCodeStore(assistantMessage.id);
-              }
+              set(state => {
+                state.insideYamlFlags[chunk.id] = false;
+              });
+              get().commitYamlToCodeStore(chunk.id);
               break;
           }
         }
       } catch (error: any) {
-        if (error.name === 'AbortError') {
-          console.log('Stream fetch aborted by user.');
-        } else {
+        if (error.name !== 'AbortError') {
           console.error('Streaming error:', error);
           set(state => {
-            if (state.partialAssistantMessage) {
-              state.partialAssistantMessage.content += `
-
-**Error during stream:** ${error.message}`;
-            }
+            state.errors[get().currentMessageId!] = error.message || 'Unknown error occurred';
           });
         }
       } finally {
         set(state => {
+          state.currentMessageId = null;
           state.isStreaming = false;
-          state.abortController = null;
-          state.partialAssistantMessage = null;
-          state.partialYaml = null;
-          state.insideYaml = false;
+          state.partialAssistantMessages = {};
+          state.partialYamls = {};
+          state.insideYamlFlags = {};
+          state.abortControllers = {};
         });
       }
     },
 
-    addPartialMessage: message =>
+    addPartialMessage: (messageId: number, message: string) =>
       set(state => {
-        if (state.partialAssistantMessage) {
-          state.partialAssistantMessage.content += message;
+        if (state.partialAssistantMessages[messageId]) {
+          state.partialAssistantMessages[messageId].content += message;
         }
       }),
 
-    clearPartialAssistantMessage: () =>
+    clearPartialAssistantMessage: (messageId: number) =>
       set(state => {
-        state.partialAssistantMessage = null;
+        delete state.partialAssistantMessages[messageId];
       }),
 
-    setPartialYaml: yaml =>
+    setPartialYaml: (messageId: number, yaml: string) =>
       set(state => {
-        state.partialYaml = yaml;
+        state.partialYamls[messageId] = yaml;
       }),
 
-    appendToYaml: chunk =>
+    appendToYaml: (messageId: number, chunk: string) =>
       set(state => {
-        if (state.partialYaml !== null) {
-          state.partialYaml += chunk;
+        if (state.partialYamls[messageId] !== undefined) {
+          state.partialYamls[messageId] += chunk;
         }
       }),
 
-    clearYaml: () =>
+    clearYaml: (messageId: number) =>
       set(state => {
-        state.partialYaml = null;
+        delete state.partialYamls[messageId];
       }),
 
-    commitYamlToCodeStore: messageId => {
-      const yamlToCommit = get().partialYaml;
-      if (yamlToCommit !== null) {
+    commitYamlToCodeStore: (messageId: number) => {
+      const yamlToCommit = get().partialYamls[messageId];
+      if (yamlToCommit !== undefined) {
         console.log('Committing YAML to CodeStore for message:', messageId, yamlToCommit);
         useCodeStore.getState().saveYaml(messageId, yamlToCommit);
       } else {

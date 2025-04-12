@@ -11,9 +11,11 @@ export const ChatContent = () => {
   const { threads, currentThreadId } = useChatStore();
   const currentThread = threads[currentThreadId!];
   const isStreaming = useStreamStore(state => state.isStreaming);
-  const partialMessage = useStreamStore(state => state.partialAssistantMessage);
-  const partialYaml = useStreamStore(state => state.partialYaml);
-  const insideYaml = useStreamStore(state => state.insideYaml);
+  const partialMessage = useStreamStore(
+    state => state.partialAssistantMessages[state.currentMessageId!],
+  );
+  const partialYaml = useStreamStore(state => state.partialYamls[state.currentMessageId!]);
+  const insideYaml = useStreamStore(state => state.insideYamlFlags[state.currentMessageId!]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
