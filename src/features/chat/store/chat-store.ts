@@ -35,6 +35,50 @@ export interface ChatStore {
   clearThreads: () => void;
 }
 
+function parseAndFormatInterface(content: string): string {
+  try {
+    // First try to parse the raw content
+    const parsed = JSON.parse(content);
+    return JSON.stringify(parsed, null, 2);
+  } catch (err) {
+    const error = err as Error;
+    // If that fails, try to extract JSON from markdown code blocks
+    const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[1]);
+        return JSON.stringify(parsed, null, 2);
+      } catch (err) {
+        const error = err as Error;
+        throw new Error('Failed to parse interface JSON: ' + error.message);
+      }
+    }
+    throw new Error('No valid JSON found in interface content');
+  }
+}
+
+function parseAndFormatSteps(content: string): string {
+  try {
+    // First try to parse the raw content
+    const parsed = JSON.parse(content);
+    return JSON.stringify(parsed, null, 2);
+  } catch (err) {
+    const error = err as Error;
+    // If that fails, try to extract JSON from markdown code blocks
+    const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[1]);
+        return JSON.stringify(parsed, null, 2);
+      } catch (err) {
+        const error = err as Error;
+        throw new Error('Failed to parse steps JSON: ' + error.message);
+      }
+    }
+    throw new Error('No valid JSON found in steps content');
+  }
+}
+
 export const useChatStore = create<ChatStore>()(
   persist(
     immer((set, get) => ({
