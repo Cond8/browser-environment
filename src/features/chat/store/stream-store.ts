@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { SYSTEM_PROMPT } from '../services/system-prompt';
-import { allTools } from '../tools';
 import { useAssistantConfigStore } from './assistant-config-store';
 import { ThreadMessage, useChatStore } from './chat-store';
 
