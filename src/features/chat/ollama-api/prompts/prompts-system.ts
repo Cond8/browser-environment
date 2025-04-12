@@ -10,10 +10,10 @@ interface:
   class: transform
   method: transform_user_data (Converts raw to standardized format)
   goal: Transform raw user data into standardized format
-  input:
+  inputs:
     - raw_data: JSON string containing user information
     - format_type: Target output format specification
-  output:
+  outputs:
     - processed_data: Standardized user data in specified format
 
 steps:
@@ -21,19 +21,21 @@ steps:
     class: validate
     method: validate_input (Performs format and content validation)
     goal: Ensure input data meets required format and constraints
-    input:
+    inputs:
       - raw_data: From interface
       - format_type: From interface
-    output:
+    outputs:
       - validated_data: Cleaned and verified input data
 
   - name: ExtractData
     class: extract
     method: extract_data (Extracts data from input)
     goal: Extract data from input
-    input:
+    inputs:
       - validated_data: From previous step
       - extract_type: From interface
+    outputs:
+      - extracted_data: Extracted data from input
 \`\`\`
 
 ---
@@ -49,21 +51,23 @@ The interface section defines the workflow's contract and must include:
   - Example: "ProcessUserData", "GenerateReport"
 
 - \`class\`: 
-  - Single, specific domain class
+  - Single word, specific domain class
+  - Pick a valid class from the list of domain classes below
   - Most specific/programmatic class possible
-  - Example: "DataProcessor", "ReportGenerator"
+  - Example: "processor", "generator"
 
 - \`method\`: 
   - snake_case format
   - Optional short comment in parentheses
-  - Example: "transform_data (Converts input to output format)"
+  - Example: "transform_data"
 
 - \`goal\`: 
   - Single, clear, actionable statement
   - Avoid vague terms like "handle", "process", "manage"
+  - Can be seen as a description of the method
   - Example: "Transform raw user data into standardized format"
 
-- \`input\`: 
+- \`inputs\`: 
   - List of required input variables
   - Format: \`- variable_name: description\`
   - snake_case variable names
@@ -71,7 +75,7 @@ The interface section defines the workflow's contract and must include:
   - Must specify all required inputs
   - Each input must have a type and description
 
-- \`output\`: 
+- \`outputs\`: 
   - List of expected output variables
   - Same format as input
   - Must match final step's output exactly

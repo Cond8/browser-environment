@@ -1,6 +1,6 @@
 // src/features/chat/services/prompts-tools.ts
 export const DOMAIN_CLASSES = () =>
-  `## DOMAIN CLASSES
+  `## CLASSES
 
 ### LLM-Centric
 - \`extract\`: Pull patterns from text
@@ -54,10 +54,10 @@ interface:
   class: validate
   method: validate_csv
   goal: Extract and validate data from a CSV file
-  input:
+  inputs:
     - file_path: path to the CSV file
     - delimiter: character separating columns
-  output:
+  outputs:
     - valid_rows: list of validated data rows
     - error_count: number of invalid rows
 \`\`\`
@@ -91,10 +91,10 @@ steps:
     class: validate
     method: validate_csv
     goal: Validate the CSV file
-    input:
+    inputs:
       - file_path: path to the CSV file
       - delimiter: character separating columns
-    output:
+    outputs:
       - valid_rows: list of validated data rows
       - error_count: number of invalid rows
 
@@ -102,10 +102,10 @@ steps:
     class: extract
     method: extract_data
     goal: Extract data from the CSV file
-    input:
+    inputs:
       - file_path: path to the CSV file
       - delimiter: character separating columns
-    output:
+    outputs:
       - data: list of data rows
 \`\`\`
 `.trim();

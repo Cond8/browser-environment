@@ -4,8 +4,8 @@ import { cn } from '@/lib/utils';
 type Interface = {
   name: string;
   goal: string;
-  input: { [key: string]: string }[] | string[];
-  output: { [key: string]: string }[] | string[];
+  inputs: { [key: string]: string }[] | string[];
+  outputs: { [key: string]: string }[] | string[];
   class: string;
   method: string;
 };
@@ -181,8 +181,8 @@ function InterfaceCard({
             Inputs
           </h3>
           <ul className="list-disc list-inside space-y-1">
-            {Array.isArray(data.input) &&
-              data.input.map((input: string | { [key: string]: string }, idx: number) => {
+            {Array.isArray(data.inputs) &&
+              data.inputs.map((input: string | { [key: string]: string }, idx: number) => {
                 if (typeof input === 'string') {
                   const parsed = parseWithComments(input);
                   return (
@@ -217,8 +217,8 @@ function InterfaceCard({
             Outputs
           </h3>
           <ul className="list-disc list-inside space-y-1">
-            {Array.isArray(data.output) &&
-              data.output.map((output: string | { [key: string]: string }, idx: number) => {
+            {Array.isArray(data.outputs) &&
+              data.outputs.map((output: string | { [key: string]: string }, idx: number) => {
                 if (typeof output === 'string') {
                   const parsed = parseWithComments(output);
                   return (
