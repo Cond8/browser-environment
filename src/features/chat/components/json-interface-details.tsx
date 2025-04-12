@@ -15,7 +15,7 @@ type Props = {
 };
 
 // Utility function to parse a string with comments in parentheses
-export function parseWithComments(str: string | undefined | null): {
+export function parseWithComments(str: string | { [key: string]: string } | undefined | null): {
   value: string;
   comment?: string;
 } {
@@ -23,14 +23,28 @@ export function parseWithComments(str: string | undefined | null): {
     return { value: '' };
   }
 
-  const match = str.match(/^(.*?)\s*\((.*)\)$/);
-  if (match) {
+  // If str is an object, return the first key-value pair
+  if (typeof str === 'object' && !Array.isArray(str)) {
+    const [key, value] = Object.entries(str)[0];
     return {
-      value: match[1].trim(),
-      comment: match[2].trim(),
+      value: key,
+      comment: value,
     };
   }
-  return { value: str.trim() };
+
+  // Handle string case
+  if (typeof str === 'string') {
+    const match = str.match(/^(.*?)\s*\((.*)\)$/);
+    if (match) {
+      return {
+        value: match[1].trim(),
+        comment: match[2].trim(),
+      };
+    }
+    return { value: str.trim() };
+  }
+
+  return { value: '' };
 }
 
 // Utility function to add spaces before capital letters and capitalize words

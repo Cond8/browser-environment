@@ -3,17 +3,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/features/chat/store/chat-store';
 import { Send, StopCircle } from 'lucide-react';
 import { useState } from 'react';
+import { useEventBusStore } from '../store/eventbus-store';
 import { useStreamStore } from '../store/stream-store';
 import { SelectedModel } from './selected-model';
 import { ShortcutsDisplay } from './shortcuts-display';
+
 export function UserInput() {
-  const [message, setMessage] = useState(
-    'I want to classify emails as spam or not spam',
-  );
+  const [message, setMessage] = useState('I want to classify emails as spam or not spam');
 
   const addUserMessage = useChatStore(state => state.addUserMessage);
   const isStreaming = useStreamStore(state => state.isStreaming);
   const stopStreaming = useStreamStore(state => state.stopStreaming);
+  const triggerAbort = useEventBusStore(state => state.triggerAbort);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +22,6 @@ export function UserInput() {
     if (!trimmed) return;
 
     addUserMessage(trimmed);
-
     setMessage('');
   };
 
@@ -41,6 +41,13 @@ export function UserInput() {
       }
     }
   };
+
+  const handleStop = () => {
+    console.log('[UserInput] Stop button clicked');
+    triggerAbort();
+    stopStreaming();
+  };
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-4 border-t">
       <Textarea
@@ -60,10 +67,7 @@ export function UserInput() {
             command="Stop"
             shortcut="Shift+Enter"
             asButton
-            onClick={() => {
-              console.log('[UserInput] Stop button clicked');
-              stopStreaming();
-            }}
+            onClick={handleStop}
             hide={!isStreaming}
             icon={StopCircle}
           />

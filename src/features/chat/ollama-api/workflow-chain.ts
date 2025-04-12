@@ -1,128 +1,111 @@
 // src/features/chat/ollama-api/workflow-chain.ts
+import { ChatRequest, Ollama } from 'ollama/browser';
 import { useAssistantConfigStore } from '../store/assistant-config-store';
 import { useChatStore } from '../store/chat-store';
+import { useEventBusStore } from '../store/eventbus-store';
 import { SYSTEM_PROMPT } from './prompts/prompts-system';
 import { INTERFACE_PROMPT, STEPS_PROMPT } from './prompts/prompts-tools';
+import { interfaceTool, stepsTool } from './tool-schemas/workflow-schema';
 
 export type StreamYield =
   | { type: 'text'; content: string; id: number }
   | { type: 'start_json'; id: number }
   | { type: 'end_json'; id: number };
 
-export async function* streamWorkflowChain(
-  abortController: AbortController,
-): AsyncGenerator<StreamYield, void, unknown> {
+export async function* streamWorkflowChain(): AsyncGenerator<StreamYield, void, unknown> {
   const { selectedModel, parameters, ollamaUrl } = useAssistantConfigStore.getState();
 
-  const interfaceAssistantMessage = useChatStore.getState().addEmptyAssistantMessage();
-  const messages = useChatStore.getState().getMessagesUntil(interfaceAssistantMessage.id);
+  const assistantMessage = useChatStore.getState().addEmptyAssistantMessage();
+  const messages = useChatStore.getState().getMessagesUntil(assistantMessage.id);
 
   if (messages.length > 1) {
     throw new Error('Workflow chain only supports one message');
   }
 
-  const streamResponse = createStreamResponse(ollamaUrl, abortController);
+  const streamResponse = createStreamResponse(ollamaUrl);
 
   // Phase 1: Interface Generation
-  const interfaceResponse = yield* streamResponse({
+  const interfaceResponse = yield* streamResponse(assistantMessage.id, {
     model: selectedModel,
     messages: [
       { role: 'system', content: SYSTEM_PROMPT() + INTERFACE_PROMPT() },
       { role: 'user', content: messages[0].content },
     ],
+    tools: [interfaceTool],
     options: parameters,
     stream: true,
   });
 
-  useChatStore.getState().updateAssistantMessage(interfaceAssistantMessage.id, interfaceResponse);
-
-  if (abortController.signal.aborted) {
-    return;
-  }
-
-  const stepsAssistantMessage = useChatStore.getState().addEmptyAssistantMessage();
+  const interfaceWithoutBlocks = interfaceResponse.replace('```json', '').replace('```', '');
+  const interfaceParsed = JSON.parse(interfaceWithoutBlocks);
+  useChatStore.getState().setInterface(assistantMessage.id, interfaceParsed);
 
   // Phase 2: Steps Generation
-  const stepsResponse = yield* streamResponse({
+  const stepsResponse = yield* streamResponse(assistantMessage.id, {
     model: selectedModel,
     messages: [
       { role: 'system', content: SYSTEM_PROMPT() + STEPS_PROMPT() },
       { role: 'user', content: interfaceResponse },
     ],
+    tools: [stepsTool],
     options: parameters,
     stream: true,
   });
 
-  useChatStore.getState().updateAssistantMessage(stepsAssistantMessage.id, stepsResponse);
-
-  if (abortController.signal.aborted) {
-    return;
-  }
+  const stepsWithoutBlocks = stepsResponse.replace('```json', '').replace('```', '');
+  const stepsParsed = JSON.parse(stepsWithoutBlocks);
+  useChatStore.getState().setSteps(assistantMessage.id, stepsParsed);
 }
 
-function createStreamResponse(url: string, abortController: AbortController) {
+function createStreamResponse(url: string) {
   return async function* streamOllamaResponse(
-    body: any,
+    id: number,
+    request: ChatRequest & { stream: true },
   ): AsyncGenerator<StreamYield, string, unknown> {
-    const response = await fetch(`${url}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: abortController.signal,
+    request.stream = true;
+
+    const ollamaClient = new Ollama({ host: url });
+
+    const response = await ollamaClient.chat(request);
+
+    useEventBusStore.getState().registerAbortCallback(() => {
+      response.abort();
     });
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      console.error('Streaming API error response:', errorBody);
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const reader = response.body?.getReader();
-    if (!reader) throw new Error('Response body is null');
-
-    const decoder = new TextDecoder();
     let buffer = '';
     let lookbehindBuffer = '';
     let insideJson = false;
 
     try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      for await (const chunk of response) {
+        if ('error' in chunk) {
+          console.error('Streaming API error response:', chunk.error);
+          throw new Error(`API error: ${chunk.error}`);
+        }
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n').filter(line => line.trim());
+        const content = chunk.message?.content;
+        if (!content) continue;
 
-        for (const line of lines) {
-          try {
-            const parsed = JSON.parse(line);
-            const content = parsed.message?.content;
-            if (!content) continue;
+        buffer += content;
+        lookbehindBuffer += content;
+        const normalized = lookbehindBuffer.toLowerCase();
 
-            buffer += content;
-            lookbehindBuffer += content;
-            const normalized = lookbehindBuffer.toLowerCase();
+        if (insideJson && normalized.includes('`')) {
+          lookbehindBuffer = '';
+          insideJson = false;
+          yield { type: 'end_json', id };
+        }
 
-            if (insideJson && normalized.includes('`')) {
-              lookbehindBuffer = '';
-              insideJson = false;
-              yield { type: 'end_json', id: body.id };
-            }
+        yield { type: 'text', content, id };
 
-            yield { type: 'text', content, id: body.id };
+        if (!insideJson && normalized.includes('```json')) {
+          lookbehindBuffer = '';
+          insideJson = true;
+          yield { type: 'start_json', id };
+        }
 
-            if (!insideJson && normalized.includes('```json')) {
-              lookbehindBuffer = '';
-              insideJson = true;
-              yield { type: 'start_json', id: body.id };
-            }
-
-            if (lookbehindBuffer.length > 1000) {
-              lookbehindBuffer = lookbehindBuffer.slice(-500);
-            }
-          } catch (err) {
-            console.error('Error parsing chunk:', err);
-          }
+        if (lookbehindBuffer.length > 1000) {
+          lookbehindBuffer = lookbehindBuffer.slice(-500);
         }
       }
     } catch (error: any) {

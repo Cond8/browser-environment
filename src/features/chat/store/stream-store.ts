@@ -9,7 +9,6 @@ interface StreamStore {
   currentMessageId: number | null;
   isStreaming: boolean;
   insideJson: boolean;
-  abortController: AbortController | null;
   partialMessages: Record<number, ThreadMessage>;
   partialJsons: Record<number, string>;
   errors: Record<number, string | null>;
@@ -37,7 +36,6 @@ export const useStreamStore = create<StreamStore>()(
     currentMessageId: null,
     isStreaming: false,
     insideJson: false,
-    abortController: null,
     partialMessages: {},
     partialJsons: {},
     errors: {},
@@ -59,10 +57,6 @@ export const useStreamStore = create<StreamStore>()(
 
     stopStreaming: () => {
       set(state => {
-        if (state.abortController) {
-          state.abortController.abort();
-          state.abortController = null;
-        }
         state.isStreaming = false;
         state.insideJson = false;
         state.partialJsons = {};
@@ -71,20 +65,17 @@ export const useStreamStore = create<StreamStore>()(
     },
 
     startChain: async () => {
-      const abortController = new AbortController();
-
       set(state => {
         state.currentMessageId = null;
         state.isStreaming = true;
         state.partialMessages = {};
         state.partialJsons = {};
         state.insideJson = false;
-        state.abortController = abortController;
         state.errors = {};
       });
 
       try {
-        for await (const chunk of streamWorkflowChain(abortController)) {
+        for await (const chunk of streamWorkflowChain()) {
           get().setCurrentMessageId(chunk.id);
           switch (chunk.type) {
             case 'text':
@@ -119,7 +110,6 @@ export const useStreamStore = create<StreamStore>()(
           state.partialMessages = {};
           state.partialJsons = {};
           state.insideJson = false;
-          state.abortController = null;
         });
       }
     },

@@ -1,13 +1,19 @@
 // src/features/chat/store/chat-store.ts
-import { OllamaMessage, OllamaToolCall } from '@/features/chat/services/ollama-types.ts';
+import { Message, ToolCall } from 'ollama';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { WorkflowStep } from '../ollama-api/tool-schemas/workflow-schema';
 import { useStreamStore } from './stream-store';
 
-export interface ThreadMessage extends OllamaMessage {
+export interface ThreadMessage extends Message {
   id: number;
-  tool_calls?: OllamaToolCall[];
+  tool_calls?: ToolCall[];
+  workflow?: {
+    interface: WorkflowStep;
+    steps: WorkflowStep[];
+  };
+  error?: Error;
 }
 
 export interface Thread {
@@ -20,12 +26,18 @@ export interface Thread {
 export interface ChatStore {
   currentThreadId: Thread['id'] | null;
   threads: Record<Thread['id'], Thread>;
+
   getCurrentThread: () => Thread | null;
   setCurrentThread: (threadId: Thread['id'] | null) => void;
   resetThread: () => void;
+
   addUserMessage: (message: string) => void;
   addEmptyAssistantMessage: () => ThreadMessage;
+
   updateAssistantMessage: (id: number, message: string) => void;
+
+  setInterface: (id: number, data: WorkflowStep) => void;
+  setSteps: (id: number, steps: WorkflowStep[]) => void;
 
   getMessagesUntil: (id: number) => ThreadMessage[];
 
@@ -35,7 +47,7 @@ export interface ChatStore {
   clearThreads: () => void;
 }
 
-function parseAndFormatInterface(content: string): string {
+function parseAndFormatJson(content: string): string {
   try {
     // First try to parse the raw content
     const parsed = JSON.parse(content);
@@ -54,28 +66,6 @@ function parseAndFormatInterface(content: string): string {
       }
     }
     throw new Error('No valid JSON found in interface content');
-  }
-}
-
-function parseAndFormatSteps(content: string): string {
-  try {
-    // First try to parse the raw content
-    const parsed = JSON.parse(content);
-    return JSON.stringify(parsed, null, 2);
-  } catch (err) {
-    const error = err as Error;
-    // If that fails, try to extract JSON from markdown code blocks
-    const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/);
-    if (jsonMatch) {
-      try {
-        const parsed = JSON.parse(jsonMatch[1]);
-        return JSON.stringify(parsed, null, 2);
-      } catch (err) {
-        const error = err as Error;
-        throw new Error('Failed to parse steps JSON: ' + error.message);
-      }
-    }
-    throw new Error('No valid JSON found in steps content');
   }
 }
 
@@ -147,6 +137,33 @@ export const useChatStore = create<ChatStore>()(
             const assistantMessage = thread.messages.find(m => m.id === id);
             if (assistantMessage) {
               assistantMessage.content = message;
+            }
+          }
+        });
+      },
+
+      setInterface: (id: number, data: WorkflowStep) => {
+        set(state => {
+          if (state.currentThreadId) {
+            const thread = state.threads[state.currentThreadId];
+            const message = thread.messages.find(m => m.id === id);
+            if (message) {
+              message.workflow = {
+                interface: data,
+                steps: [],
+              };
+            }
+          }
+        });
+      },
+
+      setSteps: (id: number, steps: WorkflowStep[]) => {
+        set(state => {
+          if (state.currentThreadId) {
+            const thread = state.threads[state.currentThreadId];
+            const message = thread.messages.find(m => m.id === id);
+            if (message && message.workflow) {
+              message.workflow.steps = steps;
             }
           }
         });
