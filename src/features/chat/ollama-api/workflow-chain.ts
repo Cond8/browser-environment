@@ -1,8 +1,8 @@
 // src/features/chat/ollama-api/workflow-chain.ts
-import { SYSTEM_PROMPT } from '../services/prompts-system';
-import { INTERFACE_PROMPT, STEPS_PROMPT } from '../services/prompts-tools';
 import { useAssistantConfigStore } from '../store/assistant-config-store';
 import { useChatStore } from '../store/chat-store';
+import { SYSTEM_PROMPT } from './prompts/prompts-system';
+import { INTERFACE_PROMPT, STEPS_PROMPT } from './prompts/prompts-tools';
 
 export type StreamYield =
   | { type: 'text'; content: string; id: number }
@@ -27,8 +27,8 @@ export async function* streamWorkflowChain(
   const interfaceResponse = yield* streamResponse({
     model: selectedModel,
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT() },
-      { role: 'user', content: INTERFACE_PROMPT(messages[0].content) },
+      { role: 'system', content: SYSTEM_PROMPT() + INTERFACE_PROMPT() },
+      { role: 'user', content: messages[0].content },
     ],
     options: parameters,
     stream: true,
@@ -46,8 +46,8 @@ export async function* streamWorkflowChain(
   const stepsResponse = yield* streamResponse({
     model: selectedModel,
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT() },
-      { role: 'user', content: STEPS_PROMPT(interfaceResponse) },
+      { role: 'system', content: SYSTEM_PROMPT() + STEPS_PROMPT() },
+      { role: 'user', content: interfaceResponse },
     ],
     options: parameters,
     stream: true,

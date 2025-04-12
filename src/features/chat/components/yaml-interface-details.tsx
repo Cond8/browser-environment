@@ -13,7 +13,14 @@ type Props = {
 };
 
 // Utility function to parse a string with comments in parentheses
-function parseWithComments(str: string): { value: string; comment?: string } {
+export function parseWithComments(str: string | undefined | null): {
+  value: string;
+  comment?: string;
+} {
+  if (!str) {
+    return { value: '' };
+  }
+
   const match = str.match(/^(.*?)\s*\((.*)\)$/);
   if (match) {
     return {
@@ -25,7 +32,10 @@ function parseWithComments(str: string): { value: string; comment?: string } {
 }
 
 // Utility function to add spaces before capital letters and capitalize words
-function addSpacesToTitle(str: string): string {
+export function addSpacesToTitle(str: string | undefined | null): string {
+  if (!str) {
+    return '';
+  }
   return str
     .replace(/([A-Z])/g, ' $1') // Add space before capital letters
     .split(' ') // Split into words
@@ -34,8 +44,20 @@ function addSpacesToTitle(str: string): string {
     .trim();
 }
 
+// Utility function to format snake_case to title case
+export function formatSnakeCase(str: string | undefined | null): string {
+  if (!str) {
+    return '';
+  }
+  return str
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
+    .trim();
+}
+
 // Utility function to determine class category and type
-function getClassInfo(className: string): {
+export function getClassInfo(className: string): {
   category: 'programmatic' | 'llm_based';
   type: 'simple' | 'complex';
 } {
@@ -70,7 +92,7 @@ function getClassInfo(className: string): {
 }
 
 // Utility function to get color classes for class info
-function getClassColorClasses(category: string, type: string): string {
+export function getClassColorClasses(category: string, type: string): string {
   if (category === 'programmatic' && type === 'simple') {
     return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100';
   }
@@ -120,7 +142,7 @@ export default function InterfaceDetails({ data: { interface: data } }: Props) {
                 const parsedDesc = parseWithComments(desc);
                 return (
                   <li key={idx}>
-                    <strong>{parsedName.value}</strong>
+                    <strong>{formatSnakeCase(parsedName.value)}</strong>
                     {parsedName.comment && (
                       <span className="text-muted-foreground"> - {parsedName.comment}</span>
                     )}
@@ -154,7 +176,7 @@ export default function InterfaceDetails({ data: { interface: data } }: Props) {
                 const parsedDesc = parseWithComments(desc);
                 return (
                   <li key={idx}>
-                    <strong>{parsedName.value}</strong>
+                    <strong>{formatSnakeCase(parsedName.value)}</strong>
                     {parsedName.comment && (
                       <span className="text-muted-foreground"> - {parsedName.comment}</span>
                     )}
@@ -177,7 +199,7 @@ export default function InterfaceDetails({ data: { interface: data } }: Props) {
           </span>
         </p>
         <p>
-          <strong>Method:</strong> {addSpacesToTitle(parseWithComments(data.method).value)}
+          <strong>Method:</strong> {formatSnakeCase(parseWithComments(data.method).value)}
           {parseWithComments(data.method).comment && (
             <span className="text-muted-foreground">
               {' '}
