@@ -12,7 +12,26 @@ const extractJsonContent = (content: string): string => {
   return match ? match[1].trim() : content.trim();
 };
 
+// Check if content looks like it might be JSON
+const looksLikeJson = (content: string): boolean => {
+  const trimmed = content.trim();
+  return (
+    (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+    (trimmed.startsWith('[') && trimmed.endsWith(']')) ||
+    content.includes('```json')
+  );
+};
+
 export const JsonParser = ({ content }: JsonParserProps) => {
+  // If content doesn't look like JSON, just display it as regular text
+  if (!looksLikeJson(content)) {
+    return (
+      <div className="p-4 bg-muted/30">
+        <div className="whitespace-pre-wrap">{content}</div>
+      </div>
+    );
+  }
+
   let parsed: any;
   let error: string | null = null;
   const jsonContent = extractJsonContent(content);
@@ -34,7 +53,7 @@ export const JsonParser = ({ content }: JsonParserProps) => {
       {isValidInterface ? (
         <InterfaceDetails data={parsed} />
       ) : (
-        <JsonViewer content={JSON.stringify(parsed, null, 2)} error={error} />
+        <JsonViewer content={content} error={error} />
       )}
     </div>
   );
