@@ -13,7 +13,7 @@ export const ChatContent = () => {
   const isStreaming = useStreamStore(state => state.isStreaming);
   const partialMessage = useStreamStore(state => state.partialMessages[state.currentMessageId!]);
   const partialYaml = useStreamStore(state => state.partialYamls[state.currentMessageId!]);
-  const insideYaml = useStreamStore(state => state.insideYamlFlags[state.currentMessageId!]);
+  const insideYaml = useStreamStore(state => state.insideYaml);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
