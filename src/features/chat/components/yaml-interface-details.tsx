@@ -93,6 +93,7 @@ export default function InterfaceDetails({ data: { interface: data } }: Props) {
   return (
     <div className="space-y-4 p-4 border rounded-2xl shadow-sm bg-card text-card-foreground">
       <div className="space-y-1">
+        <p className="text-sm text-muted-foreground">Interface</p>
         <h2 className="text-xl font-semibold">{addSpacesToTitle(data.name)}</h2>
         <p className="text-muted-foreground">{data.goal}</p>
       </div>
