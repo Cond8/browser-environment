@@ -25,6 +25,7 @@ export interface ChatStore {
   editUserMessage: (replaceId: number, message: string) => void;
   regenerateAssistantMessage: (replaceId: number) => void;
   addUserMessage: (message: string) => void;
+  addEmptyAssistantMessage: () => ThreadMessage;
   updateAssistantMessage: (id: number, message: string) => void;
 
   getMessagesUntil: (id: number) => ThreadMessage[];
@@ -72,7 +73,21 @@ export const useChatStore = create<ChatStore>()(
           thread.messages = messages;
         });
 
-        useStreamStore.getState().makePartialAssistantMessage(assistantMessage);
+        useStreamStore.getState().startChain(assistantMessage);
+      },
+
+      addEmptyAssistantMessage: () => {
+        const id = Date.now()
+        const assistantMessage: ThreadMessage = {
+          id,
+          role: 'assistant',
+          content: '',
+        };
+        set(state => {
+          state.threads[state.currentThreadId!].messages.push(assistantMessage);
+        });
+
+        return assistantMessage;
       },
 
       regenerateAssistantMessage: (replaceId: number) => {
@@ -90,7 +105,7 @@ export const useChatStore = create<ChatStore>()(
           thread.messages = messages;
         });
 
-        useStreamStore.getState().makePartialAssistantMessage(assistantMessage);
+        useStreamStore.getState().startChain(assistantMessage);
       },
 
       addUserMessage: (message: string) => {
@@ -120,7 +135,7 @@ export const useChatStore = create<ChatStore>()(
           }
         });
 
-        useStreamStore.getState().makePartialAssistantMessage(assistantMessage);
+        useStreamStore.getState().startChain(assistantMessage);
       },
 
       updateAssistantMessage: (id: number, message: string) => {

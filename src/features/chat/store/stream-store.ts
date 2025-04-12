@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { streamWorkflowChain } from '../ollama-api/workflow-chain';
-import { ThreadMessage, useChatStore } from './chat-store';
+import { ThreadMessage } from './chat-store';
 import { useCodeStore } from './yaml-store';
 
 interface StreamStore {
@@ -11,7 +11,7 @@ interface StreamStore {
   abortController: AbortController | null;
   partialYaml: string | null;
   stopStreaming: () => void;
-  makePartialAssistantMessage: (assistantMessage: ThreadMessage) => void;
+  startChain: (assistantMessage: ThreadMessage) => void;
   addPartialMessage: (message: string) => void;
   clearPartialAssistantMessage: () => void;
   appendToYaml: (chunk: string) => void;
@@ -38,7 +38,7 @@ export const useStreamStore = create<StreamStore>()(
       });
     },
 
-    makePartialAssistantMessage: async (assistantMessage: ThreadMessage) => {
+    startChain: async (assistantMessage: ThreadMessage) => {
       const abortController = new AbortController();
       let insideYaml = false;
 
@@ -59,7 +59,7 @@ export const useStreamStore = create<StreamStore>()(
             case 'start_yaml':
               if (!insideYaml) {
                 insideYaml = true;
-                get().setPartialYaml('');
+                get().setPartialYaml(get().partialYaml || '');
               }
               break;
             case 'end_yaml':
@@ -84,20 +84,6 @@ export const useStreamStore = create<StreamStore>()(
           });
         }
       } finally {
-        if (!abortController.signal.aborted && get().partialAssistantMessage) {
-          console.log(
-            'Committing final message to ChatStore:',
-            get().partialAssistantMessage?.content,
-          );
-          useChatStore
-            .getState()
-            .updateAssistantMessage(
-              assistantMessage.id,
-              get().partialAssistantMessage?.content || '',
-            );
-        } else {
-          console.log('Stream was aborted or no partial message, not committing to ChatStore.');
-        }
         set(state => {
           state.isStreaming = false;
           state.abortController = null;
