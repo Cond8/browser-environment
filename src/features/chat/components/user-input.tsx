@@ -7,7 +7,9 @@ import { useStreamStore } from '../store/stream-store';
 import { SelectedModel } from './selected-model';
 import { ShortcutsDisplay } from './shortcuts-display';
 export function UserInput() {
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(
+    'Write a simple workflow with a single step to test chat features',
+  );
 
   const addUserMessage = useChatStore(state => state.addUserMessage);
   const isStreaming = useStreamStore(state => state.isStreaming);

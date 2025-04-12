@@ -16,6 +16,7 @@ interface StreamStore {
   addPartialMessage: (message: string) => void;
   clearPartialAssistantMessage: () => void;
   appendToYaml: (chunk: string) => void;
+  setPartialYaml: (yaml: string) => void;
   clearYaml: () => void;
   commitYamlToCodeStore: (messageId: number) => void;
 }
@@ -37,7 +38,7 @@ export const useStreamStore = create<StreamStore>()(
         state.partialYaml = null;
       });
     },
-    
+
     makePartialAssistantMessage: async (assistantMessage: ThreadMessage) => {
       const abortController = new AbortController();
       let insideYaml = false;
@@ -85,28 +86,22 @@ export const useStreamStore = create<StreamStore>()(
         }
 
         for await (const chunk of streamAssistantMessages(response)) {
-          if (abortController.signal.aborted) {
-            console.log('Stream aborted, stopping chunk processing.');
-            break;
-          }
           switch (chunk.type) {
             case 'text':
-              get().addPartialMessage(chunk.content);
-              if (insideYaml) {
-                get().appendToYaml(chunk.content);
-              }
+              get().addPartialMessage(chunk.content); // ✅ always raw model output
+              if (insideYaml) get().appendToYaml(chunk.content); // ✅ side effect
               break;
             case 'start_yaml':
-              set(state => {
-                state.partialYaml = '';
-              });
-              insideYaml = true;
-              console.log('YAML block started');
+              if (!insideYaml) {
+                insideYaml = true;
+                get().setPartialYaml('');
+              }
               break;
             case 'end_yaml':
-              insideYaml = false;
-              get().commitYamlToCodeStore(assistantMessage.id);
-              console.log('YAML block ended');
+              if (insideYaml) {
+                insideYaml = false;
+                get().commitYamlToCodeStore(assistantMessage.id);
+              }
               break;
           }
         }
@@ -138,7 +133,6 @@ export const useStreamStore = create<StreamStore>()(
         } else {
           console.log('Stream was aborted or no partial message, not committing to ChatStore.');
         }
-
         set(state => {
           state.isStreaming = false;
           state.abortController = null;
@@ -158,6 +152,11 @@ export const useStreamStore = create<StreamStore>()(
     clearPartialAssistantMessage: () =>
       set(state => {
         state.partialAssistantMessage = null;
+      }),
+
+    setPartialYaml: yaml =>
+      set(state => {
+        state.partialYaml = yaml;
       }),
 
     appendToYaml: chunk =>

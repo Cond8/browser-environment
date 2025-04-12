@@ -10,15 +10,14 @@ export async function* streamAssistantMessages(
   if (!reader) throw new Error('Response body is null');
 
   const decoder = new TextDecoder();
-  let textBuffer = ''; // Accumulates partial text
-  let insideYaml = false; // Indicates if we're inside a YAML code block
+
+  let lookbehindBuffer = '';
+  let insideYaml = false;
 
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
 
-    // Decode the chunk and split into lines.
-    // (Each line is expected to be a complete JSON message.)
     const chunk = decoder.decode(value, { stream: true });
     const lines = chunk.split('\n').filter(line => line.trim());
 
@@ -28,48 +27,30 @@ export async function* streamAssistantMessages(
         const content = parsed.message?.content;
         if (!content) continue;
 
-        // Append content to our persistent buffer.
-        textBuffer += content;
+        lookbehindBuffer += content;
+        const normalizedBuffer = lookbehindBuffer.toLowerCase();
 
-        // Process the buffer for code fence markers.
-        let pos = 0;
-        while (true) {
-          if (!insideYaml) {
-            // Look for a start marker "```yaml"
-            const startIndex = textBuffer.indexOf('```yaml', pos);
-            if (startIndex === -1) break; // If no marker, wait for more data.
-            // Yield any text that comes before the start marker.
-            if (startIndex > pos) {
-              yield { type: 'text', content: textBuffer.substring(pos, startIndex) };
-            }
-            // Emit the start marker event.
-            yield { type: 'start_yaml' };
-            pos = startIndex + '```yaml'.length;
-            insideYaml = true;
-          } else {
-            // Inside a YAML block. Look for the closing marker "```"
-            const endIndex = textBuffer.indexOf('```', pos);
-            if (endIndex === -1) break; // Wait for the marker to complete.
-            // Yield any YAML content before the closing marker.
-            if (endIndex > pos) {
-              yield { type: 'text', content: textBuffer.substring(pos, endIndex) };
-            }
-            // Emit the end marker event.
-            yield { type: 'end_yaml' };
-            pos = endIndex + 3; // 3 characters for "```"
-            insideYaml = false;
-          }
+        if (insideYaml && normalizedBuffer.includes('`')) {
+          lookbehindBuffer = '';
+          insideYaml = false;
+          yield { type: 'end_yaml' };
         }
-        // Keep any unprocessed part of the buffer.
-        textBuffer = textBuffer.substring(pos);
+
+        yield { type: 'text', content };
+
+        if (!insideYaml && normalizedBuffer.includes('```yaml')) {
+          lookbehindBuffer = '';
+          insideYaml = true;
+          yield { type: 'start_yaml' };
+        }
+
+        // 🧼 Trim buffer to avoid unbounded growth
+        if (lookbehindBuffer.length > 1000) {
+          lookbehindBuffer = lookbehindBuffer.slice(-500);
+        }
       } catch (err) {
         console.error('Error parsing chunk:', err);
       }
     }
-  }
-
-  // After reading is complete, yield any remaining text.
-  if (textBuffer) {
-    yield { type: 'text', content: textBuffer };
   }
 }
