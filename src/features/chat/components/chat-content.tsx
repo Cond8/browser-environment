@@ -5,15 +5,12 @@ import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 import { useChatStore } from '../store/chat-store';
 import { useStreamStore } from '../store/stream-store';
-import { YamlViewer } from './yaml-viewer';
+import { YamlParser } from './yaml-parser';
 
 export const ChatContent = () => {
-  const { threads, currentThreadId } = useChatStore();
-  const currentThread = threads[currentThreadId!];
+  const currentThread = useChatStore().getCurrentThread();
   const isStreaming = useStreamStore(state => state.isStreaming);
   const partialMessage = useStreamStore(state => state.partialMessages[state.currentMessageId!]);
-  const partialYaml = useStreamStore(state => state.partialYamls[state.currentMessageId!]);
-  const insideYaml = useStreamStore(state => state.insideYaml);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -25,7 +22,7 @@ export const ChatContent = () => {
       scrollToBottom();
     }, 100);
     return () => clearTimeout(timer);
-  }, [currentThread?.messages.length, partialMessage?.content, partialYaml, isStreaming]);
+  }, [currentThread?.messages.length, partialMessage?.content, isStreaming]);
 
   if (!currentThread) {
     return <EmptyChatState />;
@@ -39,23 +36,21 @@ export const ChatContent = () => {
             key={message.id}
             className={cn('w-full', message.role === 'user' ? 'bg-card' : 'bg-background')}
           >
-            <p className="whitespace-pre-wrap p-4">{message.content}</p>
+            <YamlParser content={message.content} />
           </div>
         ))}
 
         {isStreaming && (
           <div className="bg-background p-4">
-            {insideYaml && partialYaml ? (
-              <YamlViewer content={partialYaml} />
+            {partialMessage ? (
+              <YamlParser content={partialMessage.content} />
             ) : (
-              partialMessage && <p className="whitespace-pre-wrap p-4">{partialMessage.content}</p>
+              <div className="flex space-x-2 mt-2">
+                <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" />
+                <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:0.2s]" />
+                <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:0.4s]" />
+              </div>
             )}
-
-            <div className="flex space-x-2 mt-2">
-              <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" />
-              <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:0.2s]" />
-              <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:0.4s]" />
-            </div>
           </div>
         )}
 

@@ -4,7 +4,7 @@ import Editor from '@monaco-editor/react';
 import { useEffect, useRef } from 'react';
 
 export const YamlEditor = () => {
-  const yamlContent = useStreamStore(state => state.partialYaml);
+  const yamlContent = useStreamStore(state => state.partialYamls[state.currentMessageId!]);
 
   const editorRef = useRef<any>(null);
 

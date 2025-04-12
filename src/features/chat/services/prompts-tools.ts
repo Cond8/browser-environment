@@ -1,76 +1,66 @@
 // src/features/chat/services/prompts-tools.ts
-export const TOOL_PROMPT_INTERFACE_PHASE = (
-  userMessage: string,
-) => `You are an AI assistant that defines structured YAML workflows in a recursive multi-phase process.
+export const INTERFACE_PROMPT = (userMessage: string) =>
+  `
+You are an assistant that defines structured YAML workflows.
 
-You are currently in the **Interface Phase**, where your task is to define the initial shape of the workflow.
+Your current task is to define the **interface** section only, based on the following task:
 
-This phase may repeat multiple times as part of an iterative refinement process.
+"${userMessage.trim()}"
 
-## Task
-
-${userMessage.trim()}
-
-## Rules:
-
-- ONLY generate the **interface** section of the YAML workflow.
-- DO NOT generate steps.
-- DO NOT include comments, Markdown, or explanations.
-- Assume all methods will exist and function.
-- Prefer programmatic classes unless LLM-based reasoning is required.
-- The interface defines the goal, scope, and structure of the workflow. It will be passed to a second phase that generates the steps.
-
-## Interface Format
-
+### Interface Format:
 interface:
   name: CamelCaseName
-  goal: Short description of the workflow’s purpose
+  goal: Short description of the workflow's purpose
   input:
     - variable (brief comment)
   output:
     - variable (brief comment)
-  class: one of the domain classes below
-  method: camelCaseMethod (optional inline comment)
+  class: one of the valid domain classes
+  method: camelCaseMethod (optional short comment)
 
-## Available Classes:
+### Constraints:
+- Output only valid YAML (no comments, no Markdown, no prose).
+- Only generate the "interface" section. Do not generate steps.
+- Prefer **programmatic** classes unless the task requires inference or language understanding.
+- Keep inline comments short (max 10 words).
+- Use clear, unambiguous variable names.
 
-### programmatic
+### Available Classes:
+#### programmatic
 - Simple: data, validate, io, storage, logic
 - Complex: parse, control, auth, notify, schedule, optimize, calculate, network, encrypt
 
-### llm_based
+#### llm_based
 - Simple: extract, format, understand
 - Complex: process, generate, integrate, predict, transform
+`.trim();
 
-ONLY generate the interface block. Do not generate steps.
-`;
+export const STEPS_PROMPT = (interfaceYaml: string) =>
+  `
+You are an assistant that defines structured YAML workflows.
 
-export const TOOL_PROMPT_STEPS_PHASE =
-  () => `You are an AI assistant defining structured YAML workflows in a recursive multi-phase process.
+You are given the following workflow interface:
 
-You are currently in the **Steps Phase**, where your task is to generate the workflow steps based on a previously defined interface.
+${interfaceYaml.trim()}
 
-This phase may repeat as the interface evolves.
+Your task is to generate the **steps** section of the YAML workflow.
 
-## Step Format
+### Step Format:
+steps:
+  - name: CamelCaseName
+    goal: One clear purpose
+    input:
+      - variable (brief comment)
+    output:
+      - variable (brief comment)
+    class: valid domain class
+    method: camelCaseMethod (optional short comment)
 
-Each step must include:
-
-- **name**: Short CamelCase identifier (e.g., \`ValidateInput\`)
-- **goal**: One clear and specific purpose
-- **input**: List of required inputs
-- **output**: List of expected outputs
-- **class**: Domain category (from the provided list)
-- **method**: camelCase identifier (optional inline comment)
-
-## Constraints
-
-- Define between 8 and 12 steps total.
-- Steps must follow a logical, sequential progression.
-- Each step must represent a single, atomic action.
-- The final step must produce all outputs declared in the interface.
-- Prefer **programmatic** classes for deterministic logic.
-- Use **llm_based** classes only when subjective judgment or inference is required.
-- Do NOT repeat or include the interface section.
-- Do NOT include any Markdown, comments, or explanation — output valid YAML only.
-`;
+### Constraints:
+- Generate 8 to 12 steps maximum.
+- Do NOT include the interface section again.
+- Each step must be atomic and sequentially logical.
+- Final step must produce all interface outputs.
+- Prefer programmatic classes unless subjective reasoning is required.
+- Use clean, readable YAML only. No Markdown or commentary.
+`.trim();

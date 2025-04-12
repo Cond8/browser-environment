@@ -1,12 +1,13 @@
+// src/features/chat/ollama-api/workflow-chain.ts
 import { SYSTEM_PROMPT } from '../services/prompts-system';
-import { TOOL_PROMPT_INTERFACE_PHASE, TOOL_PROMPT_STEPS_PHASE } from '../services/prompts-tools';
+import { INTERFACE_PROMPT, STEPS_PROMPT } from '../services/prompts-tools';
 import { useAssistantConfigStore } from '../store/assistant-config-store';
 import { useChatStore } from '../store/chat-store';
 
 export type StreamYield =
-  | { type: 'text'; content: string, id: number }
-  | { type: 'start_yaml', id: number }
-  | { type: 'end_yaml', id: number };
+  | { type: 'text'; content: string; id: number }
+  | { type: 'start_yaml'; id: number }
+  | { type: 'end_yaml'; id: number };
 
 export async function* streamWorkflowChain(
   abortController: AbortController,
@@ -27,7 +28,7 @@ export async function* streamWorkflowChain(
     model: selectedModel,
     messages: [
       { role: 'system', content: SYSTEM_PROMPT() },
-      { role: 'user', content: TOOL_PROMPT_INTERFACE_PHASE(messages[0].content) },
+      { role: 'user', content: INTERFACE_PROMPT(messages[0].content) },
     ],
     options: parameters,
     stream: true,
@@ -46,9 +47,7 @@ export async function* streamWorkflowChain(
     model: selectedModel,
     messages: [
       { role: 'system', content: SYSTEM_PROMPT() },
-      { role: 'user', content: messages[0].content },
-      { role: 'assistant', content: interfaceResponse },
-      { role: 'user', content: TOOL_PROMPT_STEPS_PHASE() },
+      { role: 'user', content: STEPS_PROMPT(interfaceResponse) },
     ],
     options: parameters,
     stream: true,
@@ -134,4 +133,4 @@ function createStreamResponse(url: string, abortController: AbortController) {
     }
     return buffer;
   };
-};
+}

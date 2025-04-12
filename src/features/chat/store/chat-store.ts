@@ -20,6 +20,7 @@ export interface Thread {
 export interface ChatStore {
   currentThreadId: Thread['id'] | null;
   threads: Record<Thread['id'], Thread>;
+  getCurrentThread: () => Thread | null;
   setCurrentThread: (threadId: Thread['id'] | null) => void;
   resetThread: () => void;
   addUserMessage: (message: string) => void;
@@ -36,7 +37,7 @@ export interface ChatStore {
 
 export const useChatStore = create<ChatStore>()(
   persist(
-    immer(set => ({
+    immer((set, get) => ({
       currentThreadId: null as Thread['id'] | null,
       threads: {} as Record<Thread['id'], Thread>,
 
@@ -44,6 +45,10 @@ export const useChatStore = create<ChatStore>()(
         set(state => {
           state.currentThreadId = threadId;
         });
+      },
+
+      getCurrentThread: () => {
+        return get().threads[get().currentThreadId!];
       },
 
       resetThread: () => {

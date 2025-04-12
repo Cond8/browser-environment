@@ -19,7 +19,7 @@ interface StreamStore {
   setError: (messageId: number, error: string | null) => void;
   clearErrors: () => void;
 
-  stopStreaming: (messageId: number) => void;
+  stopStreaming: () => void;
   startChain: () => void;
 
   addPartialMessage: (messageId: number, message: string) => void;
@@ -57,15 +57,16 @@ export const useStreamStore = create<StreamStore>()(
         state.errors = {};
       }),
 
-    stopStreaming: (messageId: number) => {
+    stopStreaming: () => {
       set(state => {
         if (state.abortController) {
           state.abortController.abort();
           state.abortController = null;
         }
         state.isStreaming = false;
-        delete state.partialYamls[messageId];
         state.insideYaml = false;
+        state.partialYamls = {};
+        state.partialMessages = {};
       });
     },
 
