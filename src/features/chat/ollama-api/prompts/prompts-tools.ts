@@ -73,7 +73,7 @@ Your task is to generate the **steps** section of the YAML workflow.
 
 ### Constraints:
 - Output pure YAML only within code fences (\`\`\`yaml)
-- Generate 2 to 4 steps maximum
+- Generate 4 to 6 steps maximum
 - Do NOT include the interface section again
 - Each step must be atomic and sequentially logical
 - Final step must produce all interface outputs
