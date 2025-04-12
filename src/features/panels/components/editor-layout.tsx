@@ -1,7 +1,7 @@
 // src/features/panels/components/editor-layout.tsx
 import { Card } from '@/components/ui/card';
 import { AssistantPanel } from '@/features/chat';
-import { YamlEditor } from '@/features/chat/components/yaml-editor';
+import { JsonEditor } from '@/features/chat/components/json-editor';
 import React from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
@@ -11,7 +11,7 @@ export const EditorLayout: React.FC = () => {
       {/* Left Panel - File Explorer */}
       <Panel defaultSize={50} minSize={30}>
         <Card className="h-full rounded-none border-r py-0 bg-background">
-          <YamlEditor />
+          <JsonEditor />
         </Card>
       </Panel>
 

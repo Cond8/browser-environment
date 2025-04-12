@@ -1,10 +1,9 @@
-// src/features/chat/components/yaml-viewer.tsx
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertCircle } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
-export const YamlViewer = ({ content, error }: { content: string; error?: string | null }) => {
+export const JsonViewer = ({ content, error }: { content: string; error?: string | null }) => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {

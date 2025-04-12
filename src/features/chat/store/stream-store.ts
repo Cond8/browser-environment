@@ -3,15 +3,15 @@ import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { streamWorkflowChain } from '../ollama-api/workflow-chain';
 import { ThreadMessage } from './chat-store';
-import { useCodeStore } from './yaml-store';
+import { useCodeStore } from './json-store';
 
 interface StreamStore {
   currentMessageId: number | null;
   isStreaming: boolean;
-  insideYaml: boolean;
+  insideJson: boolean;
   abortController: AbortController | null;
   partialMessages: Record<number, ThreadMessage>;
-  partialYamls: Record<number, string>;
+  partialJsons: Record<number, string>;
   errors: Record<number, string | null>;
 
   setCurrentMessageId: (messageId: number | null) => void;
@@ -25,21 +25,21 @@ interface StreamStore {
   addPartialMessage: (messageId: number, message: string) => void;
   clearPartialAssistantMessage: (messageId: number) => void;
 
-  appendToYaml: (messageId: number, chunk: string) => void;
-  setPartialYaml: (messageId: number, yaml: string) => void;
-  clearYaml: (messageId: number) => void;
+  appendToJson: (messageId: number, chunk: string) => void;
+  setPartialJson: (messageId: number, json: string) => void;
+  clearJson: (messageId: number) => void;
 
-  commitYamlToCodeStore: (messageId: number) => void;
+  commitJsonToCodeStore: (messageId: number) => void;
 }
 
 export const useStreamStore = create<StreamStore>()(
   immer((set, get) => ({
     currentMessageId: null,
     isStreaming: false,
-    insideYaml: false,
+    insideJson: false,
     abortController: null,
     partialMessages: {},
-    partialYamls: {},
+    partialJsons: {},
     errors: {},
 
     setCurrentMessageId: (messageId: number | null) =>
@@ -64,8 +64,8 @@ export const useStreamStore = create<StreamStore>()(
           state.abortController = null;
         }
         state.isStreaming = false;
-        state.insideYaml = false;
-        state.partialYamls = {};
+        state.insideJson = false;
+        state.partialJsons = {};
         state.partialMessages = {};
       });
     },
@@ -77,8 +77,8 @@ export const useStreamStore = create<StreamStore>()(
         state.currentMessageId = null;
         state.isStreaming = true;
         state.partialMessages = {};
-        state.partialYamls = {};
-        state.insideYaml = false;
+        state.partialJsons = {};
+        state.insideJson = false;
         state.abortController = abortController;
         state.errors = {};
       });
@@ -89,19 +89,19 @@ export const useStreamStore = create<StreamStore>()(
           switch (chunk.type) {
             case 'text':
               get().addPartialMessage(chunk.id, chunk.content);
-              if (get().insideYaml) get().appendToYaml(chunk.id, chunk.content);
+              if (get().insideJson) get().appendToJson(chunk.id, chunk.content);
               break;
-            case 'start_yaml':
+            case 'start_json':
               set(state => {
-                state.insideYaml = true;
-                state.partialYamls[chunk.id] ||= '';
+                state.insideJson = true;
+                state.partialJsons[chunk.id] ||= '';
               });
               break;
-            case 'end_yaml':
+            case 'end_json':
               set(state => {
-                state.insideYaml = false;
+                state.insideJson = false;
               });
-              get().commitYamlToCodeStore(chunk.id);
+              get().commitJsonToCodeStore(chunk.id);
               break;
           }
         }
@@ -117,8 +117,8 @@ export const useStreamStore = create<StreamStore>()(
           state.currentMessageId = null;
           state.isStreaming = false;
           state.partialMessages = {};
-          state.partialYamls = {};
-          state.insideYaml = false;
+          state.partialJsons = {};
+          state.insideJson = false;
           state.abortController = null;
         });
       }
@@ -136,30 +136,30 @@ export const useStreamStore = create<StreamStore>()(
         delete state.partialMessages[messageId];
       }),
 
-    setPartialYaml: (messageId: number, yaml: string) =>
+    setPartialJson: (messageId: number, json: string) =>
       set(state => {
-        state.partialYamls[messageId] = yaml;
+        state.partialJsons[messageId] = json;
       }),
 
-    appendToYaml: (messageId: number, chunk: string) =>
+    appendToJson: (messageId: number, chunk: string) =>
       set(state => {
-        if (state.partialYamls[messageId] !== undefined) {
-          state.partialYamls[messageId] += chunk;
+        if (state.partialJsons[messageId] !== undefined) {
+          state.partialJsons[messageId] += chunk;
         }
       }),
 
-    clearYaml: (messageId: number) =>
+    clearJson: (messageId: number) =>
       set(state => {
-        delete state.partialYamls[messageId];
+        delete state.partialJsons[messageId];
       }),
 
-    commitYamlToCodeStore: (messageId: number) => {
-      const yamlToCommit = get().partialYamls[messageId];
-      if (yamlToCommit !== undefined) {
-        console.log('Committing YAML to CodeStore for message:', messageId, yamlToCommit);
-        useCodeStore.getState().saveYaml(messageId, yamlToCommit);
+    commitJsonToCodeStore: (messageId: number) => {
+      const jsonToCommit = get().partialJsons[messageId];
+      if (jsonToCommit !== undefined) {
+        console.log('Committing JSON to CodeStore for message:', messageId, jsonToCommit);
+        useCodeStore.getState().saveJson(messageId, jsonToCommit);
       } else {
-        console.log('No YAML content to commit for message:', messageId);
+        console.log('No JSON content to commit for message:', messageId);
       }
     },
   })),

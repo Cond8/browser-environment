@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 import { useChatStore } from '../store/chat-store';
 import { useStreamStore } from '../store/stream-store';
-import { YamlParser } from './yaml-parser';
+import { JsonParser } from './json-parser';
 
 export const ChatContent = () => {
   const currentThread = useChatStore().getCurrentThread();
@@ -36,14 +36,14 @@ export const ChatContent = () => {
             key={message.id}
             className={cn('w-full', message.role === 'user' ? 'bg-card' : 'bg-background')}
           >
-            <YamlParser content={message.content} />
+            <JsonParser content={message.content} />
           </div>
         ))}
 
         {isStreaming && (
           <div className="bg-background p-4">
             {partialMessage ? (
-              <YamlParser content={partialMessage.content} />
+              <JsonParser content={partialMessage.content} />
             ) : (
               <div className="flex space-x-2 mt-2">
                 <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" />

@@ -6,8 +6,8 @@ import { INTERFACE_PROMPT, STEPS_PROMPT } from './prompts/prompts-tools';
 
 export type StreamYield =
   | { type: 'text'; content: string; id: number }
-  | { type: 'start_yaml'; id: number }
-  | { type: 'end_yaml'; id: number };
+  | { type: 'start_json'; id: number }
+  | { type: 'end_json'; id: number };
 
 export async function* streamWorkflowChain(
   abortController: AbortController,
@@ -83,7 +83,7 @@ function createStreamResponse(url: string, abortController: AbortController) {
     const decoder = new TextDecoder();
     let buffer = '';
     let lookbehindBuffer = '';
-    let insideYaml = false;
+    let insideJson = false;
 
     try {
       while (true) {
@@ -103,18 +103,18 @@ function createStreamResponse(url: string, abortController: AbortController) {
             lookbehindBuffer += content;
             const normalized = lookbehindBuffer.toLowerCase();
 
-            if (insideYaml && normalized.includes('`')) {
+            if (insideJson && normalized.includes('`')) {
               lookbehindBuffer = '';
-              insideYaml = false;
-              yield { type: 'end_yaml', id: body.id };
+              insideJson = false;
+              yield { type: 'end_json', id: body.id };
             }
 
             yield { type: 'text', content, id: body.id };
 
-            if (!insideYaml && normalized.includes('```yaml')) {
+            if (!insideJson && normalized.includes('```json')) {
               lookbehindBuffer = '';
-              insideYaml = true;
-              yield { type: 'start_yaml', id: body.id };
+              insideJson = true;
+              yield { type: 'start_json', id: body.id };
             }
 
             if (lookbehindBuffer.length > 1000) {

@@ -1,4 +1,3 @@
-// src/features/chat/components/interface-details.tsx
 import { cn } from '@/lib/utils';
 
 type Interface = {
@@ -126,71 +125,69 @@ function InterfaceCard({
   return (
     <div
       className={cn(
-        'space-y-4 p-4 rounded-2xl shadow-sm bg-card text-card-foreground',
-        isStep
-          ? 'border border-muted-foreground/10 bg-muted/10'
-          : 'border-2 border-primary/30 bg-card shadow-md',
+        'group space-y-4 p-6 rounded-2xl transition-all duration-300',
+        'bg-gradient-to-br from-card to-card/80',
+        'shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)]',
+        'hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.4)]',
+        'border-2 backdrop-blur-sm',
+        isStep ? 'border-muted-foreground/10' : 'border-primary/20',
       )}
     >
-      <div className="space-y-1">
-        <p className={cn('text-sm', isStep ? 'text-muted-foreground' : 'text-primary')}>
+      <div className="space-y-2">
+        <p className="text-sm font-medium tracking-wide text-primary">
           {isStep ? 'Step' : 'Interface'}
         </p>
-        <h2 className={cn('font-semibold', isStep ? 'text-xl' : 'text-2xl')}>
+        <h2 className="text-2xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80">
           {addSpacesToTitle(data.name)}
         </h2>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <p
-            className={cn('text-sm font-medium', isStep ? 'text-muted-foreground' : 'text-primary')}
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <p className="text-sm font-medium text-primary">Class:</p>
+          <span className="text-lg font-semibold">{addSpacesToTitle(data.class)}</span>
+          <span
+            className={cn(
+              'px-3 py-1 rounded-full text-xs font-medium tracking-wide',
+              'transition-all duration-300',
+              colorClasses,
+              'hover:scale-105 hover:shadow-sm',
+            )}
           >
-            Class:
-          </p>
-          <span className={cn('font-semibold', isStep ? 'text-base' : 'text-lg')}>
-            {addSpacesToTitle(data.class)}
-          </span>
-          <span className={cn('px-2 py-1 rounded-md text-xs font-medium', colorClasses)}>
             {classInfo.category} - {classInfo.type}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <p
-            className={cn('text-sm font-medium', isStep ? 'text-muted-foreground' : 'text-primary')}
-          >
-            Method:
-          </p>
-          <span className={cn('font-semibold', isStep ? 'text-base' : 'text-lg')}>
+        <div className="flex items-center gap-3">
+          <p className="text-sm font-medium text-primary">Method:</p>
+          <span className="text-lg font-semibold">
             {formatSnakeCase(parseWithComments(data.method).value)}
             {parseWithComments(data.method).comment && (
-              <span className="text-muted-foreground ml-1">
+              <span className="text-muted-foreground ml-2">
                 - {parseWithComments(data.method).comment}
               </span>
             )}
           </span>
         </div>
-        <p className={cn('text-sm', isStep ? 'text-muted-foreground' : 'text-foreground')}>
-          {data.goal}
-        </p>
+        <p className="text-lg leading-relaxed font-light text-foreground">{data.goal}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 text-sm">
-        <div>
-          <h3 className={cn('font-medium', isStep ? 'text-muted-foreground' : 'text-primary')}>
-            Inputs
-          </h3>
-          <ul className="list-disc list-inside space-y-1">
+      <div className="grid grid-cols-2 gap-6 text-sm">
+        <div className="space-y-2">
+          <h3 className="font-medium tracking-wide text-primary">Inputs</h3>
+          <ul className="list-none space-y-2">
             {Array.isArray(data.inputs) &&
               data.inputs.map((input: string | { [key: string]: string }, idx: number) => {
                 if (typeof input === 'string') {
                   const parsed = parseWithComments(input);
                   return (
-                    <li key={idx}>
-                      {parsed.value}
-                      {parsed.comment && (
-                        <span className="text-muted-foreground"> - {parsed.comment}</span>
-                      )}
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary/50" />
+                      <div>
+                        <span className="font-medium">{parsed.value}</span>
+                        {parsed.comment && (
+                          <span className="text-muted-foreground ml-2">- {parsed.comment}</span>
+                        )}
+                      </div>
                     </li>
                   );
                 }
@@ -198,35 +195,39 @@ function InterfaceCard({
                 const parsedName = parseWithComments(name);
                 const parsedDesc = parseWithComments(desc);
                 return (
-                  <li key={idx}>
-                    <strong>{formatSnakeCase(parsedName.value)}</strong>
-                    {parsedName.comment && (
-                      <span className="text-muted-foreground"> - {parsedName.comment}</span>
-                    )}
-                    : {parsedDesc.value}
-                    {parsedDesc.comment && (
-                      <span className="text-muted-foreground"> - {parsedDesc.comment}</span>
-                    )}
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary/50" />
+                    <div>
+                      <strong className="font-medium">{formatSnakeCase(parsedName.value)}</strong>
+                      {parsedName.comment && (
+                        <span className="text-muted-foreground ml-2">- {parsedName.comment}</span>
+                      )}
+                      <span className="block text-muted-foreground">
+                        {parsedDesc.value}
+                        {parsedDesc.comment && <span className="ml-2">- {parsedDesc.comment}</span>}
+                      </span>
+                    </div>
                   </li>
                 );
               })}
           </ul>
         </div>
-        <div>
-          <h3 className={cn('font-medium', isStep ? 'text-muted-foreground' : 'text-primary')}>
-            Outputs
-          </h3>
-          <ul className="list-disc list-inside space-y-1">
+        <div className="space-y-2">
+          <h3 className="font-medium tracking-wide text-primary">Outputs</h3>
+          <ul className="list-none space-y-2">
             {Array.isArray(data.outputs) &&
               data.outputs.map((output: string | { [key: string]: string }, idx: number) => {
                 if (typeof output === 'string') {
                   const parsed = parseWithComments(output);
                   return (
-                    <li key={idx}>
-                      {parsed.value}
-                      {parsed.comment && (
-                        <span className="text-muted-foreground"> - {parsed.comment}</span>
-                      )}
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary/50" />
+                      <div>
+                        <span className="font-medium">{parsed.value}</span>
+                        {parsed.comment && (
+                          <span className="text-muted-foreground ml-2">- {parsed.comment}</span>
+                        )}
+                      </div>
                     </li>
                   );
                 }
@@ -234,15 +235,18 @@ function InterfaceCard({
                 const parsedName = parseWithComments(name);
                 const parsedDesc = parseWithComments(desc);
                 return (
-                  <li key={idx}>
-                    <strong>{formatSnakeCase(parsedName.value)}</strong>
-                    {parsedName.comment && (
-                      <span className="text-muted-foreground"> - {parsedName.comment}</span>
-                    )}
-                    : {parsedDesc.value}
-                    {parsedDesc.comment && (
-                      <span className="text-muted-foreground"> - {parsedDesc.comment}</span>
-                    )}
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary/50" />
+                    <div>
+                      <strong className="font-medium">{formatSnakeCase(parsedName.value)}</strong>
+                      {parsedName.comment && (
+                        <span className="text-muted-foreground ml-2">- {parsedName.comment}</span>
+                      )}
+                      <span className="block text-muted-foreground">
+                        {parsedDesc.value}
+                        {parsedDesc.comment && <span className="ml-2">- {parsedDesc.comment}</span>}
+                      </span>
+                    </div>
                   </li>
                 );
               })}
@@ -252,11 +256,13 @@ function InterfaceCard({
 
       {/* Render Steps if provided and this is not already a step card */}
       {!isStep && steps && steps.length > 0 && (
-        <div className="space-y-4 pt-4 mt-4 border-t border-muted-foreground/10">
-          <h3 className="text-lg font-semibold text-primary">Steps</h3>
-          {steps.map((step, index) => (
-            <InterfaceCard key={index} interface={step} isStep={true} />
-          ))}
+        <div className="space-y-4 pt-6 mt-6 border-t border-muted-foreground/10">
+          <h3 className="text-lg font-semibold tracking-wide text-primary">Steps</h3>
+          <div className="space-y-4">
+            {steps.map((step, index) => (
+              <InterfaceCard key={index} interface={step} isStep={true} />
+            ))}
+          </div>
         </div>
       )}
     </div>
