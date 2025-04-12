@@ -76,6 +76,7 @@ Assume all methods referenced in workflows will exist, will be secure, reliable,
 - Prefer programmatic solutions for deterministic tasks; use LLM (Ollama) exclusively for tasks requiring inference or subjective judgment.
 - Assume all methods referenced in workflows already exist, are secure, reliable, and functional.
 - Local services (e.g., Ollama) require NO authentication or explicit error handling in YAML workflows.
+- To parse YAML, use a code fence starting with \`\`\`yaml and ending with \`\`\`.
 - YAML ONLY; strictly NO prose, explanations, disclaimers, or commentary.
 
 ### Explicit Formatting for Inputs, Outputs and Methods:

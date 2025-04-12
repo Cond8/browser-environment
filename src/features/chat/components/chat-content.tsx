@@ -5,27 +5,27 @@ import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 import { useChatStore } from '../store/chat-store';
 import { useStreamStore } from '../store/stream-store';
+import { YamlViewer } from './yaml-viewer';
 
 export const ChatContent = () => {
   const { threads, currentThreadId } = useChatStore();
   const currentThread = threads[currentThreadId!];
   const isStreaming = useStreamStore(state => state.isStreaming);
   const partialMessage = useStreamStore(state => state.partialAssistantMessage);
+  const partialYaml = useStreamStore(state => state.partialYaml);
+  const insideYaml = useStreamStore(state => state.insideYaml);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   };
 
-  // Scroll to bottom when new messages are added or during streaming
   useEffect(() => {
-    // Add a slight delay to allow the DOM to update, especially during streaming
     const timer = setTimeout(() => {
       scrollToBottom();
-    }, 100); // Adjust delay as needed
-
-    return () => clearTimeout(timer); // Cleanup timer on unmount or dependency change
-  }, [currentThread?.messages.length, partialMessage?.content, isStreaming]);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [currentThread?.messages.length, partialMessage?.content, partialYaml, isStreaming]);
 
   if (!currentThread) {
     return <EmptyChatState />;
@@ -42,17 +42,23 @@ export const ChatContent = () => {
             <p className="whitespace-pre-wrap p-4">{message.content}</p>
           </div>
         ))}
-        {isStreaming && partialMessage && (
+
+        {isStreaming && (
           <div className="bg-background p-4">
-            <p className="whitespace-pre-wrap p-4">{partialMessage.content}</p>
-            <div className="flex space-x-2">
+            {insideYaml && partialYaml ? (
+              <YamlViewer content={partialYaml} />
+            ) : (
+              partialMessage && <p className="whitespace-pre-wrap p-4">{partialMessage.content}</p>
+            )}
+
+            <div className="flex space-x-2 mt-2">
               <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" />
               <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:0.2s]" />
               <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:0.4s]" />
             </div>
           </div>
         )}
-        {/* Element to scroll to */}
+
         <div ref={messagesEndRef} />
       </div>
     </ScrollArea>

@@ -33,44 +33,51 @@ function createStreamResponse(url: string, abortController: AbortController) {
     let lookbehindBuffer = '';
     let insideYaml = false;
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n').filter(line => line.trim());
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n').filter(line => line.trim());
 
-      for (const line of lines) {
-        try {
-          const parsed = JSON.parse(line);
-          const content = parsed.message?.content;
-          if (!content) continue;
+        for (const line of lines) {
+          try {
+            const parsed = JSON.parse(line);
+            const content = parsed.message?.content;
+            if (!content) continue;
 
-          buffer += content;
-          lookbehindBuffer += content;
-          const normalized = lookbehindBuffer.toLowerCase();
+            buffer += content;
+            lookbehindBuffer += content;
+            const normalized = lookbehindBuffer.toLowerCase();
 
-          if (insideYaml && normalized.includes('`')) {
-            lookbehindBuffer = '';
-            insideYaml = false;
-            yield { type: 'end_yaml' };
+            if (insideYaml && normalized.includes('`')) {
+              lookbehindBuffer = '';
+              insideYaml = false;
+              yield { type: 'end_yaml' };
+            }
+
+            yield { type: 'text', content };
+
+            if (!insideYaml && normalized.includes('```yaml')) {
+              lookbehindBuffer = '';
+              insideYaml = true;
+              yield { type: 'start_yaml' };
+            }
+
+            if (lookbehindBuffer.length > 1000) {
+              lookbehindBuffer = lookbehindBuffer.slice(-500);
+            }
+          } catch (err) {
+            console.error('Error parsing chunk:', err);
           }
-
-          yield { type: 'text', content };
-
-          if (!insideYaml && normalized.includes('```yaml')) {
-            lookbehindBuffer = '';
-            insideYaml = true;
-            yield { type: 'start_yaml' };
-          }
-
-          if (lookbehindBuffer.length > 1000) {
-            lookbehindBuffer = lookbehindBuffer.slice(-500);
-          }
-        } catch (err) {
-          console.error('Error parsing chunk:', err);
         }
       }
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        return buffer;
+      }
+      throw error;
     }
     return buffer;
   };
@@ -100,11 +107,12 @@ export async function* streamWorkflowChain(
     stream: true,
   });
 
+  useChatStore.getState().updateAssistantMessage(assistantMessage.id, interfaceResponse);
+
   if (abortController.signal.aborted) {
     return;
   }
 
-  useChatStore.getState().updateAssistantMessage(assistantMessage.id, interfaceResponse);
   const stepsAssistantMessage = useChatStore.getState().addEmptyAssistantMessage();
 
   // Phase 2: Steps Generation
@@ -120,9 +128,9 @@ export async function* streamWorkflowChain(
     stream: true,
   });
 
+  useChatStore.getState().updateAssistantMessage(stepsAssistantMessage.id, stepsResponse);
+
   if (abortController.signal.aborted) {
     return;
   }
-
-  useChatStore.getState().updateAssistantMessage(stepsAssistantMessage.id, stepsResponse);
 }

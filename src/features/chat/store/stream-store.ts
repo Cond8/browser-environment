@@ -10,6 +10,7 @@ interface StreamStore {
   partialAssistantMessage: ThreadMessage | null;
   abortController: AbortController | null;
   partialYaml: string | null;
+  insideYaml: boolean;
   stopStreaming: () => void;
   startChain: (assistantMessage: ThreadMessage) => void;
   addPartialMessage: (message: string) => void;
@@ -26,6 +27,7 @@ export const useStreamStore = create<StreamStore>()(
     partialAssistantMessage: null,
     partialYaml: null,
     abortController: null,
+    insideYaml: false,
 
     stopStreaming: () => {
       set(state => {
@@ -35,18 +37,19 @@ export const useStreamStore = create<StreamStore>()(
         }
         state.isStreaming = false;
         state.partialYaml = null;
+        state.insideYaml = false;
       });
     },
 
     startChain: async (assistantMessage: ThreadMessage) => {
       const abortController = new AbortController();
-      let insideYaml = false;
 
       set(state => {
         state.partialAssistantMessage = { ...assistantMessage, content: '' };
         state.partialYaml = null;
         state.isStreaming = true;
         state.abortController = abortController;
+        state.insideYaml = false;
       });
 
       try {
@@ -54,17 +57,21 @@ export const useStreamStore = create<StreamStore>()(
           switch (chunk.type) {
             case 'text':
               get().addPartialMessage(chunk.content); // ✅ always raw model output
-              if (insideYaml) get().appendToYaml(chunk.content); // ✅ side effect
+              if (get().insideYaml) get().appendToYaml(chunk.content); // ✅ side effect
               break;
             case 'start_yaml':
-              if (!insideYaml) {
-                insideYaml = true;
-                get().setPartialYaml(get().partialYaml || '');
+              if (!get().insideYaml) {
+                set(state => {
+                  state.insideYaml = true;
+                  state.partialYaml = state.partialYaml || '';
+                });
               }
               break;
             case 'end_yaml':
-              if (insideYaml) {
-                insideYaml = false;
+              if (get().insideYaml) {
+                set(state => {
+                  state.insideYaml = false;
+                });
                 get().commitYamlToCodeStore(assistantMessage.id);
               }
               break;
@@ -89,6 +96,7 @@ export const useStreamStore = create<StreamStore>()(
           state.abortController = null;
           state.partialAssistantMessage = null;
           state.partialYaml = null;
+          state.insideYaml = false;
         });
       }
     },
