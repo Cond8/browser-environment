@@ -1,4 +1,6 @@
 // src/features/chat/components/interface-details.tsx
+import { cn } from '@/lib/utils';
+
 type Interface = {
   name: string;
   goal: string;
@@ -9,7 +11,8 @@ type Interface = {
 };
 
 type Props = {
-  data: { interface: Interface };
+  data: { interface?: Interface; steps?: Interface[] };
+  isStep?: boolean;
 };
 
 // Utility function to parse a string with comments in parentheses
@@ -108,21 +111,75 @@ export function getClassColorClasses(category: string, type: string): string {
   return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100'; // default fallback
 }
 
-export default function InterfaceDetails({ data: { interface: data } }: Props) {
+function InterfaceCard({
+  interface: data,
+  isStep = false,
+  steps,
+}: {
+  interface: Interface;
+  isStep?: boolean;
+  steps?: Interface[];
+}) {
   const classInfo = getClassInfo(data.class);
   const colorClasses = getClassColorClasses(classInfo.category, classInfo.type);
 
   return (
-    <div className="space-y-4 p-4 border rounded-2xl shadow-sm bg-card text-card-foreground">
+    <div
+      className={cn(
+        'space-y-4 p-4 rounded-2xl shadow-sm bg-card text-card-foreground',
+        isStep
+          ? 'border border-muted-foreground/10 bg-muted/10'
+          : 'border-2 border-primary/30 bg-card shadow-md',
+      )}
+    >
       <div className="space-y-1">
-        <p className="text-sm text-muted-foreground">Interface</p>
-        <h2 className="text-xl font-semibold">{addSpacesToTitle(data.name)}</h2>
-        <p className="text-muted-foreground">{data.goal}</p>
+        <p className={cn('text-sm', isStep ? 'text-muted-foreground' : 'text-primary')}>
+          {isStep ? 'Step' : 'Interface'}
+        </p>
+        <h2 className={cn('font-semibold', isStep ? 'text-xl' : 'text-2xl')}>
+          {addSpacesToTitle(data.name)}
+        </h2>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <p
+            className={cn('text-sm font-medium', isStep ? 'text-muted-foreground' : 'text-primary')}
+          >
+            Class:
+          </p>
+          <span className={cn('font-semibold', isStep ? 'text-base' : 'text-lg')}>
+            {addSpacesToTitle(data.class)}
+          </span>
+          <span className={cn('px-2 py-1 rounded-md text-xs font-medium', colorClasses)}>
+            {classInfo.category} - {classInfo.type}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <p
+            className={cn('text-sm font-medium', isStep ? 'text-muted-foreground' : 'text-primary')}
+          >
+            Method:
+          </p>
+          <span className={cn('font-semibold', isStep ? 'text-base' : 'text-lg')}>
+            {formatSnakeCase(parseWithComments(data.method).value)}
+            {parseWithComments(data.method).comment && (
+              <span className="text-muted-foreground ml-1">
+                - {parseWithComments(data.method).comment}
+              </span>
+            )}
+          </span>
+        </div>
+        <p className={cn('text-sm', isStep ? 'text-muted-foreground' : 'text-foreground')}>
+          {data.goal}
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 text-sm">
         <div>
-          <h3 className="font-medium text-primary">Inputs</h3>
+          <h3 className={cn('font-medium', isStep ? 'text-muted-foreground' : 'text-primary')}>
+            Inputs
+          </h3>
           <ul className="list-disc list-inside space-y-1">
             {Array.isArray(data.input) &&
               data.input.map((input: string | { [key: string]: string }, idx: number) => {
@@ -156,7 +213,9 @@ export default function InterfaceDetails({ data: { interface: data } }: Props) {
           </ul>
         </div>
         <div>
-          <h3 className="font-medium text-primary">Outputs</h3>
+          <h3 className={cn('font-medium', isStep ? 'text-muted-foreground' : 'text-primary')}>
+            Outputs
+          </h3>
           <ul className="list-disc list-inside space-y-1">
             {Array.isArray(data.output) &&
               data.output.map((output: string | { [key: string]: string }, idx: number) => {
@@ -191,23 +250,37 @@ export default function InterfaceDetails({ data: { interface: data } }: Props) {
         </div>
       </div>
 
-      <div className="text-sm text-muted-foreground">
-        <p>
-          <strong>Class:</strong> {addSpacesToTitle(data.class)}{' '}
-          <span className={`px-2 py-1 rounded-md text-xs font-medium ${colorClasses}`}>
-            {classInfo.category} - {classInfo.type}
-          </span>
-        </p>
-        <p>
-          <strong>Method:</strong> {formatSnakeCase(parseWithComments(data.method).value)}
-          {parseWithComments(data.method).comment && (
-            <span className="text-muted-foreground">
-              {' '}
-              - {parseWithComments(data.method).comment}
-            </span>
-          )}
-        </p>
-      </div>
+      {/* Render Steps if provided and this is not already a step card */}
+      {!isStep && steps && steps.length > 0 && (
+        <div className="space-y-4 pt-4 mt-4 border-t border-muted-foreground/10">
+          <h3 className="text-lg font-semibold text-primary">Steps</h3>
+          {steps.map((step, index) => (
+            <InterfaceCard key={index} interface={step} isStep={true} />
+          ))}
+        </div>
+      )}
     </div>
   );
+}
+
+export default function InterfaceDetails({ data }: Props) {
+  // Handle case where only steps might be present (though ideally an interface should exist)
+  if (!data.interface && data.steps && data.steps.length > 0) {
+    return (
+      <div className="space-y-6 p-4 bg-muted/30">
+        <p className="text-lg font-semibold text-primary">Steps</p>
+        {data.steps.map((step, index) => (
+          <InterfaceCard key={index} interface={step} isStep={true} />
+        ))}
+      </div>
+    );
+  }
+
+  // Handle the primary case: render the interface, passing steps to it
+  if (data.interface) {
+    return <InterfaceCard interface={data.interface} steps={data.steps} />;
+  }
+
+  // Fallback if neither interface nor steps are defined
+  return <div className="p-4 text-muted-foreground">No interface or steps defined</div>;
 }

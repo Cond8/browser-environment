@@ -1,6 +1,5 @@
 import YAML from 'yaml';
 import InterfaceDetails from './yaml-interface-details';
-import StepsDetails from './yaml-steps-details';
 import { YamlViewer } from './yaml-viewer';
 
 type YamlParserProps = {
@@ -45,10 +44,8 @@ export const YamlParser = ({ content }: YamlParserProps) => {
 
   return (
     <div className="p-4 bg-muted/30">
-      {'interface' in parsed ? (
+      {'interface' in parsed || 'steps' in parsed ? (
         <InterfaceDetails data={parsed} />
-      ) : 'steps' in parsed ? (
-        <StepsDetails data={parsed} />
       ) : (
         <YamlViewer content={YAML.stringify(parsed)} error={error} />
       )}
