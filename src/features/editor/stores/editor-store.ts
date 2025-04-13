@@ -1,4 +1,5 @@
-import { useVfsStore } from '@/features/vfs/store/vfs-store';
+import { useServiceStore } from '@/features/vfs/store/service-store';
+import { useWorkflowStore } from '@/features/vfs/store/workflow-store';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 
@@ -32,7 +33,7 @@ interface EditorState {
   setCursorPosition: (position: { line: number; column: number } | null) => void;
   updateSettings: (settings: Partial<EditorState['settings']>) => void;
 
-  setActiveEditor: (filepath: string) => void;
+  setActiveEditor: (fileType: 'workflow' | 'service', filepath: string) => void;
 }
 
 export const useEditorStore = create<EditorState>()(
@@ -75,10 +76,16 @@ export const useEditorStore = create<EditorState>()(
         Object.assign(state.settings, newSettings);
       });
     },
-    setActiveEditor: (filepath) => {
+    setActiveEditor: (fileType: 'workflow' | 'service', filepath: string) => {
       set(state => {
         state.filePath = filepath;
-        state.content = useVfsStore.getState().getContent(filepath);
+        if (fileType === 'workflow') {
+          state.content = JSON.stringify(
+            useWorkflowStore.getState().getWorkflow(filepath)?.content ?? {},
+          );
+        } else if (fileType === 'service') {
+          state.content = useServiceStore.getState().getService(filepath)?.content ?? '';
+        }
       });
     },
   })),

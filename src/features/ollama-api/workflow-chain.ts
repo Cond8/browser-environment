@@ -2,7 +2,7 @@
 import { useAssistantConfigStore } from '../chat/store/assistant-config-store';
 import { useChatStore } from '../chat/store/chat-store';
 import { useEditorStore } from '../editor/stores/editor-store';
-import { useVfsStore } from '../vfs/store/vfs-store';
+import { useWorkflowStore } from '../vfs/store/workflow-store';
 import { handleAlignmentPhase } from './phases/alignment-phase';
 import { handleInterfacePhase } from './phases/interface-phase';
 import { handleStepsPhase } from './phases/steps-phase';
@@ -103,8 +103,8 @@ export async function executeWorkflowChain(): Promise<{
       },
     );
     chatStore.addInterfaceMessage(interfaceResult.interface);
-    const workflowPath = useVfsStore.getState().createWorkflow(interfaceResult.interface);
-    useEditorStore.getState().setActiveEditor(workflowPath);
+    const workflowPath = useWorkflowStore.getState().createWorkflow(interfaceResult.interface);
+    useEditorStore.getState().setActiveEditor('workflow', workflowPath);
 
     /* =======================
      * ===== STEPS PHASE =====
@@ -125,7 +125,7 @@ export async function executeWorkflowChain(): Promise<{
       },
     );
     chatStore.addStepsMessage(stepsResult.steps);
-    useVfsStore.getState().addStepsToWorkflow(workflowPath, stepsResult.steps);
+    useWorkflowStore.getState().addStepsToWorkflow(workflowPath, stepsResult.steps);
     // useVfsStore.getState().upsertServices(stepsResult.steps);
 
     return {

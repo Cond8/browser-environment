@@ -2,9 +2,9 @@
 import { Card } from '@/components/ui/card';
 import { AssistantPanel } from '@/features/chat';
 import { EditorWrapper } from '@/features/editor/components/editor-wrapper';
+import VirtualFileSystem from '@/features/vfs/components/virtual-file-system';
 import React from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { VirtualFileSystem } from '../../vfs/components/virtual-file-system';
 
 export const EditorLayout: React.FC = () => {
   return (

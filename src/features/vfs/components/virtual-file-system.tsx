@@ -1,108 +1,125 @@
-// src/features/panels/components/virtual-file-system.tsx
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Node, useVfsStore } from '@/features/vfs/store/vfs-store';
-import { cn } from '@/lib/utils';
-import { ChevronDown, ChevronRight, File, Folder, Server, Workflow } from 'lucide-react';
-import React, { useMemo } from 'react';
+import { format } from 'date-fns';
+import React, { useState } from 'react';
+import { Service, useServiceStore } from '../store/service-store';
+import { StoredWorkflow, useWorkflowStore } from '../store/workflow-store';
 
-interface FileTreeProps {
-  node: Node;
-  level?: number;
-}
+const VirtualFileSystem: React.FC = () => {
+  const [expandedWorkflow, setExpandedWorkflow] = useState<string | null>(null);
 
-const FileTree: React.FC<FileTreeProps> = ({ node, level = 0 }) => {
-  const isExpanded = useVfsStore(state => state.isNodeExpanded(node.id));
-  const selectedNode = useVfsStore(state => state.selectedNode);
-  const { toggleNode, setSelectedNode } = useVfsStore();
+  // Use memoized selectors to prevent unnecessary re-renders
+  const getWorkflows = useWorkflowStore(state => state.getAllWorkflows);
+  const getServices = useServiceStore(state => state.getAllServices);
 
-  // Use memoized selector for child nodes to prevent infinite loops
-  const edges = useVfsStore(state => state.getNodeEdges(node.id, 'contains'));
+  const workflows = getWorkflows();
+  const services = getServices();
 
-  // Memoize the child nodes array to prevent reference changes
-  const childNodes = useMemo(() => {
-    return edges
-      .map(edge => useVfsStore.getState().getNode(edge.target))
-      .filter((node): node is Node => node !== null);
-  }, [edges]);
-
-  const handleClick = () => {
-    if (node.type === 'directory') {
-      toggleNode(node.id);
-    } else {
-      setSelectedNode(node.id);
-    }
+  const formatDate = (date: Date) => {
+    return format(new Date(date), 'MMM dd, yyyy HH:mm');
   };
 
-  const getIcon = () => {
-    if (node.type === 'directory') {
-      return <Folder className="h-4 w-4 text-muted-foreground" />;
-    } else if (node.type === 'workflow') {
-      return <Workflow className="h-4 w-4 text-blue-500" />;
-    } else if (node.type === 'service') {
-      return <Server className="h-4 w-4 text-green-500" />;
-    }
-    return <File className="h-4 w-4 text-muted-foreground" />;
+  const WorkflowItem: React.FC<{ workflow: StoredWorkflow }> = ({ workflow }) => {
+    const isExpanded = expandedWorkflow === workflow.id;
+
+    return (
+      <li className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
+        <button
+          className="w-full p-3 flex items-center"
+          onClick={() => setExpandedWorkflow(isExpanded ? null : workflow.id)}
+        >
+          <span className="text-2xl mr-3">📋</span>
+          <div className="flex-1 text-left">
+            <div className="flex justify-between items-center">
+              <span className="font-medium">{workflow.name}</span>
+              <span className="text-sm text-gray-500">{formatDate(workflow.updatedAt)}</span>
+            </div>
+            <div className="text-sm text-gray-500">
+              Interface: {workflow.content.interface.name}
+            </div>
+          </div>
+        </button>
+
+        {isExpanded && (
+          <div className="p-3 border-t border-gray-100">
+            <div className="mb-3">
+              <h4 className="font-medium text-sm text-gray-700 mb-1">Interface</h4>
+              <div className="text-sm text-gray-600">
+                <p>Service: {workflow.content.interface.service}</p>
+                <p>Method: {workflow.content.interface.method}</p>
+                <p>Goal: {workflow.content.interface.goal}</p>
+                {workflow.content.interface.inputs && (
+                  <p>Inputs: {workflow.content.interface.inputs.join(', ')}</p>
+                )}
+                {workflow.content.interface.outputs && (
+                  <p>Outputs: {workflow.content.interface.outputs.join(', ')}</p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-sm text-gray-700 mb-1">Steps</h4>
+              <ul className="space-y-2">
+                {workflow.content.steps.map((step, index) => (
+                  <li key={index} className="text-sm text-gray-600 pl-4 border-l-2 border-gray-200">
+                    <p className="font-medium">{step.name}</p>
+                    <p>Service: {step.service}</p>
+                    <p>Method: {step.method}</p>
+                    <p>Goal: {step.goal}</p>
+                    {step.inputs && <p>Inputs: {step.inputs.join(', ')}</p>}
+                    {step.outputs && <p>Outputs: {step.outputs.join(', ')}</p>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+      </li>
+    );
+  };
+
+  const ServiceItem: React.FC<{ service: Service }> = ({ service }) => {
+    return (
+      <li className="flex items-center p-3 bg-white rounded-lg shadow hover:shadow-md transition-shadow">
+        <span className="text-2xl mr-3">📜</span>
+        <div className="flex-1">
+          <div className="flex justify-between items-center">
+            <span className="font-medium">{service.name}</span>
+            <span className="text-sm text-gray-500">{formatDate(service.updatedAt)}</span>
+          </div>
+          <div className="text-sm text-gray-500">JavaScript Service</div>
+        </div>
+      </li>
+    );
   };
 
   return (
-    <div>
-      <div
-        className={cn(
-          'flex items-center gap-2 px-2 py-1 hover:bg-muted/50 cursor-pointer',
-          level > 0 && 'ml-4',
-          selectedNode === node.id && 'bg-muted/50',
+    <div className="p-4 space-y-8">
+      <section>
+        <h2 className="text-xl font-bold mb-4">Workflows</h2>
+        {workflows.length === 0 ? (
+          <p className="text-gray-500">No workflows in the system</p>
+        ) : (
+          <ul className="space-y-2">
+            {workflows.map(workflow => (
+              <WorkflowItem key={workflow.id} workflow={workflow} />
+            ))}
+          </ul>
         )}
-        onClick={handleClick}
-        style={{ paddingLeft: `${level * 12}px` }}
-      >
-        {node.type === 'directory' && (
-          <>
-            {isExpanded ? (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            )}
-          </>
+      </section>
+
+      <section>
+        <h2 className="text-xl font-bold mb-4">Services</h2>
+        {services.length === 0 ? (
+          <p className="text-gray-500">No services in the system</p>
+        ) : (
+          <ul className="space-y-2">
+            {services.map(service => (
+              <ServiceItem key={service.id} service={service} />
+            ))}
+          </ul>
         )}
-        {getIcon()}
-        <span className="text-sm">{node.name}</span>
-      </div>
-      {isExpanded && childNodes.length > 0 && (
-        <div>
-          {childNodes.map(child => (
-            <FileTree key={child.id} node={child} level={level + 1} />
-          ))}
-        </div>
-      )}
+      </section>
     </div>
   );
 };
 
-// Custom hook to get root nodes using memoization
-const useRootNodes = () => {
-  const allNodes = useVfsStore(state => state.getAllNodes());
-  const allEdges = useVfsStore(state => state.getAllEdges());
-
-  // Memoize the calculation to prevent recreating arrays on each render
-  return useMemo(() => {
-    const targetNodeIds = new Set(
-      allEdges.filter(edge => edge.type === 'contains').map(edge => edge.target),
-    );
-    return allNodes.filter(node => !targetNodeIds.has(node.id));
-  }, [allNodes, allEdges]);
-};
-
-export const VirtualFileSystem: React.FC = () => {
-  // Use our custom hook to get memoized root nodes
-  const rootNodes = useRootNodes();
-
-  return (
-    <ScrollArea className="h-full">
-      <div className="p-2">
-        {rootNodes.map(node => (
-          <FileTree key={node.id} node={node} />
-        ))}
-      </div>
-    </ScrollArea>
-  );
-};
+export default VirtualFileSystem;

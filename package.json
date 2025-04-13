@@ -35,6 +35,7 @@
     "axios": "^1.8.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "dedent": "^1.5.3",
     "immer": "^10.1.1",
     "jest-diff": "^29.7.0",
