@@ -11,12 +11,12 @@ export const EditorWrapper = () => {
 
   const renderEditor = () => {
     switch (editorType) {
+      case 'dsl':
+        return <DslEditor dslContent={''} />;
       case 'json':
         return <JsonEditor jsonContent={''} />;
       case 'js':
         return <JsEditor jsContent={''} />;
-      case 'dsl':
-        return <DslEditor dslContent={''} />;
       default:
         return null;
     }
@@ -31,14 +31,14 @@ export const EditorWrapper = () => {
           onValueChange={value => setEditorType(value as EditorType)}
           className="w-full"
         >
+          <ToggleGroupItem value="dsl" className="flex-1">
+            DSL
+          </ToggleGroupItem>
           <ToggleGroupItem value="json" className="flex-1">
             JSON
           </ToggleGroupItem>
           <ToggleGroupItem value="js" className="flex-1">
             JavaScript
-          </ToggleGroupItem>
-          <ToggleGroupItem value="dsl" className="flex-1">
-            DSL
           </ToggleGroupItem>
         </ToggleGroup>
       </div>
