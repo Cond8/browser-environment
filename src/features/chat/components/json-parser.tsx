@@ -99,7 +99,7 @@ export const JsonParser = ({ content, messageId, isLatestAssistantMessage }: Jso
     );
   }
 
-  // Check if the successfully parsed object is the combined Workflow structure
+  // Check if the successfully parsed object is a valid workflow structure
   const isValidInterface =
     parsed != null &&
     typeof parsed === 'object' &&
@@ -133,18 +133,24 @@ export const JsonParser = ({ content, messageId, isLatestAssistantMessage }: Jso
     }
   };
 
-  return (
-    <div className={cn('p-4', 'bg-muted/30')}>
-      {isValidInterface ? (
+  // If it's a valid workflow structure, display it with the save button
+  if (isValidInterface) {
+    return (
+      <div className={cn('p-4', 'bg-muted/30')}>
         <div className="space-y-4">
           <InterfaceDetails data={parsed} />
           <Button onClick={handleSaveToVfs} className="mt-4" variant="outline">
             Save to VFS
           </Button>
         </div>
-      ) : (
-        <JsonViewer content={JSON.stringify(parsed, null, 2)} isStreaming={false} />
-      )}
+      </div>
+    );
+  }
+
+  // If it's not a valid workflow structure but is valid JSON, display it as formatted JSON
+  return (
+    <div className={cn('p-4', 'bg-muted/30')}>
+      <JsonViewer content={JSON.stringify(parsed, null, 2)} isStreaming={false} />
     </div>
   );
 };

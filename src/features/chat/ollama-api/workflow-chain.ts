@@ -10,6 +10,7 @@ import {
   interfaceSchema,
   interfaceTool,
   stepsSchema,
+  stepsTool,
   WorkflowService,
   WorkflowStep,
 } from './tool-schemas/workflow-schema';
@@ -86,6 +87,13 @@ export async function* streamWorkflowChain(): AsyncGenerator<StreamYield, void, 
         service: parsed.service as WorkflowService,
       };
       console.log('Interface successfully parsed and validated:', interfaceParsed);
+
+      // Yield the interface as part of the stream
+      yield {
+        type: 'text',
+        content: JSON.stringify({ interface: interfaceParsed }, null, 2),
+        id: assistantMessage.id,
+      };
     } catch (error) {
       console.error('Interface parsing failed:', {
         error,
@@ -104,9 +112,10 @@ export async function* streamWorkflowChain(): AsyncGenerator<StreamYield, void, 
       model: selectedModel,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT() + STEPS_PROMPT() },
-        { role: 'user', content: interfaceResponse },
+        { role: 'user', content: messages[0].content },
+        { role: 'assistant', content: interfaceResponse },
       ],
-      // tools: [stepsTool],
+      tools: [stepsTool],
       options: parameters,
       stream: true,
     });
@@ -123,6 +132,13 @@ export async function* streamWorkflowChain(): AsyncGenerator<StreamYield, void, 
         service: step.service as WorkflowService,
       }));
       console.log('Steps successfully parsed and validated:', stepsParsed);
+
+      // Yield the steps as part of the stream
+      yield {
+        type: 'text',
+        content: JSON.stringify({ steps: stepsParsed }, null, 2),
+        id: assistantMessage.id,
+      };
 
       // Combine interface and steps into a complete workflow
       if (interfaceParsed && stepsParsed) {

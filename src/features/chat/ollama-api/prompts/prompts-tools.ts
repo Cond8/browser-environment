@@ -21,38 +21,52 @@ export const INTERFACE_PROMPT = () =>
   `
 You are an assistant that defines structured JSON workflows.
 
-Your current task is to define the **interface** section only, based on the task of the user.
+Your task is to generate the **interface** section of a JSON workflow.
 
-### Constraints:
-- Output pure JSON only within code fences (\`\`\`json)
-- Only generate the interface section. Do not generate steps
-- Use **snake_case** for all input/output variable names and method names
-- Keep descriptions short (max 10 words)
-- Use clear, unambiguous variable names
-- Only use the services listed in the DOMAIN_SERVICES
-- Inputs and outputs are arrays of variable names in snake_case
+### Required Fields:
+- name: PascalCase name for the workflow
+- service: One of the predefined services (see below)
+- method: snake_case method name
+- goal: Clear description of the workflow's purpose
+- inputs: Array of input variable names in snake_case
+- outputs: Array of output variable names in snake_case
 
-${DOMAIN_SERVICES}
+### AVAILABLE SERVICES
+You must use one of these predefined services:
+- extract: Extract specific data or information from input
+- parse: Parse and interpret structured data
+- validate: Validate data against rules or constraints
+- transform: Transform data from one format to another
+- logic: Apply business logic or decision making
+- calculate: Perform mathematical calculations
+- format: Format data for presentation
+- io: Handle input/output operations
+- storage: Manage data storage operations
+- integrate: Integrate with external systems
+- understand: Analyze and understand content
+- generate: Generate new content or data
 
 ### Example:
 
 \`\`\`json
 {
-  "name": "ProcessCsvFile",
-  "service": "validate",
-  "method": "validate_csv",
-  "goal": "Extract and validate data from a CSV file",
-  "inputs": ["file_path", "delimiter"],
-  "outputs": ["valid_rows", "error_count"]
+  "name": "ProcessUserData",
+  "service": "transform",
+  "method": "transform_user_data",
+  "goal": "Transform raw user data into standardized format",
+  "inputs": ["raw_data", "format_type"],
+  "outputs": ["processed_data"]
 }
 \`\`\`
 
 ## Task: Generate Workflow Interface
+Based on the user's request, generate a complete interface definition with ALL required fields.
 
 RULES:
-- \`service\`: A single primary action verb describing the domain (e.g., extract, parse, understand). Choose from the SUGGESTED SERVICES list or provide a suitable verb. The system will use the first word.
-- \`method\`: A descriptive snake_case name for the specific function (e.g., extract_user_data).
-- \`goal\`: A concise description of the task's purpose (max 100 characters).
+- The \`service\` field MUST be one of the predefined services listed above
+- The \`method\` field MUST be in snake_case
+- The \`name\` field MUST be in PascalCase
+- Inputs and outputs MUST be arrays of variable names in snake_case
 `.trim();
 
 export const STEPS_PROMPT = () =>
@@ -63,46 +77,65 @@ You will be given the interface section of a JSON workflow.
 
 Your task is to generate the **steps** section of the JSON workflow.
 
-### Constraints:
-- Output pure JSON only within code fences (\`\`\`json)
-- Generate 4 to 6 steps maximum
-- Do NOT include the interface section again
-- Each step must be atomic and sequentially logical
-- Final step must produce all interface outputs
-- Use **snake_case** for all variable and method names
-- Only use the services listed in the DOMAIN_SERVICES
-- Inputs and outputs are arrays of variable names in snake_case
+### Required Format:
+- Output MUST start with \`\`\`json and end with \`\`\`
+- Output MUST be a valid JSON array of step objects
+- Each step MUST have ALL required fields
+- Do NOT include any explanatory text before or after the JSON
 
-${DOMAIN_SERVICES}
+### Required Fields for Each Step:
+- name: PascalCase name for the step
+- service: One of the predefined services (see below)
+- method: snake_case method name
+- goal: Clear description of the step's purpose
+- inputs: Array of input variable names in snake_case
+- outputs: Array of output variable names in snake_case
+
+### AVAILABLE SERVICES
+You must use one of these predefined services:
+- extract: Extract specific data or information from input
+- parse: Parse and interpret structured data
+- validate: Validate data against rules or constraints
+- transform: Transform data from one format to another
+- logic: Apply business logic or decision making
+- calculate: Perform mathematical calculations
+- format: Format data for presentation
+- io: Handle input/output operations
+- storage: Manage data storage operations
+- integrate: Integrate with external systems
+- understand: Analyze and understand content
+- generate: Generate new content or data
 
 ### Example:
 
 \`\`\`json
 [
   {
-    "name": "ValidateCsvFile",
+    "name": "ValidateInput",
     "service": "validate",
-    "method": "validate_csv",
-    "goal": "Validate the CSV file",
-    "inputs": ["file_path", "delimiter"],
-    "outputs": ["valid_rows", "error_count"]
+    "method": "validate_email_content",
+    "goal": "Validate the email content format",
+    "inputs": ["email_body"],
+    "outputs": ["validated_content"]
   },
   {
-    "name": "ExtractData",
-    "service": "extract",
-    "method": "extract_data",
-    "goal": "Extract data from the CSV file",
-    "inputs": ["file_path", "delimiter"],
-    "outputs": ["data"]
+    "name": "AnalyzeContent",
+    "service": "understand",
+    "method": "analyze_email_patterns",
+    "goal": "Analyze email content for spam patterns",
+    "inputs": ["validated_content"],
+    "outputs": ["spam_score"]
   }
 ]
 \`\`\`
 
 ## Task: Generate Workflow Steps
-Based on the provided INTERFACE, generate a sequence of detailed STEPS to accomplish the overall GOAL.
+Based on the provided interface, generate a sequence of steps to accomplish the goal.
 
 RULES:
-- Each STEP MUST have a \`service\` field. Choose a single action verb from the SUGGESTED SERVICES list or provide a suitable one. The system will use the first word.
-- Each STEP MUST have a \`method\` field in snake_case.
-- Each STEP MUST have a clear \`goal\` (max 100 characters).
+- Generate 2-4 steps maximum
+- Each step MUST have ALL required fields
+- Steps MUST be logically connected
+- Final step MUST produce the interface's outputs
+- Do NOT include any text before or after the JSON
 `.trim();
