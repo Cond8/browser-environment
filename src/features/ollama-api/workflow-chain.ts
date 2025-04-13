@@ -1,9 +1,8 @@
-// src/features/chat/ollama-api/workflow-chain.ts
+// src/features/ollama-api/workflow-chain.ts
 import { useAssistantConfigStore } from '../chat/store/assistant-config-store';
 import { useChatStore } from '../chat/store/chat-store';
 import { handleAlignmentPhase } from './phases/alignment-phase';
 import { handleInterfacePhase } from './phases/interface-phase';
-import { createStreamResponse, StreamYield } from './stream-response';
 
 export class WorkflowChainError extends Error {
   constructor(

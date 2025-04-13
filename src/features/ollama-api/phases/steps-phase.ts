@@ -1,10 +1,10 @@
+// src/features/ollama-api/phases/steps-phase.ts
 import { ChatRequest } from 'ollama/browser';
 import { parseOrRepairJson } from '../llm-output-fixer';
 import { SYSTEM_PROMPT } from '../prompts/prompts-system';
 import { stepsSchema, WorkflowService, WorkflowStep } from '../tool-schemas/workflow-schema';
 
 import { WorkflowChainError, WorkflowValidationError } from '../workflow-chain';
-import { StreamResponseFn, StreamYield } from '../stream-response';
 
 export const STEPS_PROMPT = () =>
   `
@@ -77,14 +77,14 @@ RULES:
 - Do NOT include any text before or after the JSON
 `.trim();
 
-export async function* handleStepsPhase(
+export async function handleStepsPhase(
   content: string,
   id: number,
   interfaceParsed: WorkflowStep,
-  streamFn: StreamResponseFn,
+  chatFn: (id: number, request: any) => Promise<string>,
   model: string,
   options: any,
-): AsyncGenerator<StreamYield, WorkflowStep[], unknown> {
+): Promise<{ steps: WorkflowStep[]; id: number }> {
   console.log('[StepsPhase] Starting steps phase with:', {
     content,
     id,
@@ -95,7 +95,7 @@ export async function* handleStepsPhase(
 
   let response;
   try {
-    const request: ChatRequest & { stream: true } = {
+    const request: ChatRequest = {
       model,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT(STEPS_PROMPT()) },
@@ -103,10 +103,9 @@ export async function* handleStepsPhase(
         { role: 'assistant', content: JSON.stringify(interfaceParsed) },
       ],
       options,
-      stream: true as const,
     };
 
-    response = yield* streamFn(id, request);
+    response = await chatFn(id, request);
   } catch (err) {
     throw new WorkflowChainError(
       'Steps generation failed',
@@ -123,8 +122,7 @@ export async function* handleStepsPhase(
     service: step.service as WorkflowService,
   }));
 
-  yield { type: 'text', content: JSON.stringify({ steps }, null, 2), id };
-  return steps;
+  return { steps, id };
 }
 
 function parseWithSchema(

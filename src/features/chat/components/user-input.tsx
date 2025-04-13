@@ -3,7 +3,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/features/chat/store/chat-store';
 import { Send, StopCircle } from 'lucide-react';
 import { useState } from 'react';
-import { useStreamStore } from '../../ollama-api/store/stream-store';
 import { useAbortEventBusStore } from '../store/abort-eventbus-store';
 import { SelectedModel } from './selected-model';
 import { ShortcutsDisplay } from './shortcuts-display';
@@ -12,9 +11,9 @@ export function UserInput() {
   const [message, setMessage] = useState('I want to classify emails as spam or not spam');
 
   const addUserMessage = useChatStore(state => state.addUserMessage);
-  const isStreaming = useStreamStore(state => state.isStreaming);
-  const stopStreaming = useStreamStore(state => state.stopStreaming);
   const triggerAbort = useAbortEventBusStore(state => state.triggerAbort);
+  const isLoading = useConnStore(state => state.isLoading);
+  const stopLoading = useAbortEventBusStore(state => state.triggerAbort)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +35,7 @@ export function UserInput() {
         return;
       }
       e.preventDefault();
-      if (!isStreaming) {
+      if (!isLoading) {
         handleSubmit(e);
       }
     }
@@ -45,7 +44,7 @@ export function UserInput() {
   const handleStop = () => {
     console.log('[UserInput] Stop button clicked');
     triggerAbort();
-    stopStreaming();
+    stopLoading();
   };
 
   return (
@@ -58,7 +57,7 @@ export function UserInput() {
         placeholder="Type your message..."
         className="min-h-[60px] resize-none"
         onKeyDown={handleKeyDown}
-        disabled={isStreaming}
+        disabled={isLoading}
       />
       <div className="flex items-center justify-between">
         <SelectedModel />
@@ -68,7 +67,7 @@ export function UserInput() {
             shortcut="Shift+Enter"
             asButton
             onClick={handleStop}
-            hide={!isStreaming}
+            hide={!isLoading}
             icon={StopCircle}
           />
           <ShortcutsDisplay
@@ -76,7 +75,7 @@ export function UserInput() {
             shortcut="Shift+Enter"
             asButton
             onClick={handleButtonSubmit}
-            hide={isStreaming}
+            hide={isLoading}
             icon={Send}
           />
         </div>

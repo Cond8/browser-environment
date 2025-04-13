@@ -1,4 +1,4 @@
-// src/features/chat/ollama-api/fetch-models.ts
+// src/features/ollama-api/fetch-models.ts
 
 import { ModelResponse } from "ollama";
 

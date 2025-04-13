@@ -3,7 +3,6 @@ import { Message, ToolCall } from 'ollama';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { useStreamStore } from '../../ollama-api/store/stream-store';
 
 export interface ThreadMessage extends Message {
   id: number;
@@ -92,7 +91,7 @@ export const useChatStore = create<ChatStore>()(
         return assistantMessage;
       },
 
-      addUserMessage: (message: string) => {
+      addUserMessage: (message: string): void => {
         const id = Date.now();
         const userMessage: ThreadMessage = {
           id,
@@ -116,8 +115,7 @@ export const useChatStore = create<ChatStore>()(
             }
           }
         });
-
-        useStreamStore.getState().startWorkflowChain();
+        // useStreamStore.getState().startWorkflowChain();
       },
 
       updateAssistantMessage: (id: number, message: string) => {

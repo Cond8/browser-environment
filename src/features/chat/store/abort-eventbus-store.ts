@@ -1,3 +1,4 @@
+// src/features/chat/store/abort-eventbus-store.ts
 import { create } from 'zustand';
 
 type AbortCallback = () => void;

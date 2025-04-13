@@ -1,3 +1,4 @@
+// src/features/panels/components/virtual-file-system.tsx
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileNode, useVfsStore } from '@/features/vfs/store/vfs-store';
 import { cn } from '@/lib/utils';

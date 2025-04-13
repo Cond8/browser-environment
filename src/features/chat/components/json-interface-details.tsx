@@ -1,3 +1,4 @@
+// src/features/chat/components/json-interface-details.tsx
 import { cn } from '@/lib/utils';
 
 interface Interface {

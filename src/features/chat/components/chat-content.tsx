@@ -3,15 +3,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { EmptyChatState } from '@/features/chat/components/empty-chat-state';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
-import { useStreamStore } from '../../ollama-api/store/stream-store';
 import { ThreadMessage, useChatStore } from '../store/chat-store';
 import { ErrorDisplay } from './error-display';
 import { JsonParser } from './json-parser';
 
 export const ChatContent = () => {
   const currentThread = useChatStore().getCurrentThread();
-  const isStreaming = useStreamStore(state => state.isStreaming);
-  const partialMessage = useStreamStore(state => state.partialMessages[state.currentMessageId!]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -23,7 +20,7 @@ export const ChatContent = () => {
       scrollToBottom();
     }, 100);
     return () => clearTimeout(timer);
-  }, [currentThread?.messages.length, partialMessage?.content, isStreaming]);
+  }, [currentThread?.messages.length]);
 
   if (!currentThread) {
     return <EmptyChatState />;
@@ -53,11 +50,7 @@ export const ChatContent = () => {
               {message.error ? (
                 <ErrorDisplay error={message.error} />
               ) : (
-                <JsonParser
-                  content={message.content}
-                  messageId={message.id}
-                  isLatestAssistantMessage={isLatestAssistantMessage}
-                />
+                <JsonParser displayContent={message.content} />
               )}
             </div>
           );
