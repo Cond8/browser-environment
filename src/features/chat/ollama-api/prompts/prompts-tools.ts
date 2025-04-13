@@ -24,7 +24,7 @@ Your current task is to define the **interface** section only, based on the task
 
 ### Constraints:
 - Output pure JSON only within code fences (\`\`\`json)
-- Only generate the "interface" section. Do not generate steps
+- Only generate the interface section. Do not generate steps
 - Use **snake_case** for all input/output variable names and method names
 - Keep descriptions short (max 10 words)
 - Use clear, unambiguous variable names
@@ -37,14 +37,12 @@ ${DOMAIN_SERVICES}
 
 \`\`\`json
 {
-  "interface": {
-    "name": "ProcessCsvFile",
-    "service": "validate",
-    "method": "validate_csv",
-    "goal": "Extract and validate data from a CSV file",
-    "inputs": ["file_path", "delimiter"],
-    "outputs": ["valid_rows", "error_count"]
-  }
+  "name": "ProcessCsvFile",
+  "service": "validate",
+  "method": "validate_csv",
+  "goal": "Extract and validate data from a CSV file",
+  "inputs": ["file_path", "delimiter"],
+  "outputs": ["valid_rows", "error_count"]
 }
 \`\`\`
 `.trim();
@@ -72,25 +70,23 @@ ${DOMAIN_SERVICES}
 ### Example:
 
 \`\`\`json
-{
-  "steps": [
-    {
-      "name": "ValidateCsvFile",
-      "service": "validate",
-      "method": "validate_csv",
-      "goal": "Validate the CSV file",
-      "inputs": ["file_path", "delimiter"],
-      "outputs": ["valid_rows", "error_count"]
-    },
-    {
-      "name": "ExtractData",
-      "service": "extract",
-      "method": "extract_data",
-      "goal": "Extract data from the CSV file",
-      "inputs": ["file_path", "delimiter"],
-      "outputs": ["data"]
-    }
-  ]
-}
+[
+  {
+    "name": "ValidateCsvFile",
+    "service": "validate",
+    "method": "validate_csv",
+    "goal": "Validate the CSV file",
+    "inputs": ["file_path", "delimiter"],
+    "outputs": ["valid_rows", "error_count"]
+  },
+  {
+    "name": "ExtractData",
+    "service": "extract",
+    "method": "extract_data",
+    "goal": "Extract data from the CSV file",
+    "inputs": ["file_path", "delimiter"],
+    "outputs": ["data"]
+  }
+]
 \`\`\`
 `.trim();

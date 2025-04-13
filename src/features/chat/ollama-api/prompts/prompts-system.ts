@@ -35,6 +35,23 @@ Each workflow consists of two main sections: interface and steps. Here's an exam
 }
 \`\`\`
 
+## AVAILABLE SERVICES
+
+You must use one of these predefined services for each step:
+
+- extract: Extract specific data or information from input
+- parse: Parse and interpret structured data
+- validate: Validate data against rules or constraints
+- transform: Transform data from one format to another
+- logic: Apply business logic or decision making
+- calculate: Perform mathematical calculations
+- format: Format data for presentation
+- io: Handle input/output operations
+- storage: Manage data storage operations
+- integrate: Integrate with external systems
+- understand: Analyze and understand content
+- generate: Generate new content or data
+
 ---
 
 ## STEPS REQUIREMENTS

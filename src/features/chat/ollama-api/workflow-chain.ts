@@ -5,7 +5,7 @@ import { useChatStore } from '../store/chat-store';
 import { useEventBusStore } from '../store/eventbus-store';
 import { SYSTEM_PROMPT } from './prompts/prompts-system';
 import { INTERFACE_PROMPT, STEPS_PROMPT } from './prompts/prompts-tools';
-import { interfaceTool } from './tool-schemas/workflow-schema';
+import { interfaceSchema, interfaceTool, stepsSchema } from './tool-schemas/workflow-schema';
 
 export class WorkflowChainError extends Error {
   constructor(
@@ -65,11 +65,13 @@ export async function* streamWorkflowChain(): AsyncGenerator<StreamYield, void, 
     });
 
     try {
-      // console.log('interfaceResponse', interfaceResponse);
+      console.log('interfaceResponse', interfaceResponse);
       const interfaceWithoutBlocks = interfaceResponse.replace('```json', '').replace('```', '');
-      // console.log('interfaceWithoutBlocks', interfaceWithoutBlocks);
+      console.log('interfaceWithoutBlocks', interfaceWithoutBlocks);
       const interfaceParsed = JSON.parse(interfaceWithoutBlocks);
-      useChatStore.getState().setInterface(assistantMessage.id, interfaceParsed);
+      console.log('interfaceParsed', interfaceParsed);
+      const interfaceParsedValidated = interfaceSchema.parse(interfaceParsed);
+      console.log('interfaceParsedValidated', interfaceParsedValidated);
     } catch (error) {
       throw new WorkflowValidationError(
         'Failed to parse interface JSON',
@@ -92,9 +94,13 @@ export async function* streamWorkflowChain(): AsyncGenerator<StreamYield, void, 
     });
 
     try {
+      console.log('stepsResponse', stepsResponse);
       const stepsWithoutBlocks = stepsResponse.replace('```json', '').replace('```', '');
+      console.log('stepsWithoutBlocks', stepsWithoutBlocks);
       const stepsParsed = JSON.parse(stepsWithoutBlocks);
-      useChatStore.getState().setSteps(assistantMessage.id, stepsParsed);
+      console.log('stepsParsed', stepsParsed);
+      const stepsParsedValidated = stepsSchema.parse(stepsParsed);
+      console.log('stepsParsedValidated', stepsParsedValidated);
     } catch (error) {
       throw new WorkflowValidationError(
         'Failed to parse steps JSON',

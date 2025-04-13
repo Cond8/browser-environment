@@ -3,16 +3,10 @@ import { Message, ToolCall } from 'ollama';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { WorkflowStep } from '../ollama-api/tool-schemas/workflow-schema';
 import { useStreamStore } from './stream-store';
 
 export interface ThreadMessage extends Message {
   id: number;
-  tool_calls?: ToolCall[];
-  workflow?: {
-    interface: WorkflowStep;
-    steps: WorkflowStep[];
-  };
   error?: {
     message: string;
     type: string;
@@ -43,9 +37,7 @@ export interface ChatStore {
   addEmptyAssistantMessage: () => ThreadMessage;
 
   updateAssistantMessage: (id: number, message: string) => void;
-
-  setInterface: (id: number, data: WorkflowStep) => void;
-  setSteps: (id: number, steps: WorkflowStep[]) => void;
+  addToolCallToMessage: (id: number, toolCall: ToolCall) => void;
 
   setMessageError: (id: number, error: ThreadMessage['error']) => void;
 
@@ -70,7 +62,8 @@ export const useChatStore = create<ChatStore>()(
       },
 
       getCurrentThread: () => {
-        return get().threads[get().currentThreadId!];
+        const currentId = get().currentThreadId;
+        return currentId ? get().threads[currentId] : null;
       },
 
       resetThread: () => {
@@ -85,9 +78,15 @@ export const useChatStore = create<ChatStore>()(
           id,
           role: 'assistant',
           content: '',
+          tool_calls: [],
         };
         set(state => {
-          state.threads[state.currentThreadId!].messages.push(assistantMessage);
+          const currentId = state.currentThreadId;
+          if (currentId) {
+            state.threads[currentId].messages.push(assistantMessage);
+          } else {
+            console.error('Cannot add assistant message: No current thread selected.');
+          }
         });
 
         return assistantMessage;
@@ -112,6 +111,9 @@ export const useChatStore = create<ChatStore>()(
           } else {
             const thread = state.threads[state.currentThreadId];
             thread.messages.push(userMessage);
+            if (thread.messages.length === 2 && thread.title === 'New Thread') {
+              thread.title = message.substring(0, 30) + (message.length > 30 ? '...' : '');
+            }
           }
         });
 
@@ -120,38 +122,34 @@ export const useChatStore = create<ChatStore>()(
 
       updateAssistantMessage: (id: number, message: string) => {
         set(state => {
-          if (state.currentThreadId) {
-            const thread = state.threads[state.currentThreadId];
-            const assistantMessage = thread.messages.find(m => m.id === id);
+          const currentId = state.currentThreadId;
+          if (currentId) {
+            const thread = state.threads[currentId];
+            const assistantMessage = thread.messages.find(
+              m => m.id === id && m.role === 'assistant',
+            );
             if (assistantMessage) {
               assistantMessage.content = message;
+            } else {
+              console.warn(`Assistant message with id ${id} not found in current thread.`);
             }
           }
         });
       },
 
-      setInterface: (id: number, data: WorkflowStep) => {
+      addToolCallToMessage: (id: number, toolCall: ToolCall) => {
         set(state => {
-          if (state.currentThreadId) {
-            const thread = state.threads[state.currentThreadId];
-            const message = thread.messages.find(m => m.id === id);
+          const currentId = state.currentThreadId;
+          if (currentId) {
+            const thread = state.threads[currentId];
+            const message = thread.messages.find(m => m.id === id && m.role === 'assistant');
             if (message) {
-              message.workflow = {
-                interface: data,
-                steps: [],
-              };
-            }
-          }
-        });
-      },
-
-      setSteps: (id: number, steps: WorkflowStep[]) => {
-        set(state => {
-          if (state.currentThreadId) {
-            const thread = state.threads[state.currentThreadId];
-            const message = thread.messages.find(m => m.id === id);
-            if (message && message.workflow) {
-              message.workflow.steps = steps;
+              if (!message.tool_calls) {
+                message.tool_calls = [];
+              }
+              message.tool_calls.push(toolCall);
+            } else {
+              console.warn(`Assistant message with id ${id} not found to add tool call.`);
             }
           }
         });
@@ -159,34 +157,46 @@ export const useChatStore = create<ChatStore>()(
 
       setMessageError: (id: number, error: ThreadMessage['error']) => {
         set(state => {
-          if (state.currentThreadId) {
-            const thread = state.threads[state.currentThreadId];
+          const currentId = state.currentThreadId;
+          if (currentId) {
+            const thread = state.threads[currentId];
             const message = thread.messages.find(m => m.id === id);
             if (message) {
               message.error = error;
+            } else {
+              console.warn(`Message with id ${id} not found to set error.`);
             }
           }
         });
       },
 
       getRecentThreads: (limit = 5): Thread[] => {
-        const threads = Object.values(useChatStore.getState().threads);
-        return threads.sort((a, b) => b.id - a.id).slice(0, limit);
+        const threads = Object.values(get().threads);
+        return threads
+          .sort((a, b) => {
+            const lastMsgA = a.messages[a.messages.length - 1]?.id || a.id;
+            const lastMsgB = b.messages[b.messages.length - 1]?.id || b.id;
+            return lastMsgB - lastMsgA;
+          })
+          .slice(0, limit);
       },
 
       getTimeAgo: (timestamp: number): string => {
-        const seconds = Math.floor((Date.now() - timestamp) / 1000);
+        const now = Date.now();
+        const seconds = Math.floor((now - timestamp) / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+
         if (seconds < 60) return `${seconds}s ago`;
-        if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-        return `${Math.floor(seconds / 86400)}d ago`;
+        if (minutes < 60) return `${minutes}m ago`;
+        if (hours < 24) return `${hours}h ago`;
+        return `${days}d ago`;
       },
 
       getAssistantMessageCount: (threadId: Thread['id']): number => {
-        const thread = useChatStore.getState().threads[threadId];
-        return thread
-          ? thread.messages.filter((m: ThreadMessage) => m.role === 'assistant').length
-          : 0;
+        const thread = get().threads[threadId];
+        return thread ? thread.messages.filter(m => m.role === 'assistant').length : 0;
       },
 
       clearThreads: () => {
@@ -197,8 +207,11 @@ export const useChatStore = create<ChatStore>()(
       },
 
       getMessagesUntil: (id: number): ThreadMessage[] => {
-        const thread = useChatStore.getState().threads[useChatStore.getState().currentThreadId!];
-        return thread.messages.filter(m => m.id < id);
+        const thread = get().getCurrentThread();
+        if (!thread) return [];
+        const messageIndex = thread.messages.findIndex(m => m.id === id);
+        if (messageIndex === -1) return thread.messages;
+        return thread.messages.slice(0, messageIndex);
       },
     })),
     {

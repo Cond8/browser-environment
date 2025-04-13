@@ -33,18 +33,44 @@ export type WorkflowStep = {
   outputs?: string[];
 };
 
+// Helper functions for validation
+const pascalCaseRegex = /^[A-Z][a-zA-Z0-9]*$/;
+const snakeCaseRegex = /^[a-z][a-z0-9]*(_[a-z0-9]+)*$/;
+
+// Base schemas for reuse
+const nameSchema = z
+  .string()
+  .min(1)
+  .regex(pascalCaseRegex, 'Name must be in PascalCase (e.g. ProcessUserData)');
+
+const methodSchema = z
+  .string()
+  .min(1)
+  .regex(snakeCaseRegex, 'Method must be in snake_case (e.g. transform_user_data)');
+
+const variableNameSchema = z
+  .string()
+  .min(1)
+  .regex(snakeCaseRegex, 'Variable name must be in snake_case (e.g. user_data)');
+
+const goalSchema = z
+  .string()
+  .min(1)
+  .max(100)
+  .describe('Short, clear task summary (max 100 characters)');
+
+// Enhanced interface schema
 export const interfaceSchema = z.object({
-  name: z.string().describe('Name of the workflow in PascalCase (e.g. ProcessUserData)'),
+  name: nameSchema,
   service: z.enum(SERVICES).describe('Domain service (choose from DOMAIN_SERVICES list)'),
-  method: z.string().describe('Method name in snake_case (e.g. transform_user_data)'),
-  goal: z.string().describe('Short, clear task summary (max 10 words)'),
-  inputs: z.array(z.string().describe('Input variable name in snake_case')).optional(),
-  outputs: z.array(z.string().describe('Output variable name in snake_case')).optional(),
+  method: methodSchema,
+  goal: goalSchema,
+  inputs: z.array(variableNameSchema).optional(),
+  outputs: z.array(variableNameSchema).optional(),
 });
 
-export const stepsSchema = z.object({
-  steps: z.array(interfaceSchema),
-});
+// Enhanced steps schema
+export const stepsSchema = z.array(interfaceSchema).min(1, 'At least one step is required');
 
 function zodToOllamaTool(name: string, description: string, schema: z.ZodTypeAny): Tool {
   const jsonSchema = zodToJsonSchema(schema, name);
