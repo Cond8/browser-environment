@@ -11,7 +11,6 @@ import {
 interface StreamStore {
   currentMessageId: number | null;
   isStreaming: boolean;
-  insideJson: boolean;
   partialMessages: Record<number, ThreadMessage>;
   partialJsons: Record<number, string>;
   errors: Record<
@@ -20,7 +19,7 @@ interface StreamStore {
       message: string;
       type: string;
       details?: {
-        phase?: 'interface' | 'steps' | 'stream';
+        phase?: 'interface' | 'steps' | 'stream' | 'alignment';
         validationErrors?: string[];
         context?: Record<string, unknown>;
       } | null;
@@ -35,7 +34,7 @@ interface StreamStore {
       message: string;
       type: string;
       details?: {
-        phase?: 'interface' | 'steps' | 'stream';
+        phase?: 'interface' | 'steps' | 'stream' | 'alignment';
         validationErrors?: string[];
         context?: Record<string, unknown>;
       } | null;
@@ -44,12 +43,11 @@ interface StreamStore {
   clearErrors: () => void;
 
   stopStreaming: () => void;
-  startChain: () => void;
+  startWorkflowChain: () => void;
 
   addPartialMessage: (messageId: number, message: string) => void;
   clearPartialAssistantMessage: (messageId: number) => void;
 
-  appendToJson: (messageId: number, chunk: string) => void;
   setPartialJson: (messageId: number, json: string) => void;
   clearJson: (messageId: number) => void;
 }
@@ -58,7 +56,6 @@ export const useStreamStore = create<StreamStore>()(
   immer((set, get) => ({
     currentMessageId: null,
     isStreaming: false,
-    insideJson: false,
     partialMessages: {},
     partialJsons: {},
     errors: {},
@@ -85,19 +82,17 @@ export const useStreamStore = create<StreamStore>()(
     stopStreaming: () => {
       set(state => {
         state.isStreaming = false;
-        state.insideJson = false;
         state.partialJsons = {};
         state.partialMessages = {};
       });
     },
 
-    startChain: async () => {
+    startWorkflowChain: async () => {
       set(state => {
         state.currentMessageId = null;
         state.isStreaming = true;
         state.partialMessages = {};
         state.partialJsons = {};
-        state.insideJson = false;
         state.errors = {};
       });
 
@@ -112,18 +107,6 @@ export const useStreamStore = create<StreamStore>()(
           switch (chunk.type) {
             case 'text':
               get().addPartialMessage(chunk.id, chunk.content);
-              if (get().insideJson) get().appendToJson(chunk.id, chunk.content);
-              break;
-            case 'start_json':
-              set(state => {
-                state.insideJson = true;
-                state.partialJsons[chunk.id] ||= '';
-              });
-              break;
-            case 'end_json':
-              set(state => {
-                state.insideJson = false;
-              });
               break;
             case 'error':
               const structuredError = {
@@ -169,7 +152,6 @@ export const useStreamStore = create<StreamStore>()(
           state.isStreaming = false;
           state.partialMessages = {};
           state.partialJsons = {};
-          state.insideJson = false;
         });
       }
     },
@@ -189,13 +171,6 @@ export const useStreamStore = create<StreamStore>()(
     setPartialJson: (messageId: number, json: string) =>
       set(state => {
         state.partialJsons[messageId] = json;
-      }),
-
-    appendToJson: (messageId: number, chunk: string) =>
-      set(state => {
-        if (state.partialJsons[messageId] !== undefined) {
-          state.partialJsons[messageId] += chunk;
-        }
       }),
 
     clearJson: (messageId: number) =>

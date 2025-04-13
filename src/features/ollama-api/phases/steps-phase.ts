@@ -3,12 +3,8 @@ import { parseOrRepairJson } from '../llm-output-fixer';
 import { SYSTEM_PROMPT } from '../prompts/prompts-system';
 import { stepsSchema, WorkflowService, WorkflowStep } from '../tool-schemas/workflow-schema';
 
-import { StreamYield, WorkflowChainError, WorkflowValidationError } from '../workflow-chain';
-
-type StreamResponseFn = (
-  id: number,
-  request: ChatRequest & { stream: true },
-) => AsyncGenerator<StreamYield, string, unknown>;
+import { WorkflowChainError, WorkflowValidationError } from '../workflow-chain';
+import { StreamResponseFn, StreamYield } from '../stream-response';
 
 export const STEPS_PROMPT = () =>
   `
@@ -109,12 +105,9 @@ export async function* handleStepsPhase(
       options,
       stream: true as const,
     };
-    console.log('[StepsPhase] Sending request:', request);
 
     response = yield* streamFn(id, request);
-    console.log('[StepsPhase] Received response:', response);
   } catch (err) {
-    console.error('[StepsPhase] Error during steps generation:', err);
     throw new WorkflowChainError(
       'Steps generation failed',
       'steps',
@@ -123,16 +116,13 @@ export async function* handleStepsPhase(
     );
   }
 
-  console.log('[StepsPhase] Parsing response with schema');
   const parsed = parseWithSchema(response, stepsSchema, 'steps');
-  console.log('[StepsPhase] Parsed steps:', parsed);
 
   const steps = parsed.map((step: WorkflowStep) => ({
     ...step,
     service: step.service as WorkflowService,
   }));
 
-  console.log('[StepsPhase] Final steps:', steps);
   yield { type: 'text', content: JSON.stringify({ steps }, null, 2), id };
   return steps;
 }

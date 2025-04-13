@@ -1,4 +1,3 @@
-import { ChatRequest } from 'ollama/browser';
 import { parseOrRepairJson } from '../llm-output-fixer';
 import { SYSTEM_PROMPT } from '../prompts/prompts-system';
 import {
@@ -7,12 +6,8 @@ import {
   WorkflowService,
   WorkflowStep,
 } from '../tool-schemas/workflow-schema';
-import { StreamYield, WorkflowChainError, WorkflowValidationError } from '../workflow-chain';
-
-type StreamResponseFn = (
-  id: number,
-  request: ChatRequest & { stream: true },
-) => AsyncGenerator<StreamYield, string, unknown>;
+import { WorkflowChainError, WorkflowValidationError } from '../workflow-chain';
+import { StreamResponseFn, StreamYield } from '../stream-response';
 
 export const INTERFACE_PROMPT = () =>
   `
@@ -70,19 +65,15 @@ export async function* handleInterfacePhase(
   content: string,
   id: number,
   streamFn: StreamResponseFn,
-  model: string,
-  options: any,
 ): AsyncGenerator<StreamYield, WorkflowStep, unknown> {
   let response;
   try {
     response = yield* streamFn(id, {
-      model,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT(INTERFACE_PROMPT()) },
         { role: 'user', content },
       ],
       tools: [interfaceTool],
-      options,
       stream: true,
     });
   } catch (err) {

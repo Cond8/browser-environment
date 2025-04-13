@@ -7,7 +7,7 @@ interface ErrorDisplayProps {
     message: string;
     type: string;
     details?: {
-      phase?: 'interface' | 'steps' | 'stream';
+      phase?: 'interface' | 'steps' | 'stream' | 'alignment';
       validationErrors?: string[];
       context?: Record<string, unknown>;
     } | null;

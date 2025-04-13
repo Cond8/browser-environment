@@ -11,7 +11,7 @@ export interface ThreadMessage extends Message {
     message: string;
     type: string;
     details?: {
-      phase?: 'interface' | 'steps' | 'stream';
+      phase?: 'interface' | 'steps' | 'stream' | 'alignment';
       validationErrors?: string[];
       context?: Record<string, unknown>;
     };
@@ -117,7 +117,7 @@ export const useChatStore = create<ChatStore>()(
           }
         });
 
-        useStreamStore.getState().startChain();
+        useStreamStore.getState().startWorkflowChain();
       },
 
       updateAssistantMessage: (id: number, message: string) => {
