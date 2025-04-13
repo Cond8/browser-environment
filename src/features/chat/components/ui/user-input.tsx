@@ -14,17 +14,19 @@ export function UserInput() {
   const addUserMessage = useChatStore(state => state.addUserMessage);
   const triggerAbort = useAbortEventBusStore(state => state.triggerAbort);
   const isLoading = useConnStore(state => state.isLoading);
+  const setIsLoading = useConnStore(state => state.setIsLoading);
   const startWorkflowChain = useConnStore(state => state.startWorkflowChain);
   const stopLoading = useAbortEventBusStore(state => state.triggerAbort);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = message.trim();
     if (!trimmed) return;
 
     addUserMessage(trimmed);
     setMessage('');
-    void startWorkflowChain();
+    await startWorkflowChain();
+    setIsLoading(false);
   };
 
   const handleButtonSubmit = () => {

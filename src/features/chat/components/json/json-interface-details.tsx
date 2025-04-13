@@ -1,4 +1,6 @@
-// src/features/chat/components/json-interface-details.tsx
+// src/features/chat/components/json/json-interface-details.tsx
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 interface Interface {
@@ -128,142 +130,143 @@ function InterfaceCard({
   const colorClasses = getServiceColorClasses(serviceInfo.category, serviceInfo.type);
 
   return (
-    <div
+    <Card
       className={cn(
-        'group space-y-4 p-6 rounded-2xl transition-all duration-300',
-        'bg-gradient-to-br from-card to-card/80',
-        'shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)]',
-        'hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.4)]',
-        'border-2 backdrop-blur-sm',
+        'group transition-all duration-300',
         isStep ? 'border-muted-foreground/10' : 'border-primary/20',
       )}
     >
-      <div className="space-y-2">
-        <p className="text-sm font-medium tracking-wide text-primary">
-          {isStep ? 'Step' : 'Interface'}
-        </p>
-        <h2 className="text-2xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80">
-          {addSpacesToTitle(data.name)}
-        </h2>
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-center gap-3">
-          <p className="text-sm font-medium text-primary">Service:</p>
-          <span className="text-lg font-semibold">{addSpacesToTitle(data.service)}</span>
+      <CardHeader className="space-y-1">
+        <div className="flex items-center justify-between">
+          <Badge variant="secondary" className="text-xs">
+            {isStep ? 'Step' : 'Interface'}
+          </Badge>
+          <Badge className={cn('text-xs', colorClasses)}>
+            {serviceInfo.category} - {serviceInfo.type}
+          </Badge>
         </div>
-        <div className={cn('text-xs font-medium tracking-wide', colorClasses)}>
-          {serviceInfo.category} - {serviceInfo.type}
-        </div>
-        <div className="flex items-center gap-3">
-          <p className="text-sm font-medium text-primary">Method:</p>
-          <span className="text-lg font-semibold">
-            {formatSnakeCase(parseWithComments(data.method).value)}
-            {parseWithComments(data.method).comment && (
-              <span className="text-muted-foreground ml-2">
-                - {parseWithComments(data.method).comment}
-              </span>
-            )}
-          </span>
-        </div>
-        <p className="text-lg leading-relaxed font-light text-foreground">{data.goal}</p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-6 text-sm">
+        <CardTitle className="text-xl">{addSpacesToTitle(data.name)}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
         <div className="space-y-2">
-          <h3 className="font-medium tracking-wide text-primary">Inputs</h3>
-          <ul className="list-none space-y-2">
-            {Array.isArray(data.inputs) &&
-              data.inputs.map((input: string | { [key: string]: string }, idx: number) => {
-                if (typeof input === 'string') {
-                  const parsed = parseWithComments(input);
+          <div className="flex items-center gap-2">
+            <p className="text-xs font-medium text-primary">Service:</p>
+            <span className="text-base font-semibold">{addSpacesToTitle(data.service)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <p className="text-xs font-medium text-primary">Method:</p>
+            <span className="text-base font-semibold">
+              {formatSnakeCase(parseWithComments(data.method).value)}
+              {parseWithComments(data.method).comment && (
+                <span className="text-muted-foreground ml-1">
+                  - {parseWithComments(data.method).comment}
+                </span>
+              )}
+            </span>
+          </div>
+          <p className="text-sm leading-relaxed font-light">{data.goal}</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 text-xs">
+          <div className="space-y-1">
+            <h3 className="text-xs font-medium tracking-wide text-primary">Inputs</h3>
+            <ul className="list-none space-y-1">
+              {Array.isArray(data.inputs) &&
+                data.inputs.map((input: string | { [key: string]: string }, idx: number) => {
+                  if (typeof input === 'string') {
+                    const parsed = parseWithComments(input);
+                    return (
+                      <li key={idx} className="flex items-start gap-1">
+                        <span className="mt-1 h-1 w-1 rounded-full bg-primary/50" />
+                        <div>
+                          <span className="font-medium">{parsed.value}</span>
+                          {parsed.comment && (
+                            <span className="text-muted-foreground ml-1">- {parsed.comment}</span>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  }
+                  const [name, desc] = Object.entries(input)[0];
+                  const parsedName = parseWithComments(name);
+                  const parsedDesc = parseWithComments(desc);
                   return (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary/50" />
+                    <li key={idx} className="flex items-start gap-1">
+                      <span className="mt-1 h-1 w-1 rounded-full bg-primary/50" />
                       <div>
-                        <span className="font-medium">{parsed.value}</span>
-                        {parsed.comment && (
-                          <span className="text-muted-foreground ml-2">- {parsed.comment}</span>
+                        <strong className="font-medium">{formatSnakeCase(parsedName.value)}</strong>
+                        {parsedName.comment && (
+                          <span className="text-muted-foreground ml-1">- {parsedName.comment}</span>
                         )}
+                        <span className="block text-muted-foreground">
+                          {parsedDesc.value}
+                          {parsedDesc.comment && (
+                            <span className="ml-1">- {parsedDesc.comment}</span>
+                          )}
+                        </span>
                       </div>
                     </li>
                   );
-                }
-                const [name, desc] = Object.entries(input)[0];
-                const parsedName = parseWithComments(name);
-                const parsedDesc = parseWithComments(desc);
-                return (
-                  <li key={idx} className="flex items-start gap-2">
-                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary/50" />
-                    <div>
-                      <strong className="font-medium">{formatSnakeCase(parsedName.value)}</strong>
-                      {parsedName.comment && (
-                        <span className="text-muted-foreground ml-2">- {parsedName.comment}</span>
-                      )}
-                      <span className="block text-muted-foreground">
-                        {parsedDesc.value}
-                        {parsedDesc.comment && <span className="ml-2">- {parsedDesc.comment}</span>}
-                      </span>
-                    </div>
-                  </li>
-                );
-              })}
-          </ul>
-        </div>
-        <div className="space-y-2">
-          <h3 className="font-medium tracking-wide text-primary">Outputs</h3>
-          <ul className="list-none space-y-2">
-            {Array.isArray(data.outputs) &&
-              data.outputs.map((output: string | { [key: string]: string }, idx: number) => {
-                if (typeof output === 'string') {
-                  const parsed = parseWithComments(output);
+                })}
+            </ul>
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-xs font-medium tracking-wide text-primary">Outputs</h3>
+            <ul className="list-none space-y-1">
+              {Array.isArray(data.outputs) &&
+                data.outputs.map((output: string | { [key: string]: string }, idx: number) => {
+                  if (typeof output === 'string') {
+                    const parsed = parseWithComments(output);
+                    return (
+                      <li key={idx} className="flex items-start gap-1">
+                        <span className="mt-1 h-1 w-1 rounded-full bg-primary/50" />
+                        <div>
+                          <span className="font-medium">{parsed.value}</span>
+                          {parsed.comment && (
+                            <span className="text-muted-foreground ml-1">- {parsed.comment}</span>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  }
+                  const [name, desc] = Object.entries(output)[0];
+                  const parsedName = parseWithComments(name);
+                  const parsedDesc = parseWithComments(desc);
                   return (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary/50" />
+                    <li key={idx} className="flex items-start gap-1">
+                      <span className="mt-1 h-1 w-1 rounded-full bg-primary/50" />
                       <div>
-                        <span className="font-medium">{parsed.value}</span>
-                        {parsed.comment && (
-                          <span className="text-muted-foreground ml-2">- {parsed.comment}</span>
+                        <strong className="font-medium">{formatSnakeCase(parsedName.value)}</strong>
+                        {parsedName.comment && (
+                          <span className="text-muted-foreground ml-1">- {parsedName.comment}</span>
                         )}
+                        <span className="block text-muted-foreground">
+                          {parsedDesc.value}
+                          {parsedDesc.comment && (
+                            <span className="ml-1">- {parsedDesc.comment}</span>
+                          )}
+                        </span>
                       </div>
                     </li>
                   );
-                }
-                const [name, desc] = Object.entries(output)[0];
-                const parsedName = parseWithComments(name);
-                const parsedDesc = parseWithComments(desc);
-                return (
-                  <li key={idx} className="flex items-start gap-2">
-                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary/50" />
-                    <div>
-                      <strong className="font-medium">{formatSnakeCase(parsedName.value)}</strong>
-                      {parsedName.comment && (
-                        <span className="text-muted-foreground ml-2">- {parsedName.comment}</span>
-                      )}
-                      <span className="block text-muted-foreground">
-                        {parsedDesc.value}
-                        {parsedDesc.comment && <span className="ml-2">- {parsedDesc.comment}</span>}
-                      </span>
-                    </div>
-                  </li>
-                );
-              })}
-          </ul>
-        </div>
-      </div>
-
-      {/* Render Steps if provided and this is not already a step card */}
-      {!isStep && steps && steps.length > 0 && (
-        <div className="space-y-4 pt-6 mt-6 border-t border-muted-foreground/10">
-          <h3 className="text-lg font-semibold tracking-wide text-primary">Steps</h3>
-          <div className="space-y-4">
-            {steps.map((step, index) => (
-              <InterfaceCard key={index} interface={step} isStep={true} />
-            ))}
+                })}
+            </ul>
           </div>
         </div>
-      )}
-    </div>
+
+        {/* Render Steps if provided and this is not already a step card */}
+        {!isStep && steps && steps.length > 0 && (
+          <div className="space-y-2 pt-4 mt-4 border-t border-muted-foreground/10">
+            <h3 className="text-sm font-semibold tracking-wide text-primary">Steps</h3>
+            <div className="space-y-2">
+              {steps.map((step, index) => (
+                <InterfaceCard key={index} interface={step} isStep={true} />
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
