@@ -4,7 +4,7 @@ import { AssistantPanel } from '@/features/chat';
 import { EditorWrapper } from '@/features/editor/components/editor-wrapper';
 import React from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { VirtualFileSystem } from './virtual-file-system';
+import { VirtualFileSystem } from '../../vfs/components/virtual-file-system';
 
 export const EditorLayout: React.FC = () => {
   return (

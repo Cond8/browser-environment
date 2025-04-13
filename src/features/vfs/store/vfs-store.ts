@@ -82,7 +82,7 @@ export const useVfsStore = create<VfsStore>()(
       ],
     },
     selectedFile: null,
-    expandedDirectories: new Set(['workflows', 'services']),
+    expandedDirectories: new Set(['', '/workflows', '/services']),
 
     setSelectedFile: path =>
       set(state => {
@@ -98,7 +98,11 @@ export const useVfsStore = create<VfsStore>()(
         }
       }),
 
-    isDirectoryExpanded: path => get().expandedDirectories.has(path),
+    isDirectoryExpanded: path => {
+      // Always expand the root directory
+      if (path === '') return true;
+      return get().expandedDirectories.has(path);
+    },
 
     // Create operations
     createFile: (path, name, fileType) =>

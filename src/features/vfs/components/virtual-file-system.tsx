@@ -2,7 +2,7 @@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileNode, useVfsStore } from '@/features/vfs/store/vfs-store';
 import { cn } from '@/lib/utils';
-import { ChevronDown, ChevronRight, File, Folder } from 'lucide-react';
+import { ChevronDown, ChevronRight, File, Folder, Server, Workflow } from 'lucide-react';
 import React from 'react';
 
 interface FileTreeProps {
@@ -25,6 +25,24 @@ const FileTree: React.FC<FileTreeProps> = ({ node, level = 0, path = '' }) => {
     }
   };
 
+  const getIcon = () => {
+    if (node.type === 'directory') {
+      if (node.name === 'workflows') {
+        return <Workflow className="h-4 w-4 text-blue-500" />;
+      } else if (node.name === 'services') {
+        return <Server className="h-4 w-4 text-green-500" />;
+      }
+      return <Folder className="h-4 w-4 text-muted-foreground" />;
+    } else {
+      if (node.fileType === 'workflow') {
+        return <Workflow className="h-4 w-4 text-blue-500" />;
+      } else if (node.fileType === 'service') {
+        return <Server className="h-4 w-4 text-green-500" />;
+      }
+      return <File className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+
   return (
     <div>
       <div
@@ -36,18 +54,16 @@ const FileTree: React.FC<FileTreeProps> = ({ node, level = 0, path = '' }) => {
         onClick={handleClick}
         style={{ paddingLeft: `${level * 12}px` }}
       >
-        {node.type === 'directory' ? (
+        {node.type === 'directory' && (
           <>
             {isExpanded ? (
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
             ) : (
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             )}
-            <Folder className="h-4 w-4 text-muted-foreground" />
           </>
-        ) : (
-          <File className="h-4 w-4 text-muted-foreground" />
         )}
+        {getIcon()}
         <span className="text-sm">{node.name}</span>
       </div>
       {isExpanded && node.children && (
@@ -67,7 +83,7 @@ export const VirtualFileSystem: React.FC = () => {
   return (
     <ScrollArea className="h-full">
       <div className="p-2">
-        <FileTree node={files} />
+        {files.children?.map((child, index) => <FileTree key={index} node={child} />)}
       </div>
     </ScrollArea>
   );
