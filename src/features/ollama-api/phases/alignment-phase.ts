@@ -1,4 +1,5 @@
 // src/features/ollama-api/phases/alignment-phase.ts
+import { ChatRequest } from 'ollama/browser';
 import { SYSTEM_PROMPT } from '../prompts/prompts-system';
 import { WorkflowChainError } from '../workflow-chain';
 
@@ -29,11 +30,11 @@ RULES:
 export async function handleAlignmentPhase(
   content: string,
   id: number,
-  chatFn: (id: number, request: any) => Promise<string>,
+  chatFn: (request: Omit<ChatRequest, 'model'>) => Promise<string>,
 ): Promise<{ response: string; id: number }> {
   let response;
   try {
-    response = await chatFn(id, {
+    response = await chatFn({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT(ALIGNMENT_PROMPT()) },
         { role: 'user', content },

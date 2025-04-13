@@ -101,7 +101,7 @@ export async function executeWorkflowChain(): Promise<{
 }
 
 function createChatFunction(ollamaUrl: string, model: string, parameters: any) {
-  return async (id: number, request: any) => {
+  return async (request: any) => {
     const response = await fetch(`${ollamaUrl}/api/chat`, {
       method: 'POST',
       headers: {

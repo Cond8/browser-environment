@@ -1,4 +1,5 @@
 // src/features/ollama-api/phases/interface-phase.ts
+import { ChatRequest } from 'ollama/browser';
 import { parseOrRepairJson } from '../llm-output-fixer';
 import { SYSTEM_PROMPT } from '../prompts/prompts-system';
 import {
@@ -64,11 +65,11 @@ RULES:
 export async function handleInterfacePhase(
   content: string,
   id: number,
-  chatFn: (id: number, request: any) => Promise<string>,
+  chatFn: (request: Omit<ChatRequest, 'model'>) => Promise<string>,
 ): Promise<{ interface: WorkflowStep; id: number }> {
   let response;
   try {
-    response = await chatFn(id, {
+    response = await chatFn({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT(INTERFACE_PROMPT()) },
         { role: 'user', content },

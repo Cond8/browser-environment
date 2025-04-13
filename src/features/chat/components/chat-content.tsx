@@ -26,18 +26,12 @@ export const ChatContent = () => {
     return <EmptyChatState />;
   }
 
-  const messages = currentThread.messages;
-  const lastAssistantMessageIndex = messages
-    .map((msg, idx) => ({ idx, isAssistant: msg.role === 'assistant' }))
-    .filter(item => item.isAssistant)
-    .pop()?.idx;
+
 
   return (
     <ScrollArea className="flex-1">
       <div className="flex flex-col">
-        {currentThread.messages.map((message: ThreadMessage, index: number) => {
-          const isAssistant = message.role === 'assistant';
-          const isLatestAssistantMessage = isAssistant && index === lastAssistantMessageIndex;
+        {currentThread.messages.map((message: ThreadMessage) => {
 
           return (
             <div

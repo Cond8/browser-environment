@@ -81,31 +81,23 @@ export async function handleStepsPhase(
   content: string,
   id: number,
   interfaceParsed: WorkflowStep,
-  chatFn: (id: number, request: any) => Promise<string>,
-  model: string,
-  options: any,
+  chatFn: (request: Omit<ChatRequest, 'model'>) => Promise<string>,
 ): Promise<{ steps: WorkflowStep[]; id: number }> {
   console.log('[StepsPhase] Starting steps phase with:', {
     content,
     id,
     interfaceParsed,
-    model,
-    options,
   });
 
   let response;
   try {
-    const request: ChatRequest = {
-      model,
+    response = await chatFn({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT(STEPS_PROMPT()) },
         { role: 'user', content },
         { role: 'assistant', content: JSON.stringify(interfaceParsed) },
       ],
-      options,
-    };
-
-    response = await chatFn(id, request);
+    });
   } catch (err) {
     throw new WorkflowChainError(
       'Steps generation failed',
