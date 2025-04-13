@@ -3,7 +3,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Node, useVfsStore } from '@/features/vfs/store/vfs-store';
 import { cn } from '@/lib/utils';
 import { ChevronDown, ChevronRight, File, Folder, Server, Workflow } from 'lucide-react';
-import React from 'react';
+import React, { useMemo } from 'react';
 
 interface FileTreeProps {
   node: Node;
@@ -14,6 +14,16 @@ const FileTree: React.FC<FileTreeProps> = ({ node, level = 0 }) => {
   const isExpanded = useVfsStore(state => state.isNodeExpanded(node.id));
   const selectedNode = useVfsStore(state => state.selectedNode);
   const { toggleNode, setSelectedNode } = useVfsStore();
+
+  // Use memoized selector for child nodes to prevent infinite loops
+  const edges = useVfsStore(state => state.getNodeEdges(node.id, 'contains'));
+
+  // Memoize the child nodes array to prevent reference changes
+  const childNodes = useMemo(() => {
+    return edges
+      .map(edge => useVfsStore.getState().getNode(edge.target))
+      .filter((node): node is Node => node !== null);
+  }, [edges]);
 
   const handleClick = () => {
     if (node.type === 'directory') {
@@ -33,14 +43,6 @@ const FileTree: React.FC<FileTreeProps> = ({ node, level = 0 }) => {
     }
     return <File className="h-4 w-4 text-muted-foreground" />;
   };
-
-  // Get child nodes through edges
-  const childNodes = useVfsStore(state => {
-    const edges = state.getEdges(node.id, 'contains');
-    return edges
-      .map(edge => state.getNode(edge.target))
-      .filter((node): node is Node => node !== null);
-  });
 
   return (
     <div>
@@ -76,17 +78,23 @@ const FileTree: React.FC<FileTreeProps> = ({ node, level = 0 }) => {
   );
 };
 
-export const VirtualFileSystem: React.FC = () => {
-  const rootNodes = useVfsStore(state => {
-    // Get all nodes that are not targets of any 'contains' edge
-    const allNodes = Array.from(state.nodes.values());
+// Custom hook to get root nodes using memoization
+const useRootNodes = () => {
+  const allNodes = useVfsStore(state => state.getAllNodes());
+  const allEdges = useVfsStore(state => state.getAllEdges());
+
+  // Memoize the calculation to prevent recreating arrays on each render
+  return useMemo(() => {
     const targetNodeIds = new Set(
-      Array.from(state.edges.values())
-        .filter(edge => edge.type === 'contains')
-        .map(edge => edge.target),
+      allEdges.filter(edge => edge.type === 'contains').map(edge => edge.target),
     );
     return allNodes.filter(node => !targetNodeIds.has(node.id));
-  });
+  }, [allNodes, allEdges]);
+};
+
+export const VirtualFileSystem: React.FC = () => {
+  // Use our custom hook to get memoized root nodes
+  const rootNodes = useRootNodes();
 
   return (
     <ScrollArea className="h-full">

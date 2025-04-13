@@ -104,7 +104,7 @@ export async function executeWorkflowChain(): Promise<{
     );
     chatStore.addInterfaceMessage(interfaceResult.interface);
     const workflowPath = useVfsStore.getState().createWorkflow(interfaceResult.interface);
-    useEditorStore.getState().setActiveEditor('workflow', workflowPath);
+    useEditorStore.getState().setActiveEditor(workflowPath);
 
     /* =======================
      * ===== STEPS PHASE =====
@@ -126,7 +126,7 @@ export async function executeWorkflowChain(): Promise<{
     );
     chatStore.addStepsMessage(stepsResult.steps);
     useVfsStore.getState().addStepsToWorkflow(workflowPath, stepsResult.steps);
-    useVfsStore.getState().upsertServices(stepsResult.steps);
+    // useVfsStore.getState().upsertServices(stepsResult.steps);
 
     return {
       interface: interfaceResult.interface,

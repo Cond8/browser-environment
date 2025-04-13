@@ -1,5 +1,6 @@
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useState } from 'react';
+import { useEditorStore } from '../stores/editor-store';
 import { DslEditor } from './dsl-editor';
 import { JsEditor } from './js-editor';
 import { JsonEditor } from './json-editor';
@@ -8,15 +9,16 @@ type EditorType = 'json' | 'js' | 'dsl';
 
 export const EditorWrapper = () => {
   const [editorType, setEditorType] = useState<EditorType>('json');
+  const jsonContent = useEditorStore(state => state.content);
 
   const renderEditor = () => {
     switch (editorType) {
       case 'dsl':
-        return <DslEditor dslContent={''} />;
+        return <DslEditor jsonContent={jsonContent} />;
       case 'json':
-        return <JsonEditor jsonContent={''} />;
+        return <JsonEditor jsonContent={jsonContent} />;
       case 'js':
-        return <JsEditor jsContent={''} />;
+        return <JsEditor jsonContent={jsonContent} />;
       default:
         return null;
     }

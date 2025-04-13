@@ -1,9 +1,10 @@
 import Editor from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { jsonToDsl } from '../transpilers/json-to-dsl';
 
 export interface DslEditorProps {
-  dslContent: string;
+  jsonContent: string;
 }
 
 // Custom DSL theme
@@ -22,13 +23,18 @@ const dslTheme: editor.IStandaloneThemeData = {
   },
 };
 
-export const DslEditor = ({ dslContent }: DslEditorProps) => {
+export const DslEditor = ({ jsonContent }: DslEditorProps) => {
+  const [dslContent, setDslContent] = useState<string>('');
   const editorRef = useRef<any>(null);
 
   const handleEditorDidMount = (editor: any) => {
     console.log('[DslEditor] Editor mounted');
     editorRef.current = editor;
   };
+
+  useEffect(() => {
+    setDslContent(jsonToDsl(jsonContent));
+  }, [jsonContent]);
 
   useEffect(() => {
     if (editorRef.current && typeof dslContent === 'string') {

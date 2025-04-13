@@ -1,17 +1,23 @@
 import Editor from '@monaco-editor/react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { jsonToJs } from '../transpilers/json-to-js';
 
 export interface JsEditorProps {
-  jsContent: string;
+  jsonContent: string;
 }
 
-export const JsEditor = ({ jsContent }: JsEditorProps) => {
+export const JsEditor = ({ jsonContent }: JsEditorProps) => {
+  const [jsContent, setJsContent] = useState<string>('');
   const editorRef = useRef<any>(null);
 
   const handleEditorDidMount = (editor: any) => {
     console.log('[JsEditor] Editor mounted');
     editorRef.current = editor;
   };
+
+  useEffect(() => {
+    setJsContent(jsonToJs(jsonContent));
+  }, [jsonContent]);
 
   useEffect(() => {
     if (editorRef.current && typeof jsContent === 'string') {

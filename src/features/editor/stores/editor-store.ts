@@ -1,3 +1,4 @@
+import { useVfsStore } from '@/features/vfs/store/vfs-store';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 
@@ -30,6 +31,8 @@ interface EditorState {
   setSelection: (selection: { start: number; end: number } | null) => void;
   setCursorPosition: (position: { line: number; column: number } | null) => void;
   updateSettings: (settings: Partial<EditorState['settings']>) => void;
+
+  setActiveEditor: (filepath: string) => void;
 }
 
 export const useEditorStore = create<EditorState>()(
@@ -70,6 +73,12 @@ export const useEditorStore = create<EditorState>()(
     updateSettings: newSettings => {
       set(state => {
         Object.assign(state.settings, newSettings);
+      });
+    },
+    setActiveEditor: (filepath) => {
+      set(state => {
+        state.filePath = filepath;
+        state.content = useVfsStore.getState().getContent(filepath);
       });
     },
   })),
