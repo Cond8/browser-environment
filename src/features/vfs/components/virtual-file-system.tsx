@@ -1,47 +1,46 @@
 // src/features/panels/components/virtual-file-system.tsx
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { FileNode, useVfsStore } from '@/features/vfs/store/vfs-store';
+import { Node, useVfsStore } from '@/features/vfs/store/vfs-store';
 import { cn } from '@/lib/utils';
 import { ChevronDown, ChevronRight, File, Folder, Server, Workflow } from 'lucide-react';
 import React from 'react';
 
 interface FileTreeProps {
-  node: FileNode;
+  node: Node;
   level?: number;
-  path?: string;
 }
 
-const FileTree: React.FC<FileTreeProps> = ({ node, level = 0, path = '' }) => {
-  const currentPath = path ? `${path}/${node.name}` : node.name;
-  const isExpanded = useVfsStore(state => state.isDirectoryExpanded(currentPath));
-  const selectedFile = useVfsStore(state => state.selectedFile);
-  const { toggleDirectory, setSelectedFile } = useVfsStore();
+const FileTree: React.FC<FileTreeProps> = ({ node, level = 0 }) => {
+  const isExpanded = useVfsStore(state => state.isNodeExpanded(node.id));
+  const selectedNode = useVfsStore(state => state.selectedNode);
+  const { toggleNode, setSelectedNode } = useVfsStore();
 
   const handleClick = () => {
     if (node.type === 'directory') {
-      toggleDirectory(currentPath);
+      toggleNode(node.id);
     } else {
-      setSelectedFile(currentPath);
+      setSelectedNode(node.id);
     }
   };
 
   const getIcon = () => {
     if (node.type === 'directory') {
-      if (node.name === 'workflows') {
-        return <Workflow className="h-4 w-4 text-blue-500" />;
-      } else if (node.name === 'services') {
-        return <Server className="h-4 w-4 text-green-500" />;
-      }
       return <Folder className="h-4 w-4 text-muted-foreground" />;
-    } else {
-      if (node.fileType === 'workflow') {
-        return <Workflow className="h-4 w-4 text-blue-500" />;
-      } else if (node.fileType === 'service') {
-        return <Server className="h-4 w-4 text-green-500" />;
-      }
-      return <File className="h-4 w-4 text-muted-foreground" />;
+    } else if (node.type === 'workflow') {
+      return <Workflow className="h-4 w-4 text-blue-500" />;
+    } else if (node.type === 'service') {
+      return <Server className="h-4 w-4 text-green-500" />;
     }
+    return <File className="h-4 w-4 text-muted-foreground" />;
   };
+
+  // Get child nodes through edges
+  const childNodes = useVfsStore(state => {
+    const edges = state.getEdges(node.id, 'contains');
+    return edges
+      .map(edge => state.getNode(edge.target))
+      .filter((node): node is Node => node !== null);
+  });
 
   return (
     <div>
@@ -49,7 +48,7 @@ const FileTree: React.FC<FileTreeProps> = ({ node, level = 0, path = '' }) => {
         className={cn(
           'flex items-center gap-2 px-2 py-1 hover:bg-muted/50 cursor-pointer',
           level > 0 && 'ml-4',
-          selectedFile === currentPath && 'bg-muted/50',
+          selectedNode === node.id && 'bg-muted/50',
         )}
         onClick={handleClick}
         style={{ paddingLeft: `${level * 12}px` }}
@@ -66,10 +65,10 @@ const FileTree: React.FC<FileTreeProps> = ({ node, level = 0, path = '' }) => {
         {getIcon()}
         <span className="text-sm">{node.name}</span>
       </div>
-      {isExpanded && node.children && (
+      {isExpanded && childNodes.length > 0 && (
         <div>
-          {node.children.map((child, index) => (
-            <FileTree key={index} node={child} level={level + 1} path={currentPath} />
+          {childNodes.map(child => (
+            <FileTree key={child.id} node={child} level={level + 1} />
           ))}
         </div>
       )}
@@ -78,12 +77,23 @@ const FileTree: React.FC<FileTreeProps> = ({ node, level = 0, path = '' }) => {
 };
 
 export const VirtualFileSystem: React.FC = () => {
-  const files = useVfsStore(state => state.files);
+  const rootNodes = useVfsStore(state => {
+    // Get all nodes that are not targets of any 'contains' edge
+    const allNodes = Array.from(state.nodes.values());
+    const targetNodeIds = new Set(
+      Array.from(state.edges.values())
+        .filter(edge => edge.type === 'contains')
+        .map(edge => edge.target),
+    );
+    return allNodes.filter(node => !targetNodeIds.has(node.id));
+  });
 
   return (
     <ScrollArea className="h-full">
       <div className="p-2">
-        {files.children?.map((child, index) => <FileTree key={index} node={child} />)}
+        {rootNodes.map(node => (
+          <FileTree key={node.id} node={node} />
+        ))}
       </div>
     </ScrollArea>
   );

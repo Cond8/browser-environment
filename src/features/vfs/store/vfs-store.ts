@@ -7,521 +7,233 @@ import { immer } from 'zustand/middleware/immer';
 // Enable MapSet plugin for Immer
 enableMapSet();
 
-export type FileType = 'workflow' | 'service';
+export type NodeType = 'workflow' | 'service' | 'directory';
+export type EdgeType = 'uses' | 'contains' | 'depends_on';
 
 export interface ServiceMethod {
   name: string;
   content: string;
 }
 
-export interface FileNode {
+export interface Node {
+  id: string;
   name: string;
-  type: 'file' | 'directory';
-  fileType?: FileType;
-  children?: FileNode[];
+  type: NodeType;
+  path: string;
   content?: {
-    // For workflow files
+    // For workflow nodes
     interface?: WorkflowStep;
     steps?: WorkflowStep[];
-    // For service files
+    // For service nodes
     template?: string;
     methods?: ServiceMethod[];
   };
 }
 
+export interface Edge {
+  id: string;
+  source: string; // source node id
+  target: string; // target node id
+  type: EdgeType;
+  properties?: Record<string, any>;
+}
+
 interface VfsStore {
-  files: FileNode;
-  selectedFile: string | null;
-  expandedDirectories: Set<string>;
+  // Graph structure
+  nodes: Map<string, Node>;
+  edges: Map<string, Edge>;
+
+  // UI state
+  selectedNode: string | null;
+  expandedNodes: Set<string>;
 
   // Actions
-  setSelectedFile: (path: string | null) => void;
-  toggleDirectory: (path: string) => void;
-  isDirectoryExpanded: (path: string) => boolean;
+  setSelectedNode: (nodeId: string | null) => void;
+  toggleNode: (nodeId: string) => void;
+  isNodeExpanded: (nodeId: string) => boolean;
 
-  // Create operations
-  createFile: (path: string, name: string, fileType: FileType) => void;
-  createDirectory: (path: string, name: string) => void;
+  // Node operations
+  createNode: (name: string, type: NodeType, path: string, content?: Node['content']) => string;
+  getNode: (nodeId: string) => Node | null;
+  getNodeByPath: (path: string) => Node | null;
+  renameNode: (nodeId: string, newName: string) => void;
+  deleteNode: (nodeId: string) => void;
 
-  // Read operations
-  getWorkflowContent: (path: string) => FileNode['content'] | null;
-  getServiceTemplate: (path: string) => string | null;
-  getServiceMethods: (path: string) => ServiceMethod[] | null;
-  getNode: (path: string) => FileNode | null;
+  // Edge operations
+  createEdge: (
+    source: string,
+    target: string,
+    type: EdgeType,
+    properties?: Record<string, any>,
+  ) => string;
+  getEdges: (nodeId: string, type?: EdgeType) => Edge[];
+  deleteEdge: (edgeId: string) => void;
 
-  // Update operations
-  commitInterface: (path: string, interfaceData: WorkflowStep) => void;
-  commitSteps: (path: string, steps: WorkflowStep[]) => void;
-  commitServiceTemplate: (path: string, template: string) => void;
-  commitServiceMethod: (path: string, methodName: string, methodContent: string) => void;
-  renameNode: (path: string, newName: string) => void;
-  moveNode: (fromPath: string, toPath: string) => void;
+  // Content operations
+  updateWorkflowContent: (
+    nodeId: string,
+    content: { interface?: WorkflowStep; steps?: WorkflowStep[] },
+  ) => void;
+  updateServiceContent: (
+    nodeId: string,
+    content: { template?: string; methods?: ServiceMethod[] },
+  ) => void;
 
-  // Delete operations
-  deleteNode: (path: string) => void;
-  deleteMethod: (path: string, methodName: string) => void;
-  deleteWorkflowSteps: (path: string) => void;
+  // Workflow operations
+  createWorkflow: (interfaceData: WorkflowStep) => string;
+  addStepsToWorkflow: (workflowId: string, steps: WorkflowStep[]) => void;
 }
 
 export const useVfsStore = create<VfsStore>()(
   immer((set, get) => ({
-    files: {
-      name: 'root',
-      type: 'directory',
-      children: [
-        {
-          name: 'workflows',
-          type: 'directory',
-          children: [],
-        },
-        {
-          name: 'services',
-          type: 'directory',
-          children: [],
-        },
-      ],
-    },
-    selectedFile: null,
-    expandedDirectories: new Set(['', '/workflows', '/services']),
+    // Initial state
+    nodes: new Map(),
+    edges: new Map(),
+    selectedNode: null,
+    expandedNodes: new Set(),
 
-    setSelectedFile: path =>
+    // UI actions
+    setSelectedNode: nodeId =>
       set(state => {
-        state.selectedFile = path;
+        state.selectedNode = nodeId;
       }),
 
-    toggleDirectory: path =>
+    toggleNode: nodeId =>
       set(state => {
-        if (state.expandedDirectories.has(path)) {
-          state.expandedDirectories.delete(path);
+        if (state.expandedNodes.has(nodeId)) {
+          state.expandedNodes.delete(nodeId);
         } else {
-          state.expandedDirectories.add(path);
+          state.expandedNodes.add(nodeId);
         }
       }),
 
-    isDirectoryExpanded: path => {
-      // Always expand the root directory
-      if (path === '') return true;
-      return get().expandedDirectories.has(path);
+    isNodeExpanded: nodeId => get().expandedNodes.has(nodeId),
+
+    // Node operations
+    createNode: (name, type, path, content) => {
+      const nodeId = crypto.randomUUID();
+      set(state => {
+        state.nodes.set(nodeId, {
+          id: nodeId,
+          name,
+          type,
+          path,
+          content,
+        });
+      });
+      return nodeId;
     },
 
-    // Create operations
-    createFile: (path, name, fileType) =>
-      set(state => {
-        const createNode = (node: FileNode, currentPath: string): boolean => {
-          if (currentPath === path) {
-            if (node.type !== 'directory') {
-              console.warn('Cannot create file in non-directory:', path);
-              return false;
-            }
-            node.children = node.children || [];
-            node.children.push({
-              name,
-              type: 'file',
-              fileType,
-              content:
-                fileType === 'workflow'
-                  ? { interface: undefined, steps: undefined }
-                  : { template: undefined, methods: [] },
-            });
-            return true;
-          }
-          if (node.children) {
-            for (const child of node.children) {
-              if (createNode(child, `${currentPath}/${child.name}`)) {
-                return true;
-              }
-            }
-          }
-          return false;
-        };
-        createNode(state.files, '');
-      }),
+    getNode: nodeId => get().nodes.get(nodeId) || null,
 
-    createDirectory: (path, name) =>
-      set(state => {
-        // Only allow creating directories within workflows or services
-        if (!path.startsWith('/workflows') && !path.startsWith('/services')) {
-          console.warn('Can only create directories within workflows or services');
-          return;
-        }
-
-        const createNode = (node: FileNode, currentPath: string): boolean => {
-          if (currentPath === path) {
-            if (node.type !== 'directory') {
-              console.warn('Cannot create directory in non-directory:', path);
-              return false;
-            }
-            node.children = node.children || [];
-            node.children.push({
-              name,
-              type: 'directory',
-              children: [],
-            });
-            return true;
-          }
-          if (node.children) {
-            for (const child of node.children) {
-              if (createNode(child, `${currentPath}/${child.name}`)) {
-                return true;
-              }
-            }
-          }
-          return false;
-        };
-        createNode(state.files, '');
-      }),
-
-    // Read operations
-    getNode: path => {
-      const findNode = (node: FileNode, currentPath: string): FileNode | null => {
-        if (currentPath === path) {
-          return node;
-        }
-        if (node.children) {
-          for (const child of node.children) {
-            const result = findNode(child, `${currentPath}/${child.name}`);
-            if (result) return result;
-          }
-        }
-        return null;
-      };
-      return findNode(get().files, '');
+    getNodeByPath: path => {
+      const nodes = get().nodes;
+      for (const node of nodes.values()) {
+        if (node.path === path) return node;
+      }
+      return null;
     },
 
-    getWorkflowContent: path => {
-      const findNodeContent = (node: FileNode, currentPath: string): FileNode['content'] | null => {
-        if (currentPath === path) {
-          if (node.fileType !== 'workflow') {
-            console.warn('Trying to get workflow content from non-workflow file:', path);
-            return null;
-          }
-          return node.content || null;
+    renameNode: (nodeId, newName) =>
+      set(state => {
+        const node = state.nodes.get(nodeId);
+        if (node) {
+          node.name = newName;
         }
-        if (node.children) {
-          for (const child of node.children) {
-            const result = findNodeContent(child, `${currentPath}/${child.name}`);
-            if (result) return result;
+      }),
+
+    deleteNode: nodeId =>
+      set(state => {
+        // Delete the node
+        state.nodes.delete(nodeId);
+
+        // Delete all edges connected to this node
+        for (const [edgeId, edge] of state.edges.entries()) {
+          if (edge.source === nodeId || edge.target === nodeId) {
+            state.edges.delete(edgeId);
           }
         }
-        return null;
-      };
-      return findNodeContent(get().files, '');
+      }),
+
+    // Edge operations
+    createEdge: (source, target, type, properties) => {
+      const edgeId = crypto.randomUUID();
+      set(state => {
+        state.edges.set(edgeId, {
+          id: edgeId,
+          source,
+          target,
+          type,
+          properties,
+        });
+      });
+      return edgeId;
     },
 
-    getServiceTemplate: path => {
-      const findNodeContent = (node: FileNode, currentPath: string): string | null => {
-        if (currentPath === path) {
-          if (node.fileType !== 'service') {
-            console.warn('Trying to get template from non-service file:', path);
-            return null;
-          }
-          return node.content?.template || null;
+    getEdges: (nodeId, type) => {
+      const edges = get().edges;
+      const result: Edge[] = [];
+      for (const edge of edges.values()) {
+        if ((edge.source === nodeId || edge.target === nodeId) && (!type || edge.type === type)) {
+          result.push(edge);
         }
-        if (node.children) {
-          for (const child of node.children) {
-            const result = findNodeContent(child, `${currentPath}/${child.name}`);
-            if (result) return result;
-          }
-        }
-        return null;
-      };
-      return findNodeContent(get().files, '');
+      }
+      return result;
     },
 
-    getServiceMethods: path => {
-      const findNodeContent = (node: FileNode, currentPath: string): ServiceMethod[] | null => {
-        if (currentPath === path) {
-          if (node.fileType !== 'service') {
-            console.warn('Trying to get methods from non-service file:', path);
-            return null;
-          }
-          return node.content?.methods || null;
+    deleteEdge: edgeId =>
+      set(state => {
+        state.edges.delete(edgeId);
+      }),
+
+    // Content operations
+    updateWorkflowContent: (nodeId, content) =>
+      set(state => {
+        const node = state.nodes.get(nodeId);
+        if (node && node.type === 'workflow') {
+          node.content = { ...node.content, ...content };
         }
-        if (node.children) {
-          for (const child of node.children) {
-            const result = findNodeContent(child, `${currentPath}/${child.name}`);
-            if (result) return result;
-          }
+      }),
+
+    updateServiceContent: (nodeId, content) =>
+      set(state => {
+        const node = state.nodes.get(nodeId);
+        if (node && node.type === 'service') {
+          node.content = { ...node.content, ...content };
         }
-        return null;
-      };
-      return findNodeContent(get().files, '');
+      }),
+
+    // Workflow operations
+    createWorkflow: interfaceData => {
+      // Create workflows directory if it doesn't exist
+      let workflowsDir = get().getNodeByPath('/workflows');
+      if (!workflowsDir) {
+        const workflowsDirId = get().createNode('workflows', 'directory', '/workflows');
+        workflowsDir = get().getNode(workflowsDirId)!;
+      }
+
+      // Generate a unique name for the workflow
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const workflowName = `workflow-${timestamp}`;
+      const workflowPath = `/workflows/${workflowName}`;
+
+      // Create the workflow node
+      const workflowId = get().createNode(workflowName, 'workflow', workflowPath, {
+        interface: interfaceData,
+      });
+
+      // Create the 'contains' edge from workflows directory to the new workflow
+      get().createEdge(workflowsDir.id, workflowId, 'contains');
+
+      return workflowId;
     },
 
-    // Update operations
-    renameNode: (path, newName) =>
+    addStepsToWorkflow: (workflowId, steps) =>
       set(state => {
-        // Prevent renaming root directories
-        if (path === '/workflows' || path === '/services') {
-          console.warn('Cannot rename root directories');
-          return;
+        const node = state.nodes.get(workflowId);
+        if (node && node.type === 'workflow') {
+          node.content = { ...node.content, steps };
         }
-
-        const renameNode = (node: FileNode, currentPath: string): boolean => {
-          if (currentPath === path) {
-            node.name = newName;
-            return true;
-          }
-          if (node.children) {
-            for (const child of node.children) {
-              if (renameNode(child, `${currentPath}/${child.name}`)) {
-                return true;
-              }
-            }
-          }
-          return false;
-        };
-        renameNode(state.files, '');
-      }),
-
-    moveNode: (fromPath, toPath) =>
-      set(state => {
-        // Prevent moving root directories
-        if (fromPath === '/workflows' || fromPath === '/services') {
-          console.warn('Cannot move root directories');
-          return;
-        }
-
-        const findNode = (node: FileNode, currentPath: string): FileNode | null => {
-          if (currentPath === fromPath) {
-            return node;
-          }
-          if (node.children) {
-            for (const child of node.children) {
-              const result = findNode(child, `${currentPath}/${child.name}`);
-              if (result) return result;
-            }
-          }
-          return null;
-        };
-
-        const nodeToMove = findNode(state.files, '');
-        if (!nodeToMove) {
-          console.warn('Node to move not found:', fromPath);
-          return;
-        }
-
-        const moveToNode = (node: FileNode, currentPath: string): boolean => {
-          if (currentPath === toPath) {
-            if (node.type !== 'directory') {
-              console.warn('Cannot move to non-directory:', toPath);
-              return false;
-            }
-            node.children = node.children || [];
-            node.children.push(nodeToMove);
-            return true;
-          }
-          if (node.children) {
-            for (const child of node.children) {
-              if (moveToNode(child, `${currentPath}/${child.name}`)) {
-                return true;
-              }
-            }
-          }
-          return false;
-        };
-
-        // First remove the node from its current location
-        const removeNode = (node: FileNode, currentPath: string): boolean => {
-          if (node.children) {
-            const index = node.children.findIndex(
-              child => `${currentPath}/${child.name}` === fromPath,
-            );
-            if (index !== -1) {
-              node.children.splice(index, 1);
-              return true;
-            }
-            for (const child of node.children) {
-              if (removeNode(child, `${currentPath}/${child.name}`)) {
-                return true;
-              }
-            }
-          }
-          return false;
-        };
-
-        removeNode(state.files, '');
-        moveToNode(state.files, '');
-      }),
-
-    // Delete operations
-    deleteNode: path =>
-      set(state => {
-        // Prevent deleting root directories
-        if (path === '/workflows' || path === '/services') {
-          console.warn('Cannot delete root directories');
-          return;
-        }
-
-        const deleteNode = (node: FileNode, currentPath: string): boolean => {
-          if (node.children) {
-            const index = node.children.findIndex(child => `${currentPath}/${child.name}` === path);
-            if (index !== -1) {
-              node.children.splice(index, 1);
-              return true;
-            }
-            for (const child of node.children) {
-              if (deleteNode(child, `${currentPath}/${child.name}`)) {
-                return true;
-              }
-            }
-          }
-          return false;
-        };
-        deleteNode(state.files, '');
-      }),
-
-    deleteMethod: (path, methodName) =>
-      set(state => {
-        const updateNodeContent = (node: FileNode, currentPath: string): boolean => {
-          if (currentPath === path) {
-            if (node.fileType !== 'service') {
-              console.warn('Trying to delete method from non-service file:', path);
-              return false;
-            }
-            const methods = node.content?.methods || [];
-            const index = methods.findIndex(m => m.name === methodName);
-            if (index !== -1) {
-              methods.splice(index, 1);
-              node.content = { ...node.content, methods };
-            }
-            return true;
-          }
-          if (node.children) {
-            for (const child of node.children) {
-              if (updateNodeContent(child, `${currentPath}/${child.name}`)) {
-                return true;
-              }
-            }
-          }
-          return false;
-        };
-        updateNodeContent(state.files, '');
-      }),
-
-    deleteWorkflowSteps: path =>
-      set(state => {
-        const updateNodeContent = (node: FileNode, currentPath: string): boolean => {
-          if (currentPath === path) {
-            if (node.fileType !== 'workflow') {
-              console.warn('Trying to delete steps from non-workflow file:', path);
-              return false;
-            }
-            node.content = { ...node.content, steps: undefined };
-            return true;
-          }
-          if (node.children) {
-            for (const child of node.children) {
-              if (updateNodeContent(child, `${currentPath}/${child.name}`)) {
-                return true;
-              }
-            }
-          }
-          return false;
-        };
-        updateNodeContent(state.files, '');
-      }),
-
-    // Update operations
-    commitInterface: (path, interfaceData) =>
-      set(state => {
-        const updateNodeContent = (node: FileNode, currentPath: string): boolean => {
-          if (currentPath === path) {
-            if (node.fileType !== 'workflow') {
-              console.warn('Trying to commit interface to non-workflow file:', path);
-              return false;
-            }
-            node.content = { ...node.content, interface: interfaceData };
-            return true;
-          }
-          if (node.children) {
-            for (const child of node.children) {
-              if (updateNodeContent(child, `${currentPath}/${child.name}`)) {
-                return true;
-              }
-            }
-          }
-          return false;
-        };
-        updateNodeContent(state.files, '');
-      }),
-
-    commitSteps: (path, steps) =>
-      set(state => {
-        const updateNodeContent = (node: FileNode, currentPath: string): boolean => {
-          if (currentPath === path) {
-            if (node.fileType !== 'workflow') {
-              console.warn('Trying to commit steps to non-workflow file:', path);
-              return false;
-            }
-            node.content = { ...node.content, steps };
-            return true;
-          }
-          if (node.children) {
-            for (const child of node.children) {
-              if (updateNodeContent(child, `${currentPath}/${child.name}`)) {
-                return true;
-              }
-            }
-          }
-          return false;
-        };
-        updateNodeContent(state.files, '');
-      }),
-
-    commitServiceTemplate: (path, template) =>
-      set(state => {
-        const updateNodeContent = (node: FileNode, currentPath: string): boolean => {
-          if (currentPath === path) {
-            if (node.fileType !== 'service') {
-              console.warn('Trying to commit template to non-service file:', path);
-              return false;
-            }
-            node.content = { ...node.content, template };
-            return true;
-          }
-          if (node.children) {
-            for (const child of node.children) {
-              if (updateNodeContent(child, `${currentPath}/${child.name}`)) {
-                return true;
-              }
-            }
-          }
-          return false;
-        };
-        updateNodeContent(state.files, '');
-      }),
-
-    commitServiceMethod: (path, methodName, methodContent) =>
-      set(state => {
-        const updateNodeContent = (node: FileNode, currentPath: string): boolean => {
-          if (currentPath === path) {
-            if (node.fileType !== 'service') {
-              console.warn('Trying to commit method to non-service file:', path);
-              return false;
-            }
-            const methods = node.content?.methods || [];
-            const existingMethodIndex = methods.findIndex(m => m.name === methodName);
-
-            if (existingMethodIndex >= 0) {
-              methods[existingMethodIndex] = { name: methodName, content: methodContent };
-            } else {
-              methods.push({ name: methodName, content: methodContent });
-            }
-
-            node.content = { ...node.content, methods };
-            return true;
-          }
-          if (node.children) {
-            for (const child of node.children) {
-              if (updateNodeContent(child, `${currentPath}/${child.name}`)) {
-                return true;
-              }
-            }
-          }
-          return false;
-        };
-        updateNodeContent(state.files, '');
       }),
   })),
 );

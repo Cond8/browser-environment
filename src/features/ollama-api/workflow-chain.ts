@@ -1,6 +1,8 @@
 // src/features/ollama-api/workflow-chain.ts
 import { useAssistantConfigStore } from '../chat/store/assistant-config-store';
 import { useChatStore } from '../chat/store/chat-store';
+import { useEditorStore } from '../editor/stores/editor-store';
+import { useVfsStore } from '../vfs/store/vfs-store';
 import { handleAlignmentPhase } from './phases/alignment-phase';
 import { handleInterfacePhase } from './phases/interface-phase';
 import { handleStepsPhase } from './phases/steps-phase';
@@ -79,6 +81,9 @@ export async function executeWorkflowChain(): Promise<{
   const chatFn = createChatAsyncFunction(ollamaUrl, selectedModel, parameters);
 
   try {
+    /* ===========================
+     * ===== ALIGNMENT PHASE =====
+     * ===========================*/
     const alignmentResult = await retryWithDelay(
       () => handleAlignmentPhase(messages[0].content, chatFn),
       'alignment',
@@ -86,6 +91,9 @@ export async function executeWorkflowChain(): Promise<{
     );
     chatStore.addAlignmentMessage(alignmentResult.response);
 
+    /* ===========================
+     * ===== INTERFACE PHASE =====
+     * ===========================*/
     const interfaceResult = await retryWithDelay(
       () => handleInterfacePhase(messages[0].content, alignmentResult.response, chatFn),
       'interface',
@@ -95,28 +103,30 @@ export async function executeWorkflowChain(): Promise<{
       },
     );
     chatStore.addInterfaceMessage(interfaceResult.interface);
+    const workflowPath = useVfsStore.getState().createWorkflow(interfaceResult.interface);
+    useEditorStore.getState().setActiveEditor('workflow', workflowPath);
 
-    let stepsResult;
-    try {
-      stepsResult = await retryWithDelay(
-        () =>
-          handleStepsPhase(
-            messages[0].content,
-            alignmentResult.response,
-            interfaceResult.interface,
-            chatFn,
-          ),
-        'steps',
-        {
-          userRequest: messages[0].content,
-          alignmentResponse: alignmentResult.response,
-          interface: interfaceResult.interface,
-        },
-      );
-      chatStore.addStepsMessage(stepsResult.steps);
-    } catch (error) {
-      throw new WorkflowChainError('Error in steps phase', 'steps', error as Error);
-    }
+    /* =======================
+     * ===== STEPS PHASE =====
+     * =======================*/
+    const stepsResult = await retryWithDelay(
+      () =>
+        handleStepsPhase(
+          messages[0].content,
+          alignmentResult.response,
+          interfaceResult.interface,
+          chatFn,
+        ),
+      'steps',
+      {
+        userRequest: messages[0].content,
+        alignmentResponse: alignmentResult.response,
+        interface: interfaceResult.interface,
+      },
+    );
+    chatStore.addStepsMessage(stepsResult.steps);
+    useVfsStore.getState().addStepsToWorkflow(workflowPath, stepsResult.steps);
+    useVfsStore.getState().upsertServices(stepsResult.steps);
 
     return {
       interface: interfaceResult.interface,
