@@ -1,19 +1,13 @@
 // src/features/chat/ollama-api/workflow-chain.ts
 import { ChatRequest, Ollama } from 'ollama/browser';
+import { ZodSchema } from 'zod';
 import { useAbortEventBusStore } from '../store/abort-eventbus-store';
 import { useAssistantConfigStore } from '../store/assistant-config-store';
 import { useChatStore } from '../store/chat-store';
 import { parseOrRepairJson } from './llm-output-fixer';
-import { SYSTEM_PROMPT } from './prompts/prompts-system';
-import { INTERFACE_PROMPT, STEPS_PROMPT } from './prompts/prompts-tools';
-import {
-  interfaceSchema,
-  interfaceTool,
-  stepsSchema,
-  stepsTool,
-  WorkflowService,
-  WorkflowStep,
-} from './tool-schemas/workflow-schema';
+import { handleInterfacePhase } from './phases/interface-phase';
+import { handleStepsPhase } from './phases/steps-phase';
+import { WorkflowStep } from './tool-schemas/workflow-schema';
 
 export class WorkflowChainError extends Error {
   constructor(
@@ -45,148 +39,17 @@ export type StreamYield =
   | { type: 'end_json'; id: number }
   | { type: 'error'; error: WorkflowChainError; id: number };
 
-export async function* streamWorkflowChain(): AsyncGenerator<StreamYield, void, unknown> {
-  const { selectedModel, parameters, ollamaUrl } = useAssistantConfigStore.getState();
-  const chatStore = useChatStore.getState();
-
-  const assistantMessage = chatStore.addEmptyAssistantMessage();
-  const messages = chatStore.getMessagesUntil(assistantMessage.id);
-
-  if (messages.length > 1) {
-    throw new WorkflowChainError('Workflow chain only supports one message', 'stream', undefined, {
-      messageCount: messages.length,
-    });
-  }
-
-  const streamResponse = createStreamResponse(ollamaUrl);
-  let interfaceParsed: WorkflowStep | null = null;
-  let stepsParsed: WorkflowStep[] | null = null;
-
+function parseWithSchema(response: string, schema: ZodSchema<any>, phase: 'interface' | 'steps') {
   try {
-    // Phase 1: Interface Generation
-    const interfaceResponse = yield* streamResponse(assistantMessage.id, {
-      model: selectedModel,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT() + INTERFACE_PROMPT() },
-        { role: 'user', content: messages[0].content },
-      ],
-      tools: [interfaceTool],
-      options: parameters,
-      stream: true,
-    });
-
-    try {
-      console.log('Processing interface response...');
-      const parsed = parseOrRepairJson(interfaceResponse, interfaceSchema);
-      if (!parsed) {
-        throw new Error('Failed to parse interface JSON even after repair attempts');
-      }
-
-      interfaceParsed = {
-        ...parsed,
-        service: parsed.service as WorkflowService,
-      };
-      console.log('Interface successfully parsed and validated:', interfaceParsed);
-
-      // Yield the interface as part of the stream
-      yield {
-        type: 'text',
-        content: JSON.stringify({ interface: interfaceParsed }, null, 2),
-        id: assistantMessage.id,
-      };
-    } catch (error) {
-      console.error('Interface parsing failed:', {
-        error,
-        rawResponse: interfaceResponse,
-      });
-      throw new WorkflowValidationError(
-        'Failed to parse interface JSON',
-        'interface',
-        [error instanceof Error ? error.message : 'Unknown parsing error'],
-        { rawResponse: interfaceResponse },
-      );
-    }
-
-    // Phase 2: Steps Generation
-    const stepsResponse = yield* streamResponse(assistantMessage.id, {
-      model: selectedModel,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT() + STEPS_PROMPT() },
-        { role: 'user', content: messages[0].content },
-        { role: 'assistant', content: interfaceResponse },
-      ],
-      tools: [stepsTool],
-      options: parameters,
-      stream: true,
-    });
-
-    try {
-      console.log('Processing steps response...');
-      const parsedSteps = parseOrRepairJson(stepsResponse, stepsSchema);
-      if (!parsedSteps) {
-        throw new Error('Failed to parse steps JSON even after repair attempts');
-      }
-
-      stepsParsed = parsedSteps.map(step => ({
-        ...step,
-        service: step.service as WorkflowService,
-      }));
-      console.log('Steps successfully parsed and validated:', stepsParsed);
-
-      // Yield the steps as part of the stream
-      yield {
-        type: 'text',
-        content: JSON.stringify({ steps: stepsParsed }, null, 2),
-        id: assistantMessage.id,
-      };
-
-      // Combine interface and steps into a complete workflow
-      if (interfaceParsed && stepsParsed) {
-        console.log('Creating combined workflow...');
-        const combinedWorkflow = {
-          interface: interfaceParsed,
-          steps: stepsParsed,
-        };
-
-        // Update the assistant message with the combined workflow
-        const finalContent = JSON.stringify(combinedWorkflow, null, 2);
-        chatStore.updateAssistantMessage(assistantMessage.id, finalContent);
-      }
-    } catch (error) {
-      console.error('Steps parsing failed:', {
-        error,
-        rawResponse: stepsResponse,
-      });
-      throw new WorkflowValidationError(
-        'Failed to parse steps JSON',
-        'steps',
-        [error instanceof Error ? error.message : 'Unknown parsing error'],
-        { rawResponse: stepsResponse },
-      );
-    }
-  } catch (error) {
-    if (error instanceof WorkflowChainError) {
-      yield { type: 'error', error, id: assistantMessage.id };
-
-      // Update chat store with error message
-      const errorContent = JSON.stringify(
-        {
-          error: error.message,
-          phase: error.phase,
-          validationErrors:
-            error instanceof WorkflowValidationError ? error.validationErrors : undefined,
-        },
-        null,
-        2,
-      );
-      chatStore.updateAssistantMessage(assistantMessage.id, errorContent);
-
-      throw error;
-    }
-    throw new WorkflowChainError(
-      'Unexpected error in workflow chain',
-      'stream',
-      error instanceof Error ? error : undefined,
+    const parsed = parseOrRepairJson(response, schema);
+    if (!parsed) throw new Error('Failed even after repair');
+    return parsed;
+  } catch (err) {
+    throw new WorkflowValidationError(
+      `Failed to parse ${phase} JSON`,
+      phase,
+      [err instanceof Error ? err.message : 'Unknown parsing error'],
+      { rawResponse: response },
     );
   }
 }
@@ -198,8 +61,31 @@ function createStreamResponse(url: string) {
   ): AsyncGenerator<StreamYield, string, unknown> {
     request.stream = true;
 
-    const ollamaClient = new Ollama({ host: url });
-    const response = await ollamaClient.chat(request);
+    let ollamaClient;
+    try {
+      ollamaClient = new Ollama({ host: url });
+    } catch (error) {
+      console.error('Failed to create Ollama client:', error);
+      throw new WorkflowChainError(
+        'Failed to connect to Ollama service',
+        'stream',
+        error instanceof Error ? error : undefined,
+        { url },
+      );
+    }
+
+    let response;
+    try {
+      response = await ollamaClient.chat(request);
+    } catch (error) {
+      console.error('Failed to start chat stream:', error);
+      throw new WorkflowChainError(
+        'Failed to start chat stream',
+        'stream',
+        error instanceof Error ? error : undefined,
+        { request },
+      );
+    }
 
     useAbortEventBusStore.getState().registerAbortCallback(() => {
       console.log('[StreamResponse] Aborting response');
@@ -209,6 +95,7 @@ function createStreamResponse(url: string) {
     let buffer = '';
     let lookbehindBuffer = '';
     let insideJson = false;
+    let hasReceivedContent = false;
 
     try {
       for await (const chunk of response) {
@@ -220,6 +107,7 @@ function createStreamResponse(url: string) {
         const content = chunk.message?.content;
         if (!content) continue;
 
+        hasReceivedContent = true;
         buffer += content;
         lookbehindBuffer += content;
         const normalized = lookbehindBuffer.toLowerCase();
@@ -242,10 +130,28 @@ function createStreamResponse(url: string) {
           lookbehindBuffer = lookbehindBuffer.slice(-500);
         }
       }
+
+      // If we received content but the buffer is empty, it might be because we're still in a JSON block
+      if (hasReceivedContent && buffer.trim() === '') {
+        console.warn('Received content but buffer is empty - might be in JSON block');
+        // Don't throw error here, let the parsing phase handle it
+      } else if (!hasReceivedContent) {
+        console.error('No content received from stream');
+        throw new WorkflowChainError('No content received from stream', 'stream', undefined, {
+          request,
+        });
+      }
     } catch (error: any) {
       if (error.name === 'AbortError') {
+        console.log('[StreamResponse] Stream aborted by user');
         return buffer;
       }
+
+      if (error instanceof WorkflowChainError) {
+        throw error;
+      }
+
+      console.error('Error during stream processing:', error);
       throw new WorkflowChainError(
         'Error during stream processing',
         'stream',
@@ -253,6 +159,72 @@ function createStreamResponse(url: string) {
         { buffer, lookbehindBuffer },
       );
     }
+
     return buffer;
   };
+}
+
+export async function* streamWorkflowChain(): AsyncGenerator<StreamYield, void, unknown> {
+  const { selectedModel, parameters, ollamaUrl } = useAssistantConfigStore.getState();
+  const chatStore = useChatStore.getState();
+  const assistantMessage = chatStore.addEmptyAssistantMessage();
+  const messages = chatStore.getMessagesUntil(assistantMessage.id);
+
+  if (messages.length > 1) {
+    throw new WorkflowChainError('Only one message is supported', 'stream', undefined, {
+      messageCount: messages.length,
+    });
+  }
+
+  const streamResponse = createStreamResponse(ollamaUrl);
+  let interfaceParsed: WorkflowStep | null = null;
+  let stepsParsed: WorkflowStep[] | null = null;
+
+  try {
+    const interfaceResult = yield* handleInterfacePhase(
+      messages[0].content,
+      assistantMessage.id,
+      streamResponse,
+      selectedModel,
+      parameters,
+    );
+    interfaceParsed = interfaceResult;
+
+    const stepsResult = yield* handleStepsPhase(
+      messages[0].content,
+      assistantMessage.id,
+      interfaceResult,
+      streamResponse,
+      selectedModel,
+      parameters,
+    );
+    stepsParsed = stepsResult;
+
+    const combinedWorkflow = { interface: interfaceParsed, steps: stepsParsed };
+    const finalContent = JSON.stringify(combinedWorkflow, null, 2);
+    chatStore.updateAssistantMessage(assistantMessage.id, finalContent);
+  } catch (error) {
+    const err =
+      error instanceof WorkflowChainError
+        ? error
+        : new WorkflowChainError('Unexpected error in workflow chain', 'stream', error as Error);
+
+    yield { type: 'error', error: err, id: assistantMessage.id };
+
+    chatStore.updateAssistantMessage(
+      assistantMessage.id,
+      JSON.stringify(
+        {
+          error: err.message,
+          phase: err.phase,
+          validationErrors:
+            err instanceof WorkflowValidationError ? err.validationErrors : undefined,
+        },
+        null,
+        2,
+      ),
+    );
+
+    throw err;
+  }
 }
