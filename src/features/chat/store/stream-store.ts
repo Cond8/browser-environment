@@ -1,9 +1,12 @@
 // src/features/chat/store/stream-store.ts
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import { streamWorkflowChain } from '../ollama-api/workflow-chain';
-import { ThreadMessage } from './chat-store';
-import { useCodeStore } from './json-store';
+import {
+  streamWorkflowChain,
+  WorkflowChainError,
+  WorkflowValidationError,
+} from '../ollama-api/workflow-chain';
+import { ThreadMessage, useChatStore } from './chat-store';
 
 interface StreamStore {
   currentMessageId: number | null;
@@ -11,11 +14,33 @@ interface StreamStore {
   insideJson: boolean;
   partialMessages: Record<number, ThreadMessage>;
   partialJsons: Record<number, string>;
-  errors: Record<number, string | null>;
+  errors: Record<
+    number,
+    {
+      message: string;
+      type: string;
+      details?: {
+        phase?: 'interface' | 'steps' | 'stream';
+        validationErrors?: string[];
+        context?: Record<string, unknown>;
+      } | null;
+    }
+  >;
 
   setCurrentMessageId: (messageId: number | null) => void;
 
-  setError: (messageId: number, error: string | null) => void;
+  setError: (
+    messageId: number,
+    error: {
+      message: string;
+      type: string;
+      details?: {
+        phase?: 'interface' | 'steps' | 'stream';
+        validationErrors?: string[];
+        context?: Record<string, unknown>;
+      } | null;
+    } | null,
+  ) => void;
   clearErrors: () => void;
 
   stopStreaming: () => void;
@@ -27,8 +52,6 @@ interface StreamStore {
   appendToJson: (messageId: number, chunk: string) => void;
   setPartialJson: (messageId: number, json: string) => void;
   clearJson: (messageId: number) => void;
-
-  commitJsonToCodeStore: (messageId: number) => void;
 }
 
 export const useStreamStore = create<StreamStore>()(
@@ -47,7 +70,11 @@ export const useStreamStore = create<StreamStore>()(
 
     setError: (messageId, error) =>
       set(state => {
-        state.errors[messageId] = error;
+        if (error === null) {
+          delete state.errors[messageId];
+        } else {
+          state.errors[messageId] = error;
+        }
       }),
 
     clearErrors: () =>
@@ -74,8 +101,13 @@ export const useStreamStore = create<StreamStore>()(
         state.errors = {};
       });
 
+      let currentAssistantMessageId: number | null = null;
+
       try {
         for await (const chunk of streamWorkflowChain()) {
+          if (!currentAssistantMessageId) {
+            currentAssistantMessageId = chunk.id;
+          }
           get().setCurrentMessageId(chunk.id);
           switch (chunk.type) {
             case 'text':
@@ -92,16 +124,44 @@ export const useStreamStore = create<StreamStore>()(
               set(state => {
                 state.insideJson = false;
               });
-              get().commitJsonToCodeStore(chunk.id);
+              break;
+            case 'error':
+              const structuredError = {
+                message: chunk.error.message,
+                type: chunk.error.name,
+                details: {
+                  phase: chunk.error.phase,
+                  validationErrors:
+                    chunk.error instanceof WorkflowValidationError
+                      ? chunk.error.validationErrors
+                      : undefined,
+                  context: chunk.error.context,
+                },
+              };
+              get().setError(chunk.id, structuredError);
+              useChatStore.getState().setMessageError(chunk.id, structuredError);
               break;
           }
         }
       } catch (error: any) {
-        if (error.name !== 'AbortError') {
-          console.error('Streaming error:', error);
-          set(state => {
-            state.errors[get().currentMessageId!] = error.message || 'Unknown error occurred';
-          });
+        const errorId = currentAssistantMessageId ?? get().currentMessageId;
+        if (error.name !== 'AbortError' && errorId) {
+          console.error('Streaming error caught in startChain:', error);
+          const structuredError = {
+            message: error.message || 'Unknown error occurred',
+            type: error.name || 'Error',
+            details:
+              error instanceof WorkflowChainError
+                ? {
+                    phase: error.phase,
+                    context: error.context,
+                    validationErrors:
+                      error instanceof WorkflowValidationError ? error.validationErrors : undefined,
+                  }
+                : undefined,
+          };
+          get().setError(errorId, structuredError);
+          useChatStore.getState().setMessageError(errorId, structuredError);
         }
       } finally {
         set(state => {
@@ -142,15 +202,5 @@ export const useStreamStore = create<StreamStore>()(
       set(state => {
         delete state.partialJsons[messageId];
       }),
-
-    commitJsonToCodeStore: (messageId: number) => {
-      const jsonToCommit = get().partialJsons[messageId];
-      if (jsonToCommit !== undefined) {
-        console.log('Committing JSON to CodeStore for message:', messageId, jsonToCommit);
-        useCodeStore.getState().saveJson(messageId, jsonToCommit);
-      } else {
-        console.log('No JSON content to commit for message:', messageId);
-      }
-    },
   })),
 );

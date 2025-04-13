@@ -1,3 +1,4 @@
+import { ErrorDisplay } from './error-display';
 import InterfaceDetails from './json-interface-details';
 import { JsonViewer } from './json-viewer';
 
@@ -33,28 +34,29 @@ export const JsonParser = ({ content }: JsonParserProps) => {
   }
 
   let parsed: any;
-  let error: string | null = null;
+  let parsingError: { message: string; type: string } | null = null;
   const jsonContent = extractJsonContent(content);
 
   try {
     parsed = JSON.parse(jsonContent);
   } catch (e) {
-    error = (e as Error).message;
+    parsingError = {
+      message: (e as Error).message,
+      type: 'JSONParsingError',
+    };
+  }
+
+  // If there was a parsing error, display it using ErrorDisplay
+  if (parsingError) {
+    return <ErrorDisplay error={parsingError} context="Invalid JSON Content" />;
   }
 
   const isValidInterface =
-    !error &&
-    parsed != null &&
-    typeof parsed === 'object' &&
-    ('interface' in parsed || 'steps' in parsed);
+    parsed != null && typeof parsed === 'object' && ('interface' in parsed || 'steps' in parsed);
 
   return (
     <div className="p-4 bg-muted/30">
-      {isValidInterface ? (
-        <InterfaceDetails data={parsed} />
-      ) : (
-        <JsonViewer content={content} error={error} />
-      )}
+      {isValidInterface ? <InterfaceDetails data={parsed} /> : <JsonViewer content={jsonContent} />}
     </div>
   );
 };

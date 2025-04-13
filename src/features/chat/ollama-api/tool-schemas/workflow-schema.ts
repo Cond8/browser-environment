@@ -2,7 +2,7 @@ import { Tool } from 'ollama';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
-const CLASSES = [
+const SERVICES = [
   'extract',
   'parse',
   'validate',
@@ -17,7 +17,7 @@ const CLASSES = [
   'generate',
 ] as const;
 
-export type WorkflowClass = (typeof CLASSES)[number];
+export type WorkflowService = (typeof SERVICES)[number];
 
 export type Workflow = {
   interface: WorkflowStep;
@@ -26,7 +26,7 @@ export type Workflow = {
 
 export type WorkflowStep = {
   name: string;
-  class: WorkflowClass;
+  service: WorkflowService;
   method: string;
   goal: string;
   inputs?: string[];
@@ -35,7 +35,7 @@ export type WorkflowStep = {
 
 export const interfaceSchema = z.object({
   name: z.string().describe('Name of the workflow in PascalCase (e.g. ProcessUserData)'),
-  class: z.enum(CLASSES).describe('Domain class (choose from DOMAIN_CLASSES list)'),
+  service: z.enum(SERVICES).describe('Domain service (choose from DOMAIN_SERVICES list)'),
   method: z.string().describe('Method name in snake_case (e.g. transform_user_data)'),
   goal: z.string().describe('Short, clear task summary (max 10 words)'),
   inputs: z.array(z.string().describe('Input variable name in snake_case')).optional(),
@@ -74,3 +74,5 @@ export const stepsTool: Tool = zodToOllamaTool(
   'Generate a single workflow step',
   stepsSchema,
 );
+
+console.log(interfaceTool);

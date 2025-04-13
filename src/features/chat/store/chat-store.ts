@@ -13,7 +13,15 @@ export interface ThreadMessage extends Message {
     interface: WorkflowStep;
     steps: WorkflowStep[];
   };
-  error?: Error;
+  error?: {
+    message: string;
+    type: string;
+    details?: {
+      phase?: 'interface' | 'steps' | 'stream';
+      validationErrors?: string[];
+      context?: Record<string, unknown>;
+    };
+  };
 }
 
 export interface Thread {
@@ -39,34 +47,14 @@ export interface ChatStore {
   setInterface: (id: number, data: WorkflowStep) => void;
   setSteps: (id: number, steps: WorkflowStep[]) => void;
 
+  setMessageError: (id: number, error: ThreadMessage['error']) => void;
+
   getMessagesUntil: (id: number) => ThreadMessage[];
 
   getRecentThreads: (limit?: number) => Thread[];
   getTimeAgo: (timestamp: number) => string;
   getAssistantMessageCount: (threadId: Thread['id']) => number;
   clearThreads: () => void;
-}
-
-function parseAndFormatJson(content: string): string {
-  try {
-    // First try to parse the raw content
-    const parsed = JSON.parse(content);
-    return JSON.stringify(parsed, null, 2);
-  } catch (err) {
-    const error = err as Error;
-    // If that fails, try to extract JSON from markdown code blocks
-    const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/);
-    if (jsonMatch) {
-      try {
-        const parsed = JSON.parse(jsonMatch[1]);
-        return JSON.stringify(parsed, null, 2);
-      } catch (err) {
-        const error = err as Error;
-        throw new Error('Failed to parse interface JSON: ' + error.message);
-      }
-    }
-    throw new Error('No valid JSON found in interface content');
-  }
 }
 
 export const useChatStore = create<ChatStore>()(
@@ -164,6 +152,18 @@ export const useChatStore = create<ChatStore>()(
             const message = thread.messages.find(m => m.id === id);
             if (message && message.workflow) {
               message.workflow.steps = steps;
+            }
+          }
+        });
+      },
+
+      setMessageError: (id: number, error: ThreadMessage['error']) => {
+        set(state => {
+          if (state.currentThreadId) {
+            const thread = state.threads[state.currentThreadId];
+            const message = thread.messages.find(m => m.id === id);
+            if (message) {
+              message.error = error;
             }
           }
         });

@@ -1,13 +1,13 @@
 import { cn } from '@/lib/utils';
 
-type Interface = {
+interface Interface {
   name: string;
-  goal: string;
-  inputs: { [key: string]: string }[] | string[];
-  outputs: { [key: string]: string }[] | string[];
-  class: string;
+  service: string;
   method: string;
-};
+  goal: string;
+  inputs?: string[];
+  outputs?: string[];
+}
 
 type Props = {
   data: { interface?: Interface; steps?: Interface[] };
@@ -72,43 +72,33 @@ export function formatSnakeCase(str: string | undefined | null): string {
     .trim();
 }
 
-// Utility function to determine class category and type
-export function getClassInfo(className: string): {
+// Utility function to determine service category and type
+export function getServiceInfo(serviceName: string): {
   category: 'programmatic' | 'llm_based';
   type: 'simple' | 'complex';
 } {
   const simpleProgrammatic = ['data', 'validate', 'io', 'storage', 'logic'];
-  const complexProgrammatic = [
-    'parse',
-    'control',
-    'auth',
-    'notify',
-    'schedule',
-    'optimize',
-    'calculate',
-    'network',
-    'encrypt',
-  ];
-  const simpleLlm = ['extract', 'format', 'understand'];
+  const complexProgrammatic = ['calculate', 'format', 'parse', 'extract'];
+  const simpleLlm = ['understand', 'classify', 'summarize'];
   const complexLlm = ['process', 'generate', 'integrate', 'predict', 'transform'];
 
-  if (simpleProgrammatic.includes(className)) {
+  if (simpleProgrammatic.includes(serviceName)) {
     return { category: 'programmatic', type: 'simple' };
   }
-  if (complexProgrammatic.includes(className)) {
+  if (complexProgrammatic.includes(serviceName)) {
     return { category: 'programmatic', type: 'complex' };
   }
-  if (simpleLlm.includes(className)) {
+  if (simpleLlm.includes(serviceName)) {
     return { category: 'llm_based', type: 'simple' };
   }
-  if (complexLlm.includes(className)) {
+  if (complexLlm.includes(serviceName)) {
     return { category: 'llm_based', type: 'complex' };
   }
   return { category: 'programmatic', type: 'simple' }; // default fallback
 }
 
-// Utility function to get color classes for class info
-export function getClassColorClasses(category: string, type: string): string {
+// Utility function to get color classes for service info
+export function getServiceColorClasses(category: string, type: string): string {
   if (category === 'programmatic' && type === 'simple') {
     return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100';
   }
@@ -133,8 +123,8 @@ function InterfaceCard({
   isStep?: boolean;
   steps?: Interface[];
 }) {
-  const classInfo = getClassInfo(data.class);
-  const colorClasses = getClassColorClasses(classInfo.category, classInfo.type);
+  const serviceInfo = getServiceInfo(data.service);
+  const colorClasses = getServiceColorClasses(serviceInfo.category, serviceInfo.type);
 
   return (
     <div
@@ -158,18 +148,11 @@ function InterfaceCard({
 
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <p className="text-sm font-medium text-primary">Class:</p>
-          <span className="text-lg font-semibold">{addSpacesToTitle(data.class)}</span>
-          <span
-            className={cn(
-              'px-3 py-1 rounded-full text-xs font-medium tracking-wide',
-              'transition-all duration-300',
-              colorClasses,
-              'hover:scale-105 hover:shadow-sm',
-            )}
-          >
-            {classInfo.category} - {classInfo.type}
-          </span>
+          <p className="text-sm font-medium text-primary">Service:</p>
+          <span className="text-lg font-semibold">{addSpacesToTitle(data.service)}</span>
+        </div>
+        <div className={cn('text-xs font-medium tracking-wide', colorClasses)}>
+          {serviceInfo.category} - {serviceInfo.type}
         </div>
         <div className="flex items-center gap-3">
           <p className="text-sm font-medium text-primary">Method:</p>

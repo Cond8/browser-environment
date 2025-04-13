@@ -1,6 +1,6 @@
 // src/features/chat/services/prompts-tools.ts
-export const DOMAIN_CLASSES = () =>
-  `## CLASSES
+export const DOMAIN_SERVICES = () =>
+  `## SERVICES
 
 - \`extract\`: Pull patterns from text
 - \`parse\`: Interpret input
@@ -28,10 +28,10 @@ Your current task is to define the **interface** section only, based on the task
 - Use **snake_case** for all input/output variable names and method names
 - Keep descriptions short (max 10 words)
 - Use clear, unambiguous variable names
-- Only use the classes listed in the DOMAIN CLASSES
+- Only use the services listed in the DOMAIN_SERVICES
 - Inputs and outputs are arrays of variable names in snake_case
 
-${DOMAIN_CLASSES}
+${DOMAIN_SERVICES}
 
 ### Example:
 
@@ -39,7 +39,7 @@ ${DOMAIN_CLASSES}
 {
   "interface": {
     "name": "ProcessCsvFile",
-    "class": "validate",
+    "service": "validate",
     "method": "validate_csv",
     "goal": "Extract and validate data from a CSV file",
     "inputs": ["file_path", "delimiter"],
@@ -64,10 +64,10 @@ Your task is to generate the **steps** section of the JSON workflow.
 - Each step must be atomic and sequentially logical
 - Final step must produce all interface outputs
 - Use **snake_case** for all variable and method names
-- Only use the classes listed in the DOMAIN CLASSES
+- Only use the services listed in the DOMAIN_SERVICES
 - Inputs and outputs are arrays of variable names in snake_case
 
-${DOMAIN_CLASSES}
+${DOMAIN_SERVICES}
 
 ### Example:
 
@@ -76,7 +76,7 @@ ${DOMAIN_CLASSES}
   "steps": [
     {
       "name": "ValidateCsvFile",
-      "class": "validate",
+      "service": "validate",
       "method": "validate_csv",
       "goal": "Validate the CSV file",
       "inputs": ["file_path", "delimiter"],
@@ -84,7 +84,7 @@ ${DOMAIN_CLASSES}
     },
     {
       "name": "ExtractData",
-      "class": "extract",
+      "service": "extract",
       "method": "extract_data",
       "goal": "Extract data from the CSV file",
       "inputs": ["file_path", "delimiter"],
