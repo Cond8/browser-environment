@@ -3,7 +3,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/features/chat/store/chat-store';
 import { Send, StopCircle } from 'lucide-react';
 import { useState } from 'react';
-import { useEventBusStore } from '../store/eventbus-store';
+import { useAbortEventBusStore } from '../store/abort-eventbus-store';
 import { useStreamStore } from '../store/stream-store';
 import { SelectedModel } from './selected-model';
 import { ShortcutsDisplay } from './shortcuts-display';
@@ -14,7 +14,7 @@ export function UserInput() {
   const addUserMessage = useChatStore(state => state.addUserMessage);
   const isStreaming = useStreamStore(state => state.isStreaming);
   const stopStreaming = useStreamStore(state => state.stopStreaming);
-  const triggerAbort = useEventBusStore(state => state.triggerAbort);
+  const triggerAbort = useAbortEventBusStore(state => state.triggerAbort);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

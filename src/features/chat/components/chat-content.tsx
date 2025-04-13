@@ -12,7 +12,6 @@ export const ChatContent = () => {
   const currentThread = useChatStore().getCurrentThread();
   const isStreaming = useStreamStore(state => state.isStreaming);
   const partialMessage = useStreamStore(state => state.partialMessages[state.currentMessageId!]);
-  const streamError = useStreamStore(state => state.errors[state.currentMessageId!]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -30,39 +29,39 @@ export const ChatContent = () => {
     return <EmptyChatState />;
   }
 
+  const messages = currentThread.messages;
+  const lastAssistantMessageIndex = messages
+    .map((msg, idx) => ({ idx, isAssistant: msg.role === 'assistant' }))
+    .filter(item => item.isAssistant)
+    .pop()?.idx;
+
   return (
     <ScrollArea className="flex-1">
       <div className="flex flex-col">
-        {currentThread.messages.map((message: ThreadMessage) => (
-          <div
-            key={message.id}
-            className={cn('w-full border-b', message.role === 'user' ? 'bg-card' : 'bg-background')}
-          >
-            {message.error ? (
-              <ErrorDisplay error={message.error} />
-            ) : (
-              <JsonParser content={message.content} />
-            )}
-          </div>
-        ))}
+        {currentThread.messages.map((message: ThreadMessage, index: number) => {
+          const isAssistant = message.role === 'assistant';
+          const isLatestAssistantMessage = isAssistant && index === lastAssistantMessageIndex;
 
-        {isStreaming && (
-          <div className="bg-background p-4 border-b">
-            {partialMessage && <JsonParser content={partialMessage.content} />}
-
-            {streamError && !partialMessage && (
-              <ErrorDisplay error={streamError} context="Streaming Error" />
-            )}
-
-            {!partialMessage && !streamError && (
-              <div className="flex space-x-2 mt-2">
-                <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" />
-                <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:0.2s]" />
-                <div className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:0.4s]" />
-              </div>
-            )}
-          </div>
-        )}
+          return (
+            <div
+              key={message.id}
+              className={cn(
+                'w-full border-b',
+                message.role === 'user' ? 'bg-card' : 'bg-background',
+              )}
+            >
+              {message.error ? (
+                <ErrorDisplay error={message.error} />
+              ) : (
+                <JsonParser
+                  content={message.content}
+                  messageId={message.id}
+                  isLatestAssistantMessage={isLatestAssistantMessage}
+                />
+              )}
+            </div>
+          );
+        })}
 
         <div ref={messagesEndRef} />
       </div>

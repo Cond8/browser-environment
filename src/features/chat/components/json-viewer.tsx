@@ -1,7 +1,13 @@
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 
-export const JsonViewer = ({ content }: { content: string }) => {
+type JsonViewerProps = {
+  content: string;
+  isStreaming?: boolean;
+};
+
+export const JsonViewer = ({ content, isStreaming = false }: JsonViewerProps) => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -11,7 +17,7 @@ export const JsonViewer = ({ content }: { content: string }) => {
   return (
     <pre className="rounded-md bg-muted p-4 font-mono text-sm text-muted-foreground">
       <ScrollArea className="max-h-[400px] overflow-auto">
-        <div className="whitespace-pre-wrap">
+        <div className={cn('whitespace-pre-wrap', isStreaming && 'streaming-content')}>
           {content}
           <div ref={bottomRef} />
         </div>
