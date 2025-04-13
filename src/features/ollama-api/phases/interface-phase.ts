@@ -78,7 +78,7 @@ export async function* handleInterfacePhase(
     response = yield* streamFn(id, {
       model,
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT() + INTERFACE_PROMPT() },
+        { role: 'system', content: SYSTEM_PROMPT(INTERFACE_PROMPT()) },
         { role: 'user', content },
       ],
       tools: [interfaceTool],

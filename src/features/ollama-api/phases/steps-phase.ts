@@ -1,12 +1,7 @@
 import { ChatRequest } from 'ollama/browser';
 import { parseOrRepairJson } from '../llm-output-fixer';
 import { SYSTEM_PROMPT } from '../prompts/prompts-system';
-import {
-  stepsSchema,
-  stepsTool,
-  WorkflowService,
-  WorkflowStep,
-} from '../tool-schemas/workflow-schema';
+import { stepsSchema, WorkflowService, WorkflowStep } from '../tool-schemas/workflow-schema';
 
 import { StreamYield, WorkflowChainError, WorkflowValidationError } from '../workflow-chain';
 
@@ -94,20 +89,32 @@ export async function* handleStepsPhase(
   model: string,
   options: any,
 ): AsyncGenerator<StreamYield, WorkflowStep[], unknown> {
+  console.log('[StepsPhase] Starting steps phase with:', {
+    content,
+    id,
+    interfaceParsed,
+    model,
+    options,
+  });
+
   let response;
   try {
-    response = yield* streamFn(id, {
+    const request: ChatRequest & { stream: true } = {
       model,
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT() + STEPS_PROMPT() },
+        { role: 'system', content: SYSTEM_PROMPT(STEPS_PROMPT()) },
         { role: 'user', content },
         { role: 'assistant', content: JSON.stringify(interfaceParsed) },
       ],
-      tools: [stepsTool],
       options,
-      stream: true,
-    });
+      stream: true as const,
+    };
+    console.log('[StepsPhase] Sending request:', request);
+
+    response = yield* streamFn(id, request);
+    console.log('[StepsPhase] Received response:', response);
   } catch (err) {
+    console.error('[StepsPhase] Error during steps generation:', err);
     throw new WorkflowChainError(
       'Steps generation failed',
       'steps',
@@ -116,16 +123,25 @@ export async function* handleStepsPhase(
     );
   }
 
+  console.log('[StepsPhase] Parsing response with schema');
   const parsed = parseWithSchema(response, stepsSchema, 'steps');
+  console.log('[StepsPhase] Parsed steps:', parsed);
+
   const steps = parsed.map((step: WorkflowStep) => ({
     ...step,
     service: step.service as WorkflowService,
   }));
+
+  console.log('[StepsPhase] Final steps:', steps);
   yield { type: 'text', content: JSON.stringify({ steps }, null, 2), id };
   return steps;
 }
 
-function parseWithSchema(response: string, schema: any, phase: 'interface' | 'steps'): WorkflowStep[] {
+function parseWithSchema(
+  response: string,
+  schema: any,
+  phase: 'interface' | 'steps',
+): WorkflowStep[] {
   try {
     const parsed = parseOrRepairJson<WorkflowStep[]>(response, schema);
     if (!parsed) throw new Error('Failed even after repair');

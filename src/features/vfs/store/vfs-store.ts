@@ -1,4 +1,4 @@
-import { WorkflowStep } from '@/features/chat/ollama-api/tool-schemas/workflow-schema';
+import { WorkflowStep } from '@/features/ollama-api/tool-schemas/workflow-schema';
 import { enableMapSet } from 'immer';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';

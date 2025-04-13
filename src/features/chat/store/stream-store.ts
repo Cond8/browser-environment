@@ -5,7 +5,7 @@ import {
   streamWorkflowChain,
   WorkflowChainError,
   WorkflowValidationError,
-} from '../ollama-api/workflow-chain';
+} from '../../ollama-api/workflow-chain';
 import { ThreadMessage, useChatStore } from './chat-store';
 
 interface StreamStore {
