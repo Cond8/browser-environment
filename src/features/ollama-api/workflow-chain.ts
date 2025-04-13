@@ -49,24 +49,28 @@ export async function executeWorkflowChain(): Promise<{
   const chatFn = createChatAsyncFunction(ollamaUrl, selectedModel, parameters);
 
   try {
-    const alignmentResult = await handleAlignmentPhase(
-      messages[0].content,
-      chatFn,
-    );
+    const alignmentResult = await handleAlignmentPhase(messages[0].content, chatFn);
     chatStore.addAlignmentMessage(alignmentResult.response);
 
     const interfaceResult = await handleInterfacePhase(
+      messages[0].content,
       alignmentResult.response,
       chatFn,
     );
     chatStore.addInterfaceMessage(interfaceResult.interface);
 
-    const stepsResult = await handleStepsPhase(
-      alignmentResult.response,
-      interfaceResult.interface,
-      chatFn,
-    );
-    chatStore.addStepsMessage(stepsResult.steps);
+    let stepsResult;
+    try {
+      stepsResult = await handleStepsPhase(
+        messages[0].content,
+        alignmentResult.response,
+        interfaceResult.interface,
+        chatFn,
+      );
+      chatStore.addStepsMessage(stepsResult.steps);
+    } catch (error) {
+      throw new WorkflowChainError('Error in steps phase', 'steps', error as Error);
+    }
 
     return {
       interface: interfaceResult.interface,

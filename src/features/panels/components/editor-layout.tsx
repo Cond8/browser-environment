@@ -1,7 +1,7 @@
 // src/features/panels/components/editor-layout.tsx
 import { Card } from '@/components/ui/card';
 import { AssistantPanel } from '@/features/chat';
-import { JsonEditor } from '@/features/chat/components/json/json-editor';
+import { EditorWrapper } from '@/features/chat/components/editor/editor-wrapper';
 import React from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { VirtualFileSystem } from './virtual-file-system';
@@ -21,7 +21,7 @@ export const EditorLayout: React.FC = () => {
       {/* Middle Panel - JSON Editor */}
       <Panel defaultSize={40} minSize={30}>
         <Card className="h-full rounded-none border-r py-0 bg-background">
-          <JsonEditor />
+          <EditorWrapper />
         </Card>
       </Panel>
 

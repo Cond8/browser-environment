@@ -6,7 +6,7 @@ import { stepsSchema, WorkflowService, WorkflowStep } from '../tool-schemas/work
 
 import { WorkflowChainError, WorkflowValidationError } from '../workflow-chain';
 
-export const STEPS_PROMPT = () =>
+export const STEPS_PROMPT = (userRequest: string, alignmentResponse: string) =>
   `
 You are an assistant that defines structured JSON workflows.
 
@@ -66,24 +66,37 @@ You must use one of these predefined services:
 ]
 \`\`\`
 
-## Task: Generate Workflow Steps
-Based on the provided interface, generate a sequence of steps to accomplish the goal.
-
 RULES:
 - Generate 2-4 steps maximum
 - Each step MUST have ALL required fields
 - Steps MUST be logically connected
 - Final step MUST produce the interface's outputs
 - Do NOT include any text before or after the JSON
+
+USER REQUEST:
+\`\`\`
+${userRequest}
+\`\`\`
+
+ASSISTANT RESPONSE:
+\`\`\`
+${alignmentResponse}
+\`\`\`
+
+## Task: Generate Workflow Steps
+Based on the provided interface, generate a sequence of steps to accomplish the goal.
+
 `.trim();
 
 export async function handleStepsPhase(
-  content: string,
+  userRequest: string,
+  alignmentResponse: string,
   interfaceParsed: WorkflowStep,
   chatFn: (request: Omit<ChatRequest, 'model'>) => Promise<string>,
 ): Promise<{ steps: WorkflowStep[] }> {
   console.log('[StepsPhase] Starting steps phase with:', {
-    content,
+    userRequest,
+    alignmentResponse,
     interfaceParsed,
   });
 
@@ -91,9 +104,8 @@ export async function handleStepsPhase(
   try {
     response = await chatFn({
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT(STEPS_PROMPT()) },
-        { role: 'user', content },
-        { role: 'assistant', content: JSON.stringify(interfaceParsed) },
+        { role: 'system', content: SYSTEM_PROMPT(STEPS_PROMPT(userRequest, alignmentResponse)) },
+        { role: 'user', content: JSON.stringify(interfaceParsed) },
       ],
     });
   } catch (err) {
@@ -101,7 +113,7 @@ export async function handleStepsPhase(
       'Steps generation failed',
       'steps',
       err instanceof Error ? err : undefined,
-      { content },
+      { userRequest, alignmentResponse, interfaceParsed },
     );
   }
 

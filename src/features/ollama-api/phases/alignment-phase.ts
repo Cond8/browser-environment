@@ -28,15 +28,15 @@ RULES:
 `.trim();
 
 export async function handleAlignmentPhase(
-  content: string,
+  userRequest: string,
   chatFn: (request: Omit<ChatRequest, 'model'>) => Promise<string>,
-): Promise<{ response: string; }> {
+): Promise<{ response: string }> {
   let response;
   try {
     response = await chatFn({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT(ALIGNMENT_PROMPT()) },
-        { role: 'user', content },
+        { role: 'user', content: userRequest },
       ],
     });
   } catch (err) {
@@ -44,7 +44,7 @@ export async function handleAlignmentPhase(
       'Alignment phase failed',
       'alignment',
       err instanceof Error ? err : undefined,
-      { content },
+      { userRequest },
     );
   }
 

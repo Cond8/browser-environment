@@ -10,7 +10,7 @@ import {
 } from '../tool-schemas/workflow-schema';
 import { WorkflowChainError, WorkflowValidationError } from '../workflow-chain';
 
-export const INTERFACE_PROMPT = () =>
+export const INTERFACE_PROMPT = (userRequest: string) =>
   `
 You are an assistant that defines structured JSON workflows.
 
@@ -50,28 +50,37 @@ You must use one of these predefined services:
   "inputs": ["raw_data", "format_type"],
   "outputs": ["processed_data"]
 }
-\`\`\`
-
-## Task: Generate Workflow Interface
-Based on the user's request, generate a complete interface definition with ALL required fields.
+  \`\`\`
 
 RULES:
 - The \`service\` field MUST be one of the predefined services listed above
 - The \`method\` field MUST be in snake_case
 - The \`name\` field MUST be in PascalCase
 - Inputs and outputs MUST be arrays of variable names in snake_case
+
+USER REQUEST:
+\`\`\`
+${userRequest}
+\`\`\`
+
+## Task: Generate Workflow Interface
+Based on the user's request and the assistant's response, generate a complete interface definition with ALL required fields.
 `.trim();
 
 export async function handleInterfacePhase(
-  content: string,
+  userRequest: string,
+  alignmentResponse: string,
   chatFn: (request: Omit<ChatRequest, 'model'>) => Promise<string>,
-): Promise<{ interface: WorkflowStep; }> {
+): Promise<{ interface: WorkflowStep }> {
   let response;
   try {
     response = await chatFn({
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT(INTERFACE_PROMPT()) },
-        { role: 'user', content },
+        {
+          role: 'system',
+          content: SYSTEM_PROMPT(INTERFACE_PROMPT(userRequest)),
+        },
+        { role: 'user', content: alignmentResponse },
       ],
       tools: [interfaceTool],
     });
@@ -80,7 +89,7 @@ export async function handleInterfacePhase(
       'Interface generation failed',
       'interface',
       err instanceof Error ? err : undefined,
-      { content },
+      { userRequest, alignmentResponse },
     );
   }
 
