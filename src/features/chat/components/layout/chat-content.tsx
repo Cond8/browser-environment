@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 import { ThreadMessage, useChatStore } from '../../store/chat-store';
 import { EmptyChatState } from '../empty/empty-chat-state';
-import { JsonParser } from '../json/json-parser';
+import { AssistantDisplay } from '../assistant-display';
 import { ErrorDisplay } from './error-display';
 
 export const ChatContent = () => {
@@ -43,7 +43,7 @@ export const ChatContent = () => {
               {message.error ? (
                 <ErrorDisplay error={message.error} />
               ) : (
-                <JsonParser displayContent={message.content} />
+                <AssistantDisplay content={message.content} type={message.type} />
               )}
             </div>
           );

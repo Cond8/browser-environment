@@ -36,7 +36,6 @@ export interface ChatStore {
   resetThread: () => void;
 
   addUserMessage: (message: string) => void;
-  addEmptyAssistantMessage: (type: ThreadMessage['type']) => ThreadMessage;
 
   addAlignmentMessage: (message: string) => void;
   addInterfaceMessage: (message: WorkflowStep) => void;
@@ -76,27 +75,6 @@ export const useChatStore = create<ChatStore>()(
         });
       },
 
-      addEmptyAssistantMessage: (type: ThreadMessage['type']): ThreadMessage => {
-        const id = parseInt(nanoid(10), 36);
-        const assistantMessage: ThreadMessage = {
-          id,
-          role: 'assistant',
-          content: '',
-          tool_calls: [],
-          type,
-        };
-        set(state => {
-          const currentId = state.currentThreadId;
-          if (currentId) {
-            state.threads[currentId].messages.push(assistantMessage);
-          } else {
-            console.error('Cannot add assistant message: No current thread selected.');
-          }
-        });
-
-        return assistantMessage;
-      },
-
       addUserMessage: (message: string): void => {
         const id = parseInt(nanoid(10), 36);
         const userMessage: ThreadMessage = {
@@ -110,7 +88,7 @@ export const useChatStore = create<ChatStore>()(
             state.currentThreadId = id;
             state.threads[id] = {
               id,
-              title: 'New Thread',
+              title: message.substring(0, 30) + (message.length > 30 ? '...' : ''),
               messages: [userMessage],
               error: null,
             };
