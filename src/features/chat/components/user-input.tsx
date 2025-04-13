@@ -3,8 +3,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/features/chat/store/chat-store';
 import { Send, StopCircle } from 'lucide-react';
 import { useState } from 'react';
+import { useStreamStore } from '../../ollama-api/store/stream-store';
 import { useAbortEventBusStore } from '../store/abort-eventbus-store';
-import { useStreamStore } from '../store/stream-store';
 import { SelectedModel } from './selected-model';
 import { ShortcutsDisplay } from './shortcuts-display';
 

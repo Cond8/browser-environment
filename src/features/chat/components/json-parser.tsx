@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { useVfsStore } from '@/features/vfs/store/vfs-store';
 import { cn } from '@/lib/utils';
 import { jsonrepair } from 'jsonrepair';
-import { useStreamStore } from '../store/stream-store';
+import { useStreamStore } from '../../ollama-api/store/stream-store';
 import { ErrorDisplay } from './error-display';
 import InterfaceDetails from './json-interface-details';
 import { JsonViewer } from './json-viewer';

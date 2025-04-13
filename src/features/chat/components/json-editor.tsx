@@ -1,4 +1,4 @@
-import { useStreamStore } from '@/features/chat/store/stream-store';
+import { useStreamStore } from '@/features/ollama-api/store/stream-store';
 import Editor from '@monaco-editor/react';
 import { useEffect, useRef } from 'react';
 

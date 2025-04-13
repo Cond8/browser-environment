@@ -1,12 +1,12 @@
 // src/features/chat/store/stream-store.ts
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
+import { ThreadMessage, useChatStore } from '../../chat/store/chat-store';
 import {
   streamWorkflowChain,
   WorkflowChainError,
   WorkflowValidationError,
-} from '../../ollama-api/workflow-chain';
-import { ThreadMessage, useChatStore } from './chat-store';
+} from '../workflow-chain';
 
 interface StreamStore {
   currentMessageId: number | null;

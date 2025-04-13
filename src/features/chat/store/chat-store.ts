@@ -3,7 +3,7 @@ import { Message, ToolCall } from 'ollama';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { useStreamStore } from './stream-store';
+import { useStreamStore } from '../../ollama-api/store/stream-store';
 
 export interface ThreadMessage extends Message {
   id: number;
@@ -72,7 +72,7 @@ export const useChatStore = create<ChatStore>()(
         });
       },
 
-      addEmptyAssistantMessage: () => {
+      addEmptyAssistantMessage: (): ThreadMessage => {
         const id = Date.now();
         const assistantMessage: ThreadMessage = {
           id,
