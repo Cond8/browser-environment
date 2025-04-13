@@ -1,27 +1,29 @@
-// src/features/chat/components/yaml-editor.tsx
-import { useStreamStore } from '@/features/chat/store/stream-store';
+// src/features/chat/components/json-editor.tsx
 import Editor from '@monaco-editor/react';
 import { useEffect, useRef } from 'react';
 
-export const YamlEditor = () => {
-  const yamlContent = useStreamStore(state => state.partialYamls[state.currentMessageId!]);
+export interface JsonEditorProps {
+  jsonContent: string;
+}
 
+export const JsonEditor = ({ jsonContent }: JsonEditorProps) => {
   const editorRef = useRef<any>(null);
 
   const handleEditorDidMount = (editor: any) => {
+    console.log('[JsonEditor] Editor mounted');
     editorRef.current = editor;
   };
 
   useEffect(() => {
-    if (editorRef.current && typeof yamlContent === 'string') {
-      editorRef.current.setValue(yamlContent);
+    if (editorRef.current && typeof jsonContent === 'string') {
+      editorRef.current.setValue(jsonContent);
     }
-  }, [yamlContent]);
+  }, [jsonContent]);
 
   return (
     <Editor
       height="100%"
-      defaultLanguage="yaml"
+      defaultLanguage="json"
       theme="vs-dark"
       options={{
         readOnly: true,

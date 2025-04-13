@@ -1,19 +1,21 @@
 // src/features/chat/components/user-input.tsx
 import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/features/chat/store/chat-store';
+import { useConnStore } from '@/features/ollama-api/store/conn-store';
 import { Send, StopCircle } from 'lucide-react';
 import { useState } from 'react';
-import { useStreamStore } from '../store/stream-store';
+import { useAbortEventBusStore } from '../store/abort-eventbus-store';
 import { SelectedModel } from './selected-model';
 import { ShortcutsDisplay } from './shortcuts-display';
+
 export function UserInput() {
-  const [message, setMessage] = useState(
-    'I want to classify emails as spam or not spam',
-  );
+  const [message, setMessage] = useState('I want to classify emails as spam or not spam');
 
   const addUserMessage = useChatStore(state => state.addUserMessage);
-  const isStreaming = useStreamStore(state => state.isStreaming);
-  const stopStreaming = useStreamStore(state => state.stopStreaming);
+  const triggerAbort = useAbortEventBusStore(state => state.triggerAbort);
+  const isLoading = useConnStore(state => state.isLoading);
+  const startWorkflowChain = useConnStore(state => state.startWorkflowChain);
+  const stopLoading = useAbortEventBusStore(state => state.triggerAbort);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,8 +23,8 @@ export function UserInput() {
     if (!trimmed) return;
 
     addUserMessage(trimmed);
-
     setMessage('');
+    void startWorkflowChain();
   };
 
   const handleButtonSubmit = () => {
@@ -36,11 +38,18 @@ export function UserInput() {
         return;
       }
       e.preventDefault();
-      if (!isStreaming) {
+      if (!isLoading) {
         handleSubmit(e);
       }
     }
   };
+
+  const handleStop = () => {
+    console.log('[UserInput] Stop button clicked');
+    triggerAbort();
+    stopLoading();
+  };
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-4 border-t">
       <Textarea
@@ -51,7 +60,7 @@ export function UserInput() {
         placeholder="Type your message..."
         className="min-h-[60px] resize-none"
         onKeyDown={handleKeyDown}
-        disabled={isStreaming}
+        disabled={isLoading}
       />
       <div className="flex items-center justify-between">
         <SelectedModel />
@@ -60,11 +69,8 @@ export function UserInput() {
             command="Stop"
             shortcut="Shift+Enter"
             asButton
-            onClick={() => {
-              console.log('[UserInput] Stop button clicked');
-              stopStreaming();
-            }}
-            hide={!isStreaming}
+            onClick={handleStop}
+            hide={!isLoading}
             icon={StopCircle}
           />
           <ShortcutsDisplay
@@ -72,7 +78,7 @@ export function UserInput() {
             shortcut="Shift+Enter"
             asButton
             onClick={handleButtonSubmit}
-            hide={isStreaming}
+            hide={isLoading}
             icon={Send}
           />
         </div>

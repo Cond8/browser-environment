@@ -9,7 +9,7 @@ import {
 import { cn } from '@/lib/utils';
 import { ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { fetchModels } from '../ollama-api/fetch-models';
+import { fetchModels } from '../../ollama-api/fetch-models';
 import { OllamaModel } from '../services/ollama-types';
 import { useAssistantConfigStore } from '../store/assistant-config-store';
 

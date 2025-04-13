@@ -1,29 +1,24 @@
-// src/features/chat/components/yaml-viewer.tsx
-import { Alert, AlertDescription } from '@/components/ui/alert';
+// src/features/chat/components/json-viewer.tsx
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 
-export const YamlViewer = ({ content, error }: { content: string; error?: string | null }) => {
+type JsonViewerProps = {
+  content: string;
+  isStreaming?: boolean;
+};
+
+export const JsonViewer = ({ content, isStreaming = false }: JsonViewerProps) => {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [content]);
 
-  if (error) {
-    return (
-      <Alert variant="destructive" className="mb-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    );
-  }
-
   return (
     <pre className="rounded-md bg-muted p-4 font-mono text-sm text-muted-foreground">
       <ScrollArea className="max-h-[400px] overflow-auto">
-        <div className="whitespace-pre-wrap">
+        <div className={cn('whitespace-pre-wrap', isStreaming && 'streaming-content')}>
           {content}
           <div ref={bottomRef} />
         </div>
