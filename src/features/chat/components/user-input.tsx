@@ -1,12 +1,12 @@
 // src/features/chat/components/user-input.tsx
 import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/features/chat/store/chat-store';
+import { useConnStore } from '@/features/ollama-api/store/conn-store';
 import { Send, StopCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useAbortEventBusStore } from '../store/abort-eventbus-store';
 import { SelectedModel } from './selected-model';
 import { ShortcutsDisplay } from './shortcuts-display';
-import { useConnStore } from '@/features/ollama-api/store/conn-store';
 
 export function UserInput() {
   const [message, setMessage] = useState('I want to classify emails as spam or not spam');
@@ -14,7 +14,8 @@ export function UserInput() {
   const addUserMessage = useChatStore(state => state.addUserMessage);
   const triggerAbort = useAbortEventBusStore(state => state.triggerAbort);
   const isLoading = useConnStore(state => state.isLoading);
-  const stopLoading = useAbortEventBusStore(state => state.triggerAbort)
+  const startWorkflowChain = useConnStore(state => state.startWorkflowChain);
+  const stopLoading = useAbortEventBusStore(state => state.triggerAbort);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +24,7 @@ export function UserInput() {
 
     addUserMessage(trimmed);
     setMessage('');
+    void startWorkflowChain();
   };
 
   const handleButtonSubmit = () => {

@@ -34,51 +34,41 @@ export async function executeWorkflowChain(): Promise<{
   steps?: WorkflowStep[];
   error?: WorkflowChainError;
 }> {
-  console.log('[WorkflowChain] Starting workflow chain execution');
   const { selectedModel, parameters, ollamaUrl } = useAssistantConfigStore.getState();
-  console.log('[WorkflowChain] Using model:', selectedModel, 'with parameters:', parameters);
 
   const chatStore = useChatStore.getState();
   const assistantMessage = chatStore.addEmptyAssistantMessage();
-  console.log('[WorkflowChain] Created new assistant message with ID:', assistantMessage.id);
-
   const messages = chatStore.getMessagesUntil(assistantMessage.id);
-  console.log('[WorkflowChain] Retrieved messages:', messages.length);
 
   if (messages.length > 1) {
-    console.error('[WorkflowChain] Error: More than one message found');
     throw new WorkflowChainError('Only one message is supported', 'stream', undefined, {
       messageCount: messages.length,
     });
   }
 
-  const chatFn = createChatFunction(ollamaUrl, selectedModel, parameters);
+  const chatFn = createChatAsyncFunction(ollamaUrl, selectedModel, parameters);
 
   try {
-    console.log('[WorkflowChain] Starting alignment phase');
     const alignmentResult = await handleAlignmentPhase(
       messages[0].content,
       assistantMessage.id,
       chatFn,
     );
-    chatStore.updateAssistantMessage(assistantMessage.id, alignmentResult.response);
 
-    console.log('[WorkflowChain] Starting interface phase');
+    chatStore.addAlignmentMessage(assistantMessage.id, alignmentResult.response);
+
     const interfaceResult = await handleInterfacePhase(
       messages[0].content,
       assistantMessage.id,
       chatFn,
     );
-    chatStore.updateAssistantMessage(
-      assistantMessage.id,
-      JSON.stringify({ interface: interfaceResult.interface }, null, 2),
-    );
+
+    chatStore.addInterfaceMessage(assistantMessage.id, interfaceResult.interface);
 
     return {
       interface: interfaceResult.interface,
     };
   } catch (error) {
-    console.error('[WorkflowChain] Error in workflow chain:', error);
     const err =
       error instanceof WorkflowChainError
         ? error
@@ -94,13 +84,12 @@ export async function executeWorkflowChain(): Promise<{
       2,
     );
     console.error('[WorkflowChain] Error content:', errorContent);
-    chatStore.updateAssistantMessage(assistantMessage.id, errorContent);
 
     return { error: err };
   }
 }
 
-function createChatFunction(ollamaUrl: string, model: string, parameters: any) {
+function createChatAsyncFunction(ollamaUrl: string, model: string, parameters: any) {
   return async (request: any) => {
     const response = await fetch(`${ollamaUrl}/api/chat`, {
       method: 'POST',
@@ -111,6 +100,7 @@ function createChatFunction(ollamaUrl: string, model: string, parameters: any) {
         ...request,
         model,
         options: parameters,
+        stream: false,
       }),
     });
 

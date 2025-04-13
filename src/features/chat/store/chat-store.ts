@@ -1,5 +1,6 @@
 // src/features/chat/store/chat-store.ts
-import { Message, ToolCall } from 'ollama';
+import { WorkflowStep } from '@/features/ollama-api/tool-schemas/workflow-schema';
+import { Message } from 'ollama';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -35,8 +36,12 @@ export interface ChatStore {
   addUserMessage: (message: string) => void;
   addEmptyAssistantMessage: () => ThreadMessage;
 
-  updateAssistantMessage: (id: number, message: string) => void;
-  addToolCallToMessage: (id: number, toolCall: ToolCall) => void;
+  addAlignmentMessage: (id: number, message: string) => void;
+  addInterfaceMessage: (id: number, message: WorkflowStep) => void;
+  addStepsMessage: (id: number, message: WorkflowStep[]) => void;
+
+  // updateAssistantMessage: (id: number, message: string) => void;
+  // addToolCallToMessage: (id: number, toolCall: ToolCall) => void;
 
   setMessageError: (id: number, error: ThreadMessage['error']) => void;
 
@@ -115,40 +120,46 @@ export const useChatStore = create<ChatStore>()(
             }
           }
         });
-        // useStreamStore.getState().startWorkflowChain();
       },
 
-      updateAssistantMessage: (id: number, message: string) => {
+      addAlignmentMessage: (id: number, message: string) => {
+        const alignmentMessage: ThreadMessage = {
+          id,
+          role: 'assistant',
+          content: message,
+        };
         set(state => {
           const currentId = state.currentThreadId;
           if (currentId) {
-            const thread = state.threads[currentId];
-            const assistantMessage = thread.messages.find(
-              m => m.id === id && m.role === 'assistant',
-            );
-            if (assistantMessage) {
-              assistantMessage.content = message;
-            } else {
-              console.warn(`Assistant message with id ${id} not found in current thread.`);
-            }
+            state.threads[currentId].messages.push(alignmentMessage);
           }
         });
       },
 
-      addToolCallToMessage: (id: number, toolCall: ToolCall) => {
+      addInterfaceMessage: (id: number, message: WorkflowStep) => {
+        const interfaceMessage: ThreadMessage = {
+          id: id + 1,
+          role: 'assistant',
+          content: JSON.stringify(message, null, 2),
+        };
         set(state => {
           const currentId = state.currentThreadId;
           if (currentId) {
-            const thread = state.threads[currentId];
-            const message = thread.messages.find(m => m.id === id && m.role === 'assistant');
-            if (message) {
-              if (!message.tool_calls) {
-                message.tool_calls = [];
-              }
-              message.tool_calls.push(toolCall);
-            } else {
-              console.warn(`Assistant message with id ${id} not found to add tool call.`);
-            }
+            state.threads[currentId].messages.push(interfaceMessage);
+          }
+        });
+      },
+
+      addStepsMessage: (id: number, message: WorkflowStep[]) => {
+        const stepsMessage: ThreadMessage = {
+          id: id + 2,
+          role: 'assistant',
+          content: JSON.stringify(message, null, 2),
+        };
+        set(state => {
+          const currentId = state.currentThreadId;
+          if (currentId) {
+            state.threads[currentId].messages.push(stepsMessage);
           }
         });
       },
