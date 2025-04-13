@@ -53,16 +53,17 @@ const variableNameSchema = z
   .min(1)
   .regex(snakeCaseRegex, 'Variable name must be in snake_case (e.g. user_data)');
 
-const goalSchema = z
-  .string()
-  .min(1)
-  .max(100)
-  .describe('Short, clear task summary (max 100 characters)');
+const goalSchema = z.string().min(1).describe('Short, clear task summary');
 
 // Enhanced interface schema
 export const interfaceSchema = z.object({
   name: nameSchema,
-  service: z.enum(SERVICES).describe('Domain service (choose from DOMAIN_SERVICES list)'),
+  service: z
+    .string()
+    .min(1)
+    .describe(
+      'Primary domain service action (e.g., extract, parse, understand). Use single words if possible.',
+    ),
   method: methodSchema,
   goal: goalSchema,
   inputs: z.array(variableNameSchema).optional(),

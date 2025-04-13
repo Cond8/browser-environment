@@ -1,6 +1,7 @@
 // src/features/chat/services/prompts-tools.ts
 export const DOMAIN_SERVICES = () =>
-  `## SERVICES
+  `## SUGGESTED SERVICES
+  Use these as a guide for the \`service\` field. The system will automatically use the *first word* of the service you provide.
 
 - \`extract\`: Pull patterns from text
 - \`parse\`: Interpret input
@@ -45,6 +46,13 @@ ${DOMAIN_SERVICES}
   "outputs": ["valid_rows", "error_count"]
 }
 \`\`\`
+
+## Task: Generate Workflow Interface
+
+RULES:
+- \`service\`: A single primary action verb describing the domain (e.g., extract, parse, understand). Choose from the SUGGESTED SERVICES list or provide a suitable verb. The system will use the first word.
+- \`method\`: A descriptive snake_case name for the specific function (e.g., extract_user_data).
+- \`goal\`: A concise description of the task's purpose (max 100 characters).
 `.trim();
 
 export const STEPS_PROMPT = () =>
@@ -89,4 +97,12 @@ ${DOMAIN_SERVICES}
   }
 ]
 \`\`\`
+
+## Task: Generate Workflow Steps
+Based on the provided INTERFACE, generate a sequence of detailed STEPS to accomplish the overall GOAL.
+
+RULES:
+- Each STEP MUST have a \`service\` field. Choose a single action verb from the SUGGESTED SERVICES list or provide a suitable one. The system will use the first word.
+- Each STEP MUST have a \`method\` field in snake_case.
+- Each STEP MUST have a clear \`goal\` (max 100 characters).
 `.trim();

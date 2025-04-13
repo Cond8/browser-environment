@@ -3,6 +3,7 @@ import { ChatRequest, Ollama } from 'ollama/browser';
 import { useAssistantConfigStore } from '../store/assistant-config-store';
 import { useChatStore } from '../store/chat-store';
 import { useEventBusStore } from '../store/eventbus-store';
+import { parseOrRepairJson } from './llm-output-fixer';
 import { SYSTEM_PROMPT } from './prompts/prompts-system';
 import { INTERFACE_PROMPT, STEPS_PROMPT } from './prompts/prompts-tools';
 import { interfaceSchema, interfaceTool, stepsSchema } from './tool-schemas/workflow-schema';
@@ -65,14 +66,17 @@ export async function* streamWorkflowChain(): AsyncGenerator<StreamYield, void, 
     });
 
     try {
-      console.log('interfaceResponse', interfaceResponse);
-      const interfaceWithoutBlocks = interfaceResponse.replace('```json', '').replace('```', '');
-      console.log('interfaceWithoutBlocks', interfaceWithoutBlocks);
-      const interfaceParsed = JSON.parse(interfaceWithoutBlocks);
-      console.log('interfaceParsed', interfaceParsed);
-      const interfaceParsedValidated = interfaceSchema.parse(interfaceParsed);
-      console.log('interfaceParsedValidated', interfaceParsedValidated);
+      console.log('Processing interface response...');
+      const interfaceParsed = parseOrRepairJson(interfaceResponse, interfaceSchema);
+      if (!interfaceParsed) {
+        throw new Error('Failed to parse interface JSON even after repair attempts');
+      }
+      console.log('Interface successfully parsed and validated:', interfaceParsed);
     } catch (error) {
+      console.error('Interface parsing failed:', {
+        error,
+        rawResponse: interfaceResponse,
+      });
       throw new WorkflowValidationError(
         'Failed to parse interface JSON',
         'interface',
@@ -94,14 +98,17 @@ export async function* streamWorkflowChain(): AsyncGenerator<StreamYield, void, 
     });
 
     try {
-      console.log('stepsResponse', stepsResponse);
-      const stepsWithoutBlocks = stepsResponse.replace('```json', '').replace('```', '');
-      console.log('stepsWithoutBlocks', stepsWithoutBlocks);
-      const stepsParsed = JSON.parse(stepsWithoutBlocks);
-      console.log('stepsParsed', stepsParsed);
-      const stepsParsedValidated = stepsSchema.parse(stepsParsed);
-      console.log('stepsParsedValidated', stepsParsedValidated);
+      console.log('Processing steps response...');
+      const stepsParsed = parseOrRepairJson(stepsResponse, stepsSchema);
+      if (!stepsParsed) {
+        throw new Error('Failed to parse steps JSON even after repair attempts');
+      }
+      console.log('Steps successfully parsed and validated:', stepsParsed);
     } catch (error) {
+      console.error('Steps parsing failed:', {
+        error,
+        rawResponse: stepsResponse,
+      });
       throw new WorkflowValidationError(
         'Failed to parse steps JSON',
         'steps',
