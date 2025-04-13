@@ -1,6 +1,7 @@
 import { useServiceStore } from '@/features/vfs/store/service-store';
 import { useWorkflowStore } from '@/features/vfs/store/workflow-store';
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 interface EditorState {
@@ -37,56 +38,63 @@ interface EditorState {
 }
 
 export const useEditorStore = create<EditorState>()(
-  immer(set => ({
-    // Initial state
-    content: '',
-    filePath: null,
-    selection: null,
-    cursorPosition: null,
-    settings: {
-      fontSize: 14,
-      theme: 'dark',
-      wordWrap: true,
-      lineNumbers: true,
-    },
+  persist(
+    immer(set => ({
+      // Initial state
+      content: '',
+      filePath: null,
+      selection: null,
+      cursorPosition: null,
+      settings: {
+        fontSize: 14,
+        theme: 'dark',
+        wordWrap: true,
+        lineNumbers: true,
+      },
 
-    // Actions
-    setContent: content => {
-      set(state => {
-        state.content = content;
-      });
+      // Actions
+      setContent: content => {
+        set(state => {
+          state.content = content;
+        });
+      },
+      setFilePath: filePath => {
+        set(state => {
+          state.filePath = filePath;
+        });
+      },
+      setSelection: selection => {
+        set(state => {
+          state.selection = selection;
+        });
+      },
+      setCursorPosition: cursorPosition => {
+        set(state => {
+          state.cursorPosition = cursorPosition;
+        });
+      },
+      updateSettings: newSettings => {
+        set(state => {
+          Object.assign(state.settings, newSettings);
+        });
+      },
+      setActiveEditor: (fileType: 'workflow' | 'service', filepath: string) => {
+        set(state => {
+          state.filePath = filepath;
+          if (fileType === 'workflow') {
+            state.content = JSON.stringify(
+              useWorkflowStore.getState().getWorkflow(filepath)?.content ?? {},
+              null,
+              2,
+            );
+          } else if (fileType === 'service') {
+            state.content = useServiceStore.getState().getService(filepath)?.content ?? '';
+          }
+        });
+      },
+    })),
+    {
+      name: 'editor-storage',
     },
-    setFilePath: filePath => {
-      set(state => {
-        state.filePath = filePath;
-      });
-    },
-    setSelection: selection => {
-      set(state => {
-        state.selection = selection;
-      });
-    },
-    setCursorPosition: cursorPosition => {
-      set(state => {
-        state.cursorPosition = cursorPosition;
-      });
-    },
-    updateSettings: newSettings => {
-      set(state => {
-        Object.assign(state.settings, newSettings);
-      });
-    },
-    setActiveEditor: (fileType: 'workflow' | 'service', filepath: string) => {
-      set(state => {
-        state.filePath = filepath;
-        if (fileType === 'workflow') {
-          state.content = JSON.stringify(
-            useWorkflowStore.getState().getWorkflow(filepath)?.content ?? {},
-          );
-        } else if (fileType === 'service') {
-          state.content = useServiceStore.getState().getService(filepath)?.content ?? '';
-        }
-      });
-    },
-  })),
+  ),
 );
