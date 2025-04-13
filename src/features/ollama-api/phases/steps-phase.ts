@@ -79,13 +79,11 @@ RULES:
 
 export async function handleStepsPhase(
   content: string,
-  id: number,
   interfaceParsed: WorkflowStep,
   chatFn: (request: Omit<ChatRequest, 'model'>) => Promise<string>,
-): Promise<{ steps: WorkflowStep[]; id: number }> {
+): Promise<{ steps: WorkflowStep[] }> {
   console.log('[StepsPhase] Starting steps phase with:', {
     content,
-    id,
     interfaceParsed,
   });
 
@@ -114,7 +112,7 @@ export async function handleStepsPhase(
     service: step.service as WorkflowService,
   }));
 
-  return { steps, id };
+  return { steps };
 }
 
 function parseWithSchema(

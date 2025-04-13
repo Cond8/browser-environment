@@ -29,9 +29,8 @@ RULES:
 
 export async function handleAlignmentPhase(
   content: string,
-  id: number,
   chatFn: (request: Omit<ChatRequest, 'model'>) => Promise<string>,
-): Promise<{ response: string; id: number }> {
+): Promise<{ response: string; }> {
   let response;
   try {
     response = await chatFn({
@@ -49,5 +48,5 @@ export async function handleAlignmentPhase(
     );
   }
 
-  return { response, id };
+  return { response };
 }

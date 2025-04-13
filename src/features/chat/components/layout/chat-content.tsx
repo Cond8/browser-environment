@@ -1,12 +1,13 @@
 // src/features/chat/components/chat-content.tsx
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { EmptyChatState } from '@/features/chat/components/empty-chat-state';
 import { useConnStore } from '@/features/ollama-api/store/conn-store';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
-import { ThreadMessage, useChatStore } from '../store/chat-store';
+import { ThreadMessage, useChatStore } from '../../store/chat-store';
+import { EmptyChatState } from '../empty/empty-chat-state';
+import { JsonParser } from '../json/json-parser';
 import { ErrorDisplay } from './error-display';
-import { JsonParser } from './json-parser';
+
 export const ChatContent = () => {
   const currentThread = useChatStore().getCurrentThread();
   const messagesEndRef = useRef<HTMLDivElement>(null);

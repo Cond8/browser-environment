@@ -64,9 +64,8 @@ RULES:
 
 export async function handleInterfacePhase(
   content: string,
-  id: number,
   chatFn: (request: Omit<ChatRequest, 'model'>) => Promise<string>,
-): Promise<{ interface: WorkflowStep; id: number }> {
+): Promise<{ interface: WorkflowStep; }> {
   let response;
   try {
     response = await chatFn({
@@ -86,7 +85,7 @@ export async function handleInterfacePhase(
   }
 
   const parsed = parseWithSchema(response, interfaceSchema, 'interface');
-  return { interface: { ...parsed, service: parsed.service as WorkflowService }, id };
+  return { interface: { ...parsed, service: parsed.service as WorkflowService } };
 }
 
 function parseWithSchema(

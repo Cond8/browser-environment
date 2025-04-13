@@ -3,6 +3,7 @@ import { useAssistantConfigStore } from '../chat/store/assistant-config-store';
 import { useChatStore } from '../chat/store/chat-store';
 import { handleAlignmentPhase } from './phases/alignment-phase';
 import { handleInterfacePhase } from './phases/interface-phase';
+import { handleStepsPhase } from './phases/steps-phase';
 import { WorkflowStep } from './tool-schemas/workflow-schema';
 
 export class WorkflowChainError extends Error {
@@ -37,8 +38,7 @@ export async function executeWorkflowChain(): Promise<{
   const { selectedModel, parameters, ollamaUrl } = useAssistantConfigStore.getState();
 
   const chatStore = useChatStore.getState();
-  const assistantMessage = chatStore.addEmptyAssistantMessage();
-  const messages = chatStore.getMessagesUntil(assistantMessage.id);
+  const messages = chatStore.getAllMessages();
 
   if (messages.length > 1) {
     throw new WorkflowChainError('Only one message is supported', 'stream', undefined, {
@@ -51,22 +51,26 @@ export async function executeWorkflowChain(): Promise<{
   try {
     const alignmentResult = await handleAlignmentPhase(
       messages[0].content,
-      assistantMessage.id,
       chatFn,
     );
-
-    chatStore.addAlignmentMessage(assistantMessage.id, alignmentResult.response);
+    chatStore.addAlignmentMessage(alignmentResult.response);
 
     const interfaceResult = await handleInterfacePhase(
-      messages[0].content,
-      assistantMessage.id,
+      alignmentResult.response,
       chatFn,
     );
+    chatStore.addInterfaceMessage(interfaceResult.interface);
 
-    chatStore.addInterfaceMessage(assistantMessage.id, interfaceResult.interface);
+    const stepsResult = await handleStepsPhase(
+      alignmentResult.response,
+      interfaceResult.interface,
+      chatFn,
+    );
+    chatStore.addStepsMessage(stepsResult.steps);
 
     return {
       interface: interfaceResult.interface,
+      steps: stepsResult.steps,
     };
   } catch (error) {
     const err =

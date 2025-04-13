@@ -1,7 +1,7 @@
 // src/features/panels/components/editor-layout.tsx
 import { Card } from '@/components/ui/card';
 import { AssistantPanel } from '@/features/chat';
-import { JsonEditor } from '@/features/chat/components/json-editor';
+import { JsonEditor } from '@/features/chat/components/json/json-editor';
 import React from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { VirtualFileSystem } from './virtual-file-system';

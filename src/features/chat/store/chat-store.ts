@@ -1,5 +1,6 @@
 // src/features/chat/store/chat-store.ts
 import { WorkflowStep } from '@/features/ollama-api/tool-schemas/workflow-schema';
+import { nanoid } from 'nanoid';
 import { Message } from 'ollama';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -7,6 +8,7 @@ import { immer } from 'zustand/middleware/immer';
 
 export interface ThreadMessage extends Message {
   id: number;
+  type: 'alignment' | 'interface' | 'steps';
   error?: {
     message: string;
     type: string;
@@ -34,17 +36,15 @@ export interface ChatStore {
   resetThread: () => void;
 
   addUserMessage: (message: string) => void;
-  addEmptyAssistantMessage: () => ThreadMessage;
+  addEmptyAssistantMessage: (type: ThreadMessage['type']) => ThreadMessage;
 
-  addAlignmentMessage: (id: number, message: string) => void;
-  addInterfaceMessage: (id: number, message: WorkflowStep) => void;
-  addStepsMessage: (id: number, message: WorkflowStep[]) => void;
-
-  // updateAssistantMessage: (id: number, message: string) => void;
-  // addToolCallToMessage: (id: number, toolCall: ToolCall) => void;
+  addAlignmentMessage: (message: string) => void;
+  addInterfaceMessage: (message: WorkflowStep) => void;
+  addStepsMessage: (message: WorkflowStep[]) => void;
 
   setMessageError: (id: number, error: ThreadMessage['error']) => void;
 
+  getAllMessages: () => ThreadMessage[];
   getMessagesUntil: (id: number) => ThreadMessage[];
 
   getRecentThreads: (limit?: number) => Thread[];
@@ -76,13 +76,14 @@ export const useChatStore = create<ChatStore>()(
         });
       },
 
-      addEmptyAssistantMessage: (): ThreadMessage => {
-        const id = Date.now();
+      addEmptyAssistantMessage: (type: ThreadMessage['type']): ThreadMessage => {
+        const id = parseInt(nanoid(10), 36);
         const assistantMessage: ThreadMessage = {
           id,
           role: 'assistant',
           content: '',
           tool_calls: [],
+          type,
         };
         set(state => {
           const currentId = state.currentThreadId;
@@ -97,11 +98,12 @@ export const useChatStore = create<ChatStore>()(
       },
 
       addUserMessage: (message: string): void => {
-        const id = Date.now();
+        const id = parseInt(nanoid(10), 36);
         const userMessage: ThreadMessage = {
           id,
           role: 'user',
           content: message,
+          type: 'alignment',
         };
         set(state => {
           if (!state.currentThreadId) {
@@ -122,11 +124,12 @@ export const useChatStore = create<ChatStore>()(
         });
       },
 
-      addAlignmentMessage: (id: number, message: string) => {
+      addAlignmentMessage: (message: string) => {
         const alignmentMessage: ThreadMessage = {
-          id,
+          id: parseInt(nanoid(10), 36),
           role: 'assistant',
           content: message,
+          type: 'alignment',
         };
         set(state => {
           const currentId = state.currentThreadId;
@@ -136,11 +139,12 @@ export const useChatStore = create<ChatStore>()(
         });
       },
 
-      addInterfaceMessage: (id: number, message: WorkflowStep) => {
+      addInterfaceMessage: (message: WorkflowStep) => {
         const interfaceMessage: ThreadMessage = {
-          id: id + 1,
+          id: parseInt(nanoid(10), 36),
           role: 'assistant',
           content: JSON.stringify(message, null, 2),
+          type: 'interface',
         };
         set(state => {
           const currentId = state.currentThreadId;
@@ -150,11 +154,12 @@ export const useChatStore = create<ChatStore>()(
         });
       },
 
-      addStepsMessage: (id: number, message: WorkflowStep[]) => {
+      addStepsMessage: (message: WorkflowStep[]) => {
         const stepsMessage: ThreadMessage = {
-          id: id + 2,
+          id: parseInt(nanoid(10), 36),
           role: 'assistant',
           content: JSON.stringify(message, null, 2),
+          type: 'steps',
         };
         set(state => {
           const currentId = state.currentThreadId;
@@ -213,6 +218,12 @@ export const useChatStore = create<ChatStore>()(
           state.threads = {};
           state.currentThreadId = null;
         });
+      },
+
+      getAllMessages: (): ThreadMessage[] => {
+        const thread = get().getCurrentThread();
+        if (!thread) return [];
+        return thread.messages;
       },
 
       getMessagesUntil: (id: number): ThreadMessage[] => {

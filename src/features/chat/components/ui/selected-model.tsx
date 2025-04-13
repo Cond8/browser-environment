@@ -9,13 +9,13 @@ import {
 import { cn } from '@/lib/utils';
 import { ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { fetchModels } from '../../ollama-api/fetch-models';
-import { OllamaModel } from '../services/ollama-types';
-import { useAssistantConfigStore } from '../store/assistant-config-store';
+import { fetchModels } from '../../../ollama-api/fetch-models';
+import { useAssistantConfigStore } from '../../store/assistant-config-store';
+import { ModelResponse } from 'ollama';
 
 export function SelectedModel() {
   const { selectedModel, setSelectedModel, ollamaUrl } = useAssistantConfigStore();
-  const [models, setModels] = useState<OllamaModel[]>([]);
+  const [models, setModels] = useState<ModelResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

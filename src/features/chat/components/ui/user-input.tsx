@@ -4,7 +4,7 @@ import { useChatStore } from '@/features/chat/store/chat-store';
 import { useConnStore } from '@/features/ollama-api/store/conn-store';
 import { Send, StopCircle } from 'lucide-react';
 import { useState } from 'react';
-import { useAbortEventBusStore } from '../store/abort-eventbus-store';
+import { useAbortEventBusStore } from '../../store/abort-eventbus-store';
 import { SelectedModel } from './selected-model';
 import { ShortcutsDisplay } from './shortcuts-display';
 

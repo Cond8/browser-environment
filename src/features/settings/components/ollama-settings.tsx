@@ -1,7 +1,7 @@
 // src/features/settings/components/ollama-settings.tsx
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { SelectedModel } from '../../chat/components/selected-model';
+import { SelectedModel } from '../../chat/components/ui/selected-model';
 import { useAssistantConfigStore } from '../../chat/store/assistant-config-store';
 
 export function OllamaSettings() {

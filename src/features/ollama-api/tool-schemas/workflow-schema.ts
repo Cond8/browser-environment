@@ -102,5 +102,3 @@ export const stepsTool: Tool = zodToOllamaTool(
   'Generate a single workflow step',
   stepsSchema,
 );
-
-console.log(interfaceTool);

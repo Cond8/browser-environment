@@ -1,7 +1,7 @@
 // src/features/chat/components/shortcuts-cheatsheet.tsx
 import { cn } from '@/lib/utils';
 import { Keyboard, LucideIcon } from 'lucide-react';
-import { ShortcutsDisplay } from './shortcuts-display';
+import { ShortcutsDisplay } from '../ui/shortcuts-display';
 
 interface ShortcutItem {
   command: string;
