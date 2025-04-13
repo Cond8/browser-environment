@@ -1,5 +1,6 @@
+// src/features/ollama-api/phases/alignment-phase.ts
+import { ChatRequest } from 'ollama/browser';
 import { SYSTEM_PROMPT } from '../prompts/prompts-system';
-import { StreamResponseFn, StreamYield } from '../stream-response';
 import { WorkflowChainError } from '../workflow-chain';
 
 export const ALIGNMENT_PROMPT = () =>
@@ -26,19 +27,18 @@ RULES:
 - Do not start generating the workflow yet
 `.trim();
 
-export async function* handleAlignmentPhase(
+export async function handleAlignmentPhase(
   content: string,
   id: number,
-  streamFn: StreamResponseFn,
-): AsyncGenerator<StreamYield, void, unknown> {
+  chatFn: (request: Omit<ChatRequest, 'model'>) => Promise<string>,
+): Promise<{ response: string; id: number }> {
   let response;
   try {
-    response = yield* streamFn(id, {
+    response = await chatFn({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT(ALIGNMENT_PROMPT()) },
         { role: 'user', content },
       ],
-      stream: true,
     });
   } catch (err) {
     throw new WorkflowChainError(
@@ -49,5 +49,5 @@ export async function* handleAlignmentPhase(
     );
   }
 
-  yield { type: 'text', content: response, id };
+  return { response, id };
 }

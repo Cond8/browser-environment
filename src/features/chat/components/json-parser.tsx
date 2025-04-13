@@ -1,16 +1,14 @@
+// src/features/chat/components/json-parser.tsx
 import { Button } from '@/components/ui/button';
 import { useVfsStore } from '@/features/vfs/store/vfs-store';
 import { cn } from '@/lib/utils';
 import { jsonrepair } from 'jsonrepair';
-import { useStreamStore } from '../../ollama-api/store/stream-store';
 import { ErrorDisplay } from './error-display';
 import InterfaceDetails from './json-interface-details';
 import { JsonViewer } from './json-viewer';
 
 type JsonParserProps = {
-  content: string;
-  messageId?: number; // Need message ID to check stream state
-  isLatestAssistantMessage?: boolean; // Flag to know if this is potentially the streaming message
+  displayContent: string;
 };
 
 // Extract JSON from fenced blocks if available.
@@ -31,33 +29,8 @@ const looksLikeJson = (content: string): boolean => {
   );
 };
 
-export const JsonParser = ({ content, messageId, isLatestAssistantMessage }: JsonParserProps) => {
-  const isStreaming = useStreamStore(state => state.isStreaming);
-  const currentStreamingId = useStreamStore(state => state.currentMessageId);
+export const JsonParser = ({ displayContent }: JsonParserProps) => {
   const vfsStore = useVfsStore();
-  // Get the raw partial message content directly from stream store if streaming this message
-  const partialMessageContent = useStreamStore(state =>
-    isStreaming && currentStreamingId === messageId
-      ? state.partialMessages[messageId]?.content
-      : null,
-  );
-
-  // Determine if *this specific message* is the one currently being streamed
-  const isCurrentlyStreamingThisMessage =
-    isStreaming && currentStreamingId === messageId && isLatestAssistantMessage;
-
-  // Use the partial content if this message is actively streaming, otherwise use the final content
-  const displayContent = isCurrentlyStreamingThisMessage ? (partialMessageContent ?? '') : content;
-
-  // --- Streaming Display Logic ---
-  if (isCurrentlyStreamingThisMessage) {
-    // Show raw, potentially incomplete JSON (or text) in the viewer
-    return (
-      <div className="p-4 bg-muted/30">
-        <JsonViewer content={displayContent} isStreaming={true} />
-      </div>
-    );
-  }
 
   // --- Final Content Display Logic ---
   // If content doesn't look like JSON, display as plain text

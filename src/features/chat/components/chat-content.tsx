@@ -1,18 +1,16 @@
 // src/features/chat/components/chat-content.tsx
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { EmptyChatState } from '@/features/chat/components/empty-chat-state';
+import { useConnStore } from '@/features/ollama-api/store/conn-store';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
-import { useStreamStore } from '../../ollama-api/store/stream-store';
 import { ThreadMessage, useChatStore } from '../store/chat-store';
 import { ErrorDisplay } from './error-display';
 import { JsonParser } from './json-parser';
-
 export const ChatContent = () => {
   const currentThread = useChatStore().getCurrentThread();
-  const isStreaming = useStreamStore(state => state.isStreaming);
-  const partialMessage = useStreamStore(state => state.partialMessages[state.currentMessageId!]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isLoading = useConnStore(state => state.isLoading);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -23,25 +21,16 @@ export const ChatContent = () => {
       scrollToBottom();
     }, 100);
     return () => clearTimeout(timer);
-  }, [currentThread?.messages.length, partialMessage?.content, isStreaming]);
+  }, [currentThread?.messages.length]);
 
   if (!currentThread) {
     return <EmptyChatState />;
   }
 
-  const messages = currentThread.messages;
-  const lastAssistantMessageIndex = messages
-    .map((msg, idx) => ({ idx, isAssistant: msg.role === 'assistant' }))
-    .filter(item => item.isAssistant)
-    .pop()?.idx;
-
   return (
     <ScrollArea className="flex-1">
       <div className="flex flex-col">
-        {currentThread.messages.map((message: ThreadMessage, index: number) => {
-          const isAssistant = message.role === 'assistant';
-          const isLatestAssistantMessage = isAssistant && index === lastAssistantMessageIndex;
-
+        {currentThread.messages.map((message: ThreadMessage) => {
           return (
             <div
               key={message.id}
@@ -53,15 +42,12 @@ export const ChatContent = () => {
               {message.error ? (
                 <ErrorDisplay error={message.error} />
               ) : (
-                <JsonParser
-                  content={message.content}
-                  messageId={message.id}
-                  isLatestAssistantMessage={isLatestAssistantMessage}
-                />
+                <JsonParser displayContent={message.content} />
               )}
             </div>
           );
         })}
+        {isLoading && <div className="w-full border-b bg-background">Loading...</div>}
 
         <div ref={messagesEndRef} />
       </div>

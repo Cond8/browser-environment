@@ -1,3 +1,5 @@
+// src/features/ollama-api/phases/interface-phase.ts
+import { ChatRequest } from 'ollama/browser';
 import { parseOrRepairJson } from '../llm-output-fixer';
 import { SYSTEM_PROMPT } from '../prompts/prompts-system';
 import {
@@ -7,7 +9,6 @@ import {
   WorkflowStep,
 } from '../tool-schemas/workflow-schema';
 import { WorkflowChainError, WorkflowValidationError } from '../workflow-chain';
-import { StreamResponseFn, StreamYield } from '../stream-response';
 
 export const INTERFACE_PROMPT = () =>
   `
@@ -61,20 +62,19 @@ RULES:
 - Inputs and outputs MUST be arrays of variable names in snake_case
 `.trim();
 
-export async function* handleInterfacePhase(
+export async function handleInterfacePhase(
   content: string,
   id: number,
-  streamFn: StreamResponseFn,
-): AsyncGenerator<StreamYield, WorkflowStep, unknown> {
+  chatFn: (request: Omit<ChatRequest, 'model'>) => Promise<string>,
+): Promise<{ interface: WorkflowStep; id: number }> {
   let response;
   try {
-    response = yield* streamFn(id, {
+    response = await chatFn({
       messages: [
         { role: 'system', content: SYSTEM_PROMPT(INTERFACE_PROMPT()) },
         { role: 'user', content },
       ],
       tools: [interfaceTool],
-      stream: true,
     });
   } catch (err) {
     throw new WorkflowChainError(
@@ -86,11 +86,14 @@ export async function* handleInterfacePhase(
   }
 
   const parsed = parseWithSchema(response, interfaceSchema, 'interface');
-  yield { type: 'text', content: JSON.stringify({ interface: parsed }, null, 2), id };
-  return { ...parsed, service: parsed.service as WorkflowService };
+  return { interface: { ...parsed, service: parsed.service as WorkflowService }, id };
 }
 
-function parseWithSchema(response: string, schema: any, phase: 'interface' | 'steps'): WorkflowStep {
+function parseWithSchema(
+  response: string,
+  schema: any,
+  phase: 'interface' | 'steps',
+): WorkflowStep {
   try {
     const parsed = parseOrRepairJson<WorkflowStep>(response, schema);
     if (!parsed) throw new Error('Failed even after repair');

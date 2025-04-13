@@ -1,9 +1,9 @@
-// src/features/chat/ollama-api/workflow-chain.ts
+// src/features/ollama-api/workflow-chain.ts
 import { useAssistantConfigStore } from '../chat/store/assistant-config-store';
 import { useChatStore } from '../chat/store/chat-store';
 import { handleAlignmentPhase } from './phases/alignment-phase';
 import { handleInterfacePhase } from './phases/interface-phase';
-import { createStreamResponse, StreamYield } from './stream-response';
+import { WorkflowStep } from './tool-schemas/workflow-schema';
 
 export class WorkflowChainError extends Error {
   constructor(
@@ -29,66 +29,50 @@ export class WorkflowValidationError extends WorkflowChainError {
   }
 }
 
-export async function* streamWorkflowChain(): AsyncGenerator<StreamYield, void, unknown> {
-  console.log('[WorkflowChain] Starting workflow chain execution');
+export async function executeWorkflowChain(): Promise<{
+  interface?: WorkflowStep;
+  steps?: WorkflowStep[];
+  error?: WorkflowChainError;
+}> {
   const { selectedModel, parameters, ollamaUrl } = useAssistantConfigStore.getState();
-  console.log('[WorkflowChain] Using model:', selectedModel, 'with parameters:', parameters);
 
   const chatStore = useChatStore.getState();
   const assistantMessage = chatStore.addEmptyAssistantMessage();
-  console.log('[WorkflowChain] Created new assistant message with ID:', assistantMessage.id);
-
   const messages = chatStore.getMessagesUntil(assistantMessage.id);
-  console.log('[WorkflowChain] Retrieved messages:', messages.length);
 
   if (messages.length > 1) {
-    console.error('[WorkflowChain] Error: More than one message found');
     throw new WorkflowChainError('Only one message is supported', 'stream', undefined, {
       messageCount: messages.length,
     });
   }
 
-  const streamResponse = createStreamResponse(ollamaUrl, selectedModel, parameters);
-  // let interfaceParsed: WorkflowStep | null = null;
-  // let stepsParsed: WorkflowStep[] | null = null;
+  const chatFn = createChatAsyncFunction(ollamaUrl, selectedModel, parameters);
 
   try {
-    console.log('[WorkflowChain] Starting alignment phase');
-    yield* handleAlignmentPhase(messages[0].content, assistantMessage.id, streamResponse);
-
-    console.log('[WorkflowChain] Starting interface phase');
-    const interfaceResult = yield* handleInterfacePhase(
+    const alignmentResult = await handleAlignmentPhase(
       messages[0].content,
       assistantMessage.id,
-      streamResponse,
+      chatFn,
     );
-    // interfaceParsed = interfaceResult;
-    // console.log('[WorkflowChain] Interface phase completed:', interfaceResult);
 
-    // console.log('[WorkflowChain] Starting steps phase');
-    // const stepsResult = yield* handleStepsPhase(
-    //   messages[0].content,
-    //   assistantMessage.id,
-    //   interfaceResult,
-    //   streamResponse,
-    //   selectedModel,
-    //   parameters,
-    // );
-    // stepsParsed = stepsResult;
-    // console.log('[WorkflowChain] Steps phase completed:', stepsResult);
+    chatStore.addAlignmentMessage(assistantMessage.id, alignmentResult.response);
 
-    // const combinedWorkflow = { interface: interfaceParsed, steps: stepsParsed };
-    // const finalContent = JSON.stringify(combinedWorkflow, null, 2);
-    // console.log('[WorkflowChain] Updating assistant message with final content');
-    // chatStore.updateAssistantMessage(assistantMessage.id, finalContent);
+    const interfaceResult = await handleInterfacePhase(
+      messages[0].content,
+      assistantMessage.id,
+      chatFn,
+    );
+
+    chatStore.addInterfaceMessage(assistantMessage.id, interfaceResult.interface);
+
+    return {
+      interface: interfaceResult.interface,
+    };
   } catch (error) {
-    console.error('[WorkflowChain] Error in workflow chain:', error);
     const err =
       error instanceof WorkflowChainError
         ? error
         : new WorkflowChainError('Unexpected error in workflow chain', 'stream', error as Error);
-
-    yield { type: 'error', error: err, id: assistantMessage.id };
 
     const errorContent = JSON.stringify(
       {
@@ -100,8 +84,31 @@ export async function* streamWorkflowChain(): AsyncGenerator<StreamYield, void, 
       2,
     );
     console.error('[WorkflowChain] Error content:', errorContent);
-    chatStore.updateAssistantMessage(assistantMessage.id, errorContent);
 
-    throw err;
+    return { error: err };
   }
+}
+
+function createChatAsyncFunction(ollamaUrl: string, model: string, parameters: any) {
+  return async (request: any) => {
+    const response = await fetch(`${ollamaUrl}/api/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...request,
+        model,
+        options: parameters,
+        stream: false,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.message.content;
+  };
 }

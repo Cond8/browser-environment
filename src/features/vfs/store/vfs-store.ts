@@ -1,3 +1,4 @@
+// src/features/vfs/store/vfs-store.ts
 import { WorkflowStep } from '@/features/ollama-api/tool-schemas/workflow-schema';
 import { enableMapSet } from 'immer';
 import { create } from 'zustand';

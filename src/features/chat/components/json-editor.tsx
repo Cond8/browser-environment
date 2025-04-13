@@ -1,17 +1,12 @@
-import { useStreamStore } from '@/features/ollama-api/store/stream-store';
+// src/features/chat/components/json-editor.tsx
 import Editor from '@monaco-editor/react';
 import { useEffect, useRef } from 'react';
 
-export const JsonEditor = () => {
-  console.log('[JsonEditor] Component rendering');
-  const currentMessageId = useStreamStore(state => state.currentMessageId);
-  const jsonContent = useStreamStore(state =>
-    currentMessageId ? state.partialJsons[currentMessageId] : '',
-  );
+export interface JsonEditorProps {
+  jsonContent: string;
+}
 
-  console.log('[JsonEditor] Current message ID:', currentMessageId);
-  console.log('[JsonEditor] JSON content:', jsonContent);
-
+export const JsonEditor = ({ jsonContent }: JsonEditorProps) => {
   const editorRef = useRef<any>(null);
 
   const handleEditorDidMount = (editor: any) => {
@@ -20,9 +15,7 @@ export const JsonEditor = () => {
   };
 
   useEffect(() => {
-    console.log('[JsonEditor] useEffect triggered with content:', jsonContent);
     if (editorRef.current && typeof jsonContent === 'string') {
-      console.log('[JsonEditor] Setting editor value');
       editorRef.current.setValue(jsonContent);
     }
   }, [jsonContent]);
