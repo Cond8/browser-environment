@@ -9,7 +9,7 @@ export interface ConnState {
 }
 
 export const useConnStore = create<ConnState>()(
-  immer((set, get) => ({
+  immer(set => ({
     isLoading: false,
     setIsLoading: (isLoading: boolean) => set({ isLoading }),
   })),

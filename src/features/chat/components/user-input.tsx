@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useAbortEventBusStore } from '../store/abort-eventbus-store';
 import { SelectedModel } from './selected-model';
 import { ShortcutsDisplay } from './shortcuts-display';
+import { useConnStore } from '@/features/ollama-api/store/conn-store';
 
 export function UserInput() {
   const [message, setMessage] = useState('I want to classify emails as spam or not spam');
