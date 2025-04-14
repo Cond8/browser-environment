@@ -8,7 +8,7 @@ const VirtualFileSystem: React.FC = () => {
   // Use memoized selectors to prevent unnecessary re-renders
   const getWorkflows = useWorkflowStore(state => state.getAllWorkflows);
   const getServices = useServiceStore(state => state.getAllServices);
-  const setActiveEditor = useEditorStore(state => state.setActiveEditor);
+  const setActiveEditor = useEditorStore(state => state.setFilePath);
 
   const workflows = getWorkflows();
   const services = getServices();

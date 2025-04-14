@@ -1,3 +1,4 @@
+// src/features/editor/transpilers/example.dsl.test.ts
 export const DSL_EXAMPLE = `
 /**
  * Classifies incoming emails as spam or not spam using content analysis and rule-based classification.

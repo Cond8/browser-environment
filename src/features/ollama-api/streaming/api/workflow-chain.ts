@@ -8,7 +8,7 @@ import { createCompletion } from '../infra/create-completion';
 import { retryWithDelay } from '../infra/retry-with-delay';
 import { alignmentPhase } from '../phases/alignment-phase';
 import { interfacePhase } from '../phases/interface-phase';
-import { handleStepPhase } from '../phases/step-phase';
+import { firstStepPhase } from '../phases/steps/step-1-phase';
 
 export class WorkflowChainError extends Error {
   public metadata: unknown[];
@@ -37,10 +37,9 @@ export class WorkflowValidationError extends WorkflowChainError {
 }
 
 export async function* executeWorkflowChain(): AsyncGenerator<
-  unknown,
+  string,
   {
-    interface?: WorkflowStep;
-    steps?: WorkflowStep[];
+    workflow?: WorkflowStep[];
     error?: WorkflowChainError;
   }
 > {
@@ -79,14 +78,14 @@ export async function* executeWorkflowChain(): AsyncGenerator<
     );
     chatStore.addInterfaceMessage(parsedInterfaceResult);
     const workflowPath = useWorkflowStore.getState().createWorkflow(parsedInterfaceResult);
-    useEditorStore.getState().setActiveEditor('workflow', workflowPath);
+    useEditorStore.getState().setFilePath(workflowPath);
 
     /* =======================
      * ===== STEPS PHASE =====
      * =======================*/
     const parsedStepsResult = yield* retryWithDelay(
       () =>
-        handleStepPhase(messages[0].content, alignmentResult, parsedInterfaceResult, completionFn),
+        firstStepPhase(messages[0].content, alignmentResult, parsedInterfaceResult, completionFn),
       'step',
       messages[0].content,
       alignmentResult,
@@ -96,10 +95,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
     // useWorkflowStore.getState().addStepsToWorkflow(workflowPath, parsedStepsResult);
     // useVfsStore.getState().upsertServices(stepsResult.steps);
 
-    return {
-      interface: parsedInterfaceResult,
-      steps: parsedStepsResult,
-    };
+    return { workflow: [parsedInterfaceResult, parsedStepsResult] };
   } catch (error) {
     const err =
       error instanceof WorkflowChainError

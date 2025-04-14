@@ -1,10 +1,11 @@
 // src/features/editor/components/dsl-editor.tsx
+import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
 import Editor from '@monaco-editor/react';
 import { editor, languages } from 'monaco-editor';
 import { useEffect, useRef } from 'react';
-
+import { jsonToDsl } from '../transpilers/json-to-dsl';
 export interface DslEditorProps {
-  dslContent: string;
+  jsonContent: WorkflowStep[];
 }
 
 // JSDoc-based DSL custom tokenizer (for highlighting only parseable tags)
@@ -51,20 +52,21 @@ const jsdocDslTheme: editor.IStandaloneThemeData = {
   },
 };
 
-export const DslEditor = ({ dslContent }: DslEditorProps) => {
+export const DslEditor = ({ jsonContent }: DslEditorProps) => {
   const editorRef = useRef<any>(null);
+  const joinDsl = (jc: WorkflowStep[]) => jc.map(step => jsonToDsl(step)).join('\n');
 
   const handleEditorDidMount = (editor: any) => {
     console.log('[DslEditor] Editor mounted');
     editorRef.current = editor;
-    editorRef.current.setValue(dslContent);
+    editorRef.current.setValue(joinDsl(jsonContent));
   };
 
   useEffect(() => {
-    if (editorRef.current && typeof dslContent === 'string') {
-      editorRef.current.setValue(dslContent);
+    if (editorRef.current) {
+      editorRef.current.setValue(joinDsl(jsonContent));
     }
-  }, [dslContent]);
+  }, [jsonContent]);
 
   return (
     <Editor

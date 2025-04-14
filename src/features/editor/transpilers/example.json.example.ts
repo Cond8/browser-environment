@@ -1,3 +1,4 @@
+// src/features/editor/transpilers/example.json.example.ts
 export const JSON_EXAMPLE = {
   blocks: [
     {

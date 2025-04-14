@@ -1,4 +1,11 @@
-// src/features/ollama-api/streaming/phases/first-step-phase.ts
+// src/features/ollama-api/streaming/phases/steps/step-1-phase.ts
+import { dslToJson } from '@/features/editor/transpilers/dsl-to-json';
+import { jsonToDsl } from '@/features/editor/transpilers/json-to-dsl';
+import { SYSTEM_PROMPT } from '@/features/ollama-api/prompts/prompts-system';
+import { Options } from 'ollama';
+import { WorkflowChainError } from '../../api/workflow-chain';
+import { WorkflowStep } from '../../api/workflow-step';
+
 export const FIRST_STEP_PROMPT = (
   userRequest: string,
   alignmentResponse: string,
@@ -7,9 +14,9 @@ export const FIRST_STEP_PROMPT = (
   `
 You are an assistant that helps users define structured workflows using a **JSDoc-based format**.
 
-Each workflow is a sequence of JSDoc comment blocks:
+Each workflow is a sequence of exactly **7 JSDoc comment blocks**:
 - The **first block** is the workflow interface.
-- The **next 4–6 blocks** are individual workflow steps.
+- The **next 6 blocks** are individual validation steps that progressively prepare and check the inputs.
 
 ---
 ## FORMAT REQUIREMENTS
@@ -21,7 +28,7 @@ Each step must follow this format:
  * <Goal of this specific step>
  *
  * @name <StepName>              // PascalCase, unique
- * @service <service>            // One of the predefined services below
+ * @service <service>            // One of the validation-related services below
  * @method <snake_case_method>   // Describes the action
  * @param {<type>} <param_name> - <Short description>
  * @returns {<type>} <result_name> - <Short description>
@@ -34,20 +41,18 @@ Each step must follow this format:
 - Do NOT output anything other than the next valid JSDoc block.
 
 ---
-## AVAILABLE SERVICES
+## AVAILABLE SERVICES (Validation-Oriented)
 
-- extract
-- parse
+Use one of these for the \`@service\` tag in each step:
+
 - validate
-- transform
-- logic
-- calculate
-- format
-- io
-- storage
-- integrate
-- understand
-- generate
+- sanitize
+- normalize
+- verify
+- check
+- assert
+
+Each one represents a different aspect of validating or preparing input data.
 
 ---
 ## USER REQUEST
@@ -63,10 +68,41 @@ ${alignmentResponse}
 ---
 ## DSL CONTEXT
 
-Below is the interface block. You must now generate the **next JSDoc block**, which defines the **first step** of the workflow:
+Below is the interface block. You must now generate the **first validation step**, using \`@service validate\`. Focus on checking required fields and structure.
 
 ${interfaceResponse}
 
 /**
  *
 `.trim();
+
+export async function* firstStepPhase(
+  userRequest: string,
+  alignmentResponse: string,
+  interfaceResponse: WorkflowStep,
+  completionFn: (
+    prompt: string,
+    options?: Partial<Options>,
+  ) => AsyncGenerator<string, string, unknown>,
+): AsyncGenerator<string, WorkflowStep, unknown> {
+  let response;
+  try {
+    response = yield* completionFn(
+      SYSTEM_PROMPT(
+        FIRST_STEP_PROMPT(userRequest, alignmentResponse, jsonToDsl(interfaceResponse)),
+      ),
+      {
+        stop: ['*/'],
+      },
+    );
+
+    return dslToJson(response);
+  } catch (err) {
+    throw new WorkflowChainError(
+      'Interface generation failed',
+      'interface',
+      err instanceof Error ? err : undefined,
+      { userRequest, alignmentResponse },
+    );
+  }
+}
