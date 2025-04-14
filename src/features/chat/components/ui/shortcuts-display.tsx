@@ -1,4 +1,4 @@
-// src/features/chat/components/shortcuts-display.tsx
+// src/features/chat/components/ui/shortcuts-display.tsx
 import { Button } from '@/components/ui/button';
 import { useSettingsStore } from '@/features/settings/store/settings';
 import { usePlatform } from '@/hooks/use-platform';

@@ -1,4 +1,4 @@
-// Define interfaces for better type checking internally
+// src/features/editor/transpilers/json-to-js.ts
 interface JsonStep {
   name: string;
   service: string;
@@ -25,13 +25,28 @@ interface ParsedJson {
 // Assume CoreBlueprint is globally available or imported elsewhere in the target JS environment
 declare var CoreBlueprint: any;
 
-// Helper function to extract type from "type - description" format
+// Helper function to extract type and description from "type - description" format
 function extractTypeAndDescription(typeWithComment: string): [string, string] {
   const parts = typeWithComment.split(' - ');
   if (parts.length >= 2) {
     return [parts[0], parts.slice(1).join(' - ')];
   }
   return [typeWithComment, ''];
+}
+
+// Map LLM types to TypeScript/JSDoc types
+function mapTypeToJsDocType(type: string): string {
+  const typeMap: Record<string, string> = {
+    text: 'string',
+    string: 'string',
+    number: 'number',
+    boolean: 'boolean',
+    function: 'Function',
+    object: 'Object',
+    array: 'Array',
+  };
+
+  return typeMap[type.toLowerCase()] || 'any';
 }
 
 export const jsonToJs = (jsonContent: string): string => {
@@ -153,7 +168,7 @@ export const jsonToJs = (jsonContent: string): string => {
           if (step.params) {
             Object.entries(step.params).forEach(([param, typeWithComment]) => {
               const [type, description] = extractTypeAndDescription(typeWithComment);
-              jsOutput += `   * @param {${type}} ${param} - ${description}
+              jsOutput += `   * @param {${mapTypeToJsDocType(type)}} ${param} - ${description}
 `;
             });
           }
@@ -162,7 +177,7 @@ export const jsonToJs = (jsonContent: string): string => {
           if (step.returns) {
             Object.entries(step.returns).forEach(([ret, typeWithComment]) => {
               const [type, description] = extractTypeAndDescription(typeWithComment);
-              jsOutput += `   * @property {${type}} ${ret} - ${description}
+              jsOutput += `   * @property {${mapTypeToJsDocType(type)}} ${ret} - ${description}
 `;
             });
           }

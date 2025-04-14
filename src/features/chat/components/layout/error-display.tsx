@@ -1,4 +1,4 @@
-// src/features/chat/components/error-display.tsx
+// src/features/chat/components/layout/error-display.tsx
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertCircle } from 'lucide-react';

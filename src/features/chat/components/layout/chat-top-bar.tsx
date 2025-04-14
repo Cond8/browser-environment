@@ -1,4 +1,4 @@
-// src/features/chat/components/chat-top-bar.tsx
+// src/features/chat/components/layout/chat-top-bar.tsx
 import { Plus } from 'lucide-react';
 import React from 'react';
 import { useChatStore } from '../../store/chat-store';

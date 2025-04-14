@@ -21,7 +21,7 @@ Your task is to generate the **interface** section of a JSON workflow.
 - service: One of the predefined services (see below)
 - method: snake_case method name
 - goal: Clear description of the workflow's purpose
-- params: Record of input variable names with types and descriptions (e.g., "text - Description here") 
+- params: Record of input variable names with types and descriptions (e.g., "string - Description here") 
 - returns: Record of output variable names with types and descriptions (e.g., "number - Description here")
 
 ### AVAILABLE SERVICES
@@ -48,11 +48,11 @@ You must use one of these predefined services:
   "method": "transform_user_data",
   "goal": "Transform raw user data into standardized format",
   "params": {
-    "raw_data": "text - The unprocessed user data that needs transformation",
-    "format_type": "text - The target format specification"
+    "raw_data": "string - The unprocessed user data that needs transformation",
+    "format_type": "string - The target format specification"
   },
   "returns": {
-    "processed_data": "text - The standardized user data in the target format"
+    "processed_data": "string - The standardized user data in the target format"
   }
 }
 \`\`\`

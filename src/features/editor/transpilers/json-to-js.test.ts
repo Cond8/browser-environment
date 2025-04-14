@@ -1,3 +1,4 @@
+// src/features/editor/transpilers/json-to-js.test.ts
 import { describe, expect, it } from 'vitest';
 import { jsonToJs } from './json-to-js';
 import { JSON_EXAMPLE } from './transpiler.examples.test';
@@ -74,11 +75,11 @@ class ExtractService extends CoreBlueprint {
 
   /**
    * Extract the body, subject line, and sender's email address from incoming emails
-   * @param {text} raw_email - The complete raw email content including headers and body
+   * @param {string} raw_email - The complete raw email content including headers and body
    * @returns {Object} An object containing the return values
-   * @property {text} email_content - The extracted email body content
-   * @property {text} subject_line - The extracted email subject line
-   * @property {text} sender_address - The extracted sender's email address
+   * @property {string} email_content - The extracted email body content
+   * @property {string} subject_line - The extracted email subject line
+   * @property {string} sender_address - The extracted sender's email address
    */
   extract_email_body_subject_sender(raw_email) {
     let email_content;
@@ -96,9 +97,9 @@ class UnderstandService extends CoreBlueprint {
 
   /**
    * Analyze the extracted content for spam patterns and keywords using machine learning or predefined ruleset
-   * @param {text} email_content - The email body content to analyze
-   * @param {text} subject_line - The email subject line to analyze
-   * @param {text} sender_address - The sender's email address to analyze
+   * @param {string} email_content - The email body content to analyze
+   * @param {string} subject_line - The email subject line to analyze
+   * @param {string} sender_address - The sender's email address to analyze
    * @returns {Object} An object containing the return values
    * @property {number} spam_score - A score between 0 and 1 indicating spam likelihood
    */
@@ -117,7 +118,7 @@ class LogicService extends CoreBlueprint {
   /**
    * Categorize the email into 'spam' or 'not spam' based on a predefined threshold for spam score
    * @param {number} spam_score - A score between 0 and 1 indicating spam likelihood
-   * @param {object} classification_rules - Rules and thresholds for spam classification
+   * @param {Object} classification_rules - Rules and thresholds for spam classification
    * @returns {Object} An object containing the return values
    * @property {boolean} is_spam - Whether the email is classified as spam
    */

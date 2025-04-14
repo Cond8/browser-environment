@@ -76,7 +76,10 @@ export const interfaceSchema = z.object({
       variableNameSchema,
       z
         .string()
-        .regex(/^(text|number|boolean|function) - .+$/, 'Type must be followed by a comment'),
+        .regex(
+          /^(string|number|boolean|function|object|array) - .+/i,
+          'Type must be followed by a comment',
+        ),
     )
     .optional(),
   returns: z
@@ -84,7 +87,10 @@ export const interfaceSchema = z.object({
       variableNameSchema,
       z
         .string()
-        .regex(/^(text|number|boolean|function) - .+$/, 'Type must be followed by a comment'),
+        .regex(
+          /^(string|number|boolean|function|object|array) - .+/i,
+          'Type must be followed by a comment',
+        ),
     )
     .optional(),
 });

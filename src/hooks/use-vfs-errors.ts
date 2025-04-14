@@ -1,3 +1,4 @@
+// src/hooks/use-vfs-errors.ts
 import type { ErrorLevel, ErrorSource, VfsError } from '@/features/vfs/store/vfs-store';
 import { useVfsStore } from '@/features/vfs/store/vfs-store';
 import { useCallback, useMemo, useState } from 'react';

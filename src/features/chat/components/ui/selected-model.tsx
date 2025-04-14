@@ -1,4 +1,4 @@
-// src/features/chat/components/selected-model.tsx
+// src/features/chat/components/ui/selected-model.tsx
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,

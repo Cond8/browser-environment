@@ -1,3 +1,4 @@
+// src/features/editor/stores/editor-store.ts
 import { useServiceStore } from '@/features/vfs/store/service-store';
 import { useWorkflowStore } from '@/features/vfs/store/workflow-store';
 import { create } from 'zustand';

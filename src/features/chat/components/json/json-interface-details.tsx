@@ -10,8 +10,8 @@ interface Interface {
   service: string;
   method: string;
   goal: string;
-  params?: string[];
-  returns?: string[];
+  params?: Record<string, string>;
+  returns?: Record<string, string>;
 }
 
 type Props = {
@@ -19,37 +19,25 @@ type Props = {
   isStep?: boolean;
 };
 
-// Utility function to parse a string with comments in parentheses
-export function parseWithComments(str: string | { [key: string]: string } | undefined | null): {
-  value: string;
-  comment?: string;
+// Utility function to parse a string with type and description in format "type - description"
+export function parseWithComments(str: string): {
+  type: string;
+  description?: string;
 } {
   if (!str) {
-    return { value: '' };
+    return { type: '' };
   }
 
-  // If str is an object, return the first key-value pair
-  if (typeof str === 'object' && !Array.isArray(str)) {
-    const [key, value] = Object.entries(str)[0];
+  // Handle string case with format "type - description"
+  const parts = str.split(' - ');
+  if (parts.length > 1) {
     return {
-      value: key,
-      comment: value,
+      type: parts[0].trim(),
+      description: parts.slice(1).join(' - ').trim(),
     };
   }
 
-  // Handle string case
-  if (typeof str === 'string') {
-    const match = str.match(/^(.*?)\s*\((.*)\)$/);
-    if (match) {
-      return {
-        value: match[1].trim(),
-        comment: match[2].trim(),
-      };
-    }
-    return { value: str.trim() };
-  }
-
-  return { value: '' };
+  return { type: str.trim() };
 }
 
 // Utility function to add spaces before capital letters and capitalize words
@@ -167,10 +155,10 @@ function InterfaceCard({
               <div className="flex items-center gap-1">
                 <p className="text-xs font-medium text-primary">Method:</p>
                 <span className="text-sm font-semibold">
-                  {formatSnakeCase(parseWithComments(data.method).value)}
-                  {parseWithComments(data.method).comment && (
+                  {formatSnakeCase(parseWithComments(data.method).type)}
+                  {parseWithComments(data.method).description && (
                     <span className="text-muted-foreground ml-1">
-                      - {parseWithComments(data.method).comment}
+                      - {parseWithComments(data.method).description}
                     </span>
                   )}
                 </span>
@@ -181,45 +169,21 @@ function InterfaceCard({
               <div className="space-y-0.5">
                 <h3 className="text-xs font-medium tracking-wide text-primary">Params</h3>
                 <ul className="list-none space-y-0.5">
-                  {Array.isArray(data.params) &&
-                    data.params.map((param: string | { [key: string]: string }, idx: number) => {
-                      if (typeof param === 'string') {
-                        const parsed = parseWithComments(param);
-                        return (
-                          <li key={idx} className="flex items-start gap-1">
-                            <span className="mt-1 h-1 w-1 rounded-full bg-primary/50" />
-                            <div>
-                              <span className="font-medium">{parsed.value}</span>
-                              {parsed.comment && (
-                                <span className="text-muted-foreground ml-1">
-                                  - {parsed.comment}
-                                </span>
-                              )}
-                            </div>
-                          </li>
-                        );
-                      }
-                      const [name, desc] = Object.entries(param)[0];
-                      const parsedName = parseWithComments(name);
-                      const parsedDesc = parseWithComments(desc);
+                  {data.params &&
+                    typeof data.params === 'object' &&
+                    Object.entries(data.params).map(([name, typeWithComment], idx) => {
+                      const { type, description } = parseWithComments(typeWithComment);
                       return (
                         <li key={idx} className="flex items-start gap-1">
                           <span className="mt-1 h-1 w-1 rounded-full bg-primary/50" />
                           <div>
-                            <strong className="font-medium">
-                              {formatSnakeCase(parsedName.value)}
-                            </strong>
-                            {parsedName.comment && (
-                              <span className="text-muted-foreground ml-1">
-                                - {parsedName.comment}
+                            <strong className="font-medium">{formatSnakeCase(name)}</strong>
+                            <span className="ml-1 text-xs text-muted-foreground">[{type}]</span>
+                            {description && (
+                              <span className="block text-muted-foreground text-xs">
+                                {description}
                               </span>
                             )}
-                            <span className="block text-muted-foreground">
-                              {parsedDesc.value}
-                              {parsedDesc.comment && (
-                                <span className="ml-1">- {parsedDesc.comment}</span>
-                              )}
-                            </span>
                           </div>
                         </li>
                       );
@@ -229,45 +193,21 @@ function InterfaceCard({
               <div className="space-y-0.5">
                 <h3 className="text-xs font-medium tracking-wide text-primary">Returns</h3>
                 <ul className="list-none space-y-0.5">
-                  {Array.isArray(data.returns) &&
-                    data.returns.map((ret: string | { [key: string]: string }, idx: number) => {
-                      if (typeof ret === 'string') {
-                        const parsed = parseWithComments(ret);
-                        return (
-                          <li key={idx} className="flex items-start gap-1">
-                            <span className="mt-1 h-1 w-1 rounded-full bg-primary/50" />
-                            <div>
-                              <span className="font-medium">{parsed.value}</span>
-                              {parsed.comment && (
-                                <span className="text-muted-foreground ml-1">
-                                  - {parsed.comment}
-                                </span>
-                              )}
-                            </div>
-                          </li>
-                        );
-                      }
-                      const [name, desc] = Object.entries(ret)[0];
-                      const parsedName = parseWithComments(name);
-                      const parsedDesc = parseWithComments(desc);
+                  {data.returns &&
+                    typeof data.returns === 'object' &&
+                    Object.entries(data.returns).map(([name, typeWithComment], idx) => {
+                      const { type, description } = parseWithComments(typeWithComment);
                       return (
                         <li key={idx} className="flex items-start gap-1">
                           <span className="mt-1 h-1 w-1 rounded-full bg-primary/50" />
                           <div>
-                            <strong className="font-medium">
-                              {formatSnakeCase(parsedName.value)}
-                            </strong>
-                            {parsedName.comment && (
-                              <span className="text-muted-foreground ml-1">
-                                - {parsedName.comment}
+                            <strong className="font-medium">{formatSnakeCase(name)}</strong>
+                            <span className="ml-1 text-xs text-muted-foreground">[{type}]</span>
+                            {description && (
+                              <span className="block text-muted-foreground text-xs">
+                                {description}
                               </span>
                             )}
-                            <span className="block text-muted-foreground">
-                              {parsedDesc.value}
-                              {parsedDesc.comment && (
-                                <span className="ml-1">- {parsedDesc.comment}</span>
-                              )}
-                            </span>
                           </div>
                         </li>
                       );

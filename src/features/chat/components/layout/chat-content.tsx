@@ -1,4 +1,4 @@
-// src/features/chat/components/chat-content.tsx
+// src/features/chat/components/layout/chat-content.tsx
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useConnStore } from '@/features/ollama-api/store/conn-store';
 import { cn } from '@/lib/utils';

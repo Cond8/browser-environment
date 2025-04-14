@@ -1,3 +1,4 @@
+// src/features/editor/transpilers/transpiler.examples.test.ts
 export const JSON_EXAMPLE = {
   interface: {
     name: 'ClassifyEmail',
@@ -5,7 +6,7 @@ export const JSON_EXAMPLE = {
     method: 'analyze_email_content',
     goal: 'Categorize emails into spam or not spam based on content analysis and sender information',
     params: {
-      raw_email: 'text - The complete raw email content including headers and body',
+      raw_email: 'string - The complete raw email content including headers and body',
       classification_rules: 'object - Rules and thresholds for spam classification',
     },
     returns: {
@@ -19,12 +20,12 @@ export const JSON_EXAMPLE = {
       method: 'extract_email_body_subject_sender',
       goal: "Extract the body, subject line, and sender's email address from incoming emails",
       params: {
-        raw_email: 'text - The complete raw email content including headers and body',
+        raw_email: 'string - The complete raw email content including headers and body',
       },
       returns: {
-        email_content: 'text - The extracted email body content',
-        subject_line: 'text - The extracted email subject line',
-        sender_address: "text - The extracted sender's email address",
+        email_content: 'string - The extracted email body content',
+        subject_line: 'string - The extracted email subject line',
+        sender_address: "string - The extracted sender's email address",
       },
     },
     {
@@ -33,9 +34,9 @@ export const JSON_EXAMPLE = {
       method: 'analyze_spam_patterns',
       goal: 'Analyze the extracted content for spam patterns and keywords using machine learning or predefined ruleset',
       params: {
-        email_content: 'text - The email body content to analyze',
-        subject_line: 'text - The email subject line to analyze',
-        sender_address: "text - The sender's email address to analyze",
+        email_content: 'string - The email body content to analyze',
+        subject_line: 'string - The email subject line to analyze',
+        sender_address: "string - The sender's email address to analyze",
       },
       returns: {
         spam_score: 'number - A score between 0 and 1 indicating spam likelihood',
@@ -63,7 +64,7 @@ INTERFACE ClassifyEmail {
   METHOD analyze_email_content
   GOAL Categorize emails into spam or not spam based on content analysis and sender information
   PARAMS {
-    email_text: "text - Raw email content to analyze"
+    email_text: "string - Raw email content to analyze"
     classification_rules: "object - Rules for spam classification"
   }
   RETURNS {
@@ -75,12 +76,12 @@ EXTRACT ExtractContent {
   METHOD extract_email_body_subject_sender
   GOAL "Extract the body, subject line, and sender's email address from incoming emails"
   PARAMS {
-    raw_email: "text - Complete raw email content"
+    raw_email: "string - Complete raw email content"
   }
   RETURNS {
-    email_content: "text - The email body content"
-    subject_line: "text - The email subject line"
-    sender_address: "text - The sender's email address"
+    email_content: "string - The email body content"
+    subject_line: "string - The email subject line"
+    sender_address: "string - The sender's email address"
   }
 }
 
@@ -88,9 +89,9 @@ UNDERSTAND AnalyzeContent {
   METHOD analyze_spam_patterns
   GOAL Analyze the extracted content for spam patterns and keywords using machine learning or predefined ruleset
   PARAMS {
-    email_content: "text - Email body content"
-    subject_line: "text - Email subject line"
-    sender_address: "text - Sender's email address"
+    email_content: "string - Email body content"
+    subject_line: "string - Email subject line"
+    sender_address: "string - Sender's email address"
   }
   RETURNS {
     spam_score: "number - Score between 0-1 indicating spam likelihood"

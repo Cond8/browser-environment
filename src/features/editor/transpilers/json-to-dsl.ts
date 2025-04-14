@@ -1,3 +1,4 @@
+// src/features/editor/transpilers/json-to-dsl.ts
 export const jsonToDsl = (jsonContent: string) => {
   // Handle empty input
   if (jsonContent === '{}') return '';

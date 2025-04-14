@@ -13,11 +13,11 @@ Each workflow consists of two main sections: interface and steps. Here's an exam
     "method": "transform_user_data",
     "goal": "Transform raw user data into standardized format",
     "params": {
-      "raw_data": "text - The unprocessed user data that needs transformation",
-      "format_type": "text - The target format specification"
+      "raw_data": "string - The unprocessed user data that needs transformation",
+      "format_type": "string - The target format specification"
     },
     "returns": {
-      "processed_data": "text - The standardized user data in the target format"
+      "processed_data": "string - The standardized user data in the target format"
     }
   },
   "steps": [
@@ -27,11 +27,11 @@ Each workflow consists of two main sections: interface and steps. Here's an exam
       "method": "validate_input",
       "goal": "Ensure input data meets required format and constraints",
       "params": {
-        "raw_data": "text - The unprocessed user data to validate",
-        "format_type": "text - The format specification to validate against"
+        "raw_data": "string - The unprocessed user data to validate",
+        "format_type": "string - The format specification to validate against"
       },
       "returns": {
-        "validated_data": "text - The validated user data"
+        "validated_data": "string - The validated user data"
       }
     },
     {
@@ -40,11 +40,11 @@ Each workflow consists of two main sections: interface and steps. Here's an exam
       "method": "extract_data",
       "goal": "Extract data from input",
       "params": {
-        "validated_data": "text - The validated user data to extract from",
-        "extract_type": "text - The type of data to extract"
+        "validated_data": "string - The validated user data to extract from",
+        "extract_type": "string - The type of data to extract"
       },
       "returns": {
-        "extracted_data": "text - The extracted data meeting the criteria"
+        "extracted_data": "string - The extracted data meeting the criteria"
       }
     }
   ]

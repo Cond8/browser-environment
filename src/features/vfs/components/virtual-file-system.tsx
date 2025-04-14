@@ -1,3 +1,4 @@
+// src/features/vfs/components/virtual-file-system.tsx
 import { useEditorStore } from '@/features/editor/stores/editor-store';
 import { format } from 'date-fns';
 import React from 'react';

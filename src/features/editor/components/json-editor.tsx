@@ -1,4 +1,4 @@
-// src/features/chat/components/json-editor.tsx
+// src/features/editor/components/json-editor.tsx
 import Editor from '@monaco-editor/react';
 import { useEffect, useRef } from 'react';
 

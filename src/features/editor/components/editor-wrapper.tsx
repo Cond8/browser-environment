@@ -1,3 +1,4 @@
+// src/features/editor/components/editor-wrapper.tsx
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useState } from 'react';
 import { useEditorStore } from '../stores/editor-store';

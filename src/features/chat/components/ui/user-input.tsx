@@ -1,4 +1,4 @@
-// src/features/chat/components/user-input.tsx
+// src/features/chat/components/ui/user-input.tsx
 import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/features/chat/store/chat-store';
 import { useConnStore } from '@/features/ollama-api/store/conn-store';

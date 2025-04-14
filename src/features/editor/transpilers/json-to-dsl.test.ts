@@ -1,3 +1,4 @@
+// src/features/editor/transpilers/json-to-dsl.test.ts
 import { describe, expect, it } from 'vitest';
 import { jsonToDsl } from './json-to-dsl';
 import { DSL_EXAMPLE, JSON_EXAMPLE } from './transpiler.examples.test';

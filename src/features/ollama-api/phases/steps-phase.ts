@@ -25,7 +25,7 @@ Your task is to generate the **steps** section of the JSON workflow.
 - service: One of the predefined services (see below)
 - method: snake_case method name
 - goal: Clear description of the step's purpose
-- params: Record of input variable names with types and descriptions (e.g., "text - Description here")
+- params: Record of input variable names with types and descriptions (e.g., "string - Description here")
 - returns: Record of output variable names with types and descriptions (e.g., "number - Description here")
 
 ### AVAILABLE SERVICES
@@ -53,10 +53,10 @@ You must use one of these predefined services:
     "method": "validate_email_content",
     "goal": "Validate the email content format",
     "params": {
-      "email_body": "text - The raw email body content to validate"
+      "email_body": "string - The raw email body content to validate"
     },
     "returns": {
-      "validated_content": "text - The validated and sanitized email content"
+      "validated_content": "string - The validated and sanitized email content"
     }
   },
   {
@@ -65,7 +65,7 @@ You must use one of these predefined services:
     "method": "analyze_email_patterns",
     "goal": "Analyze email content for spam patterns",
     "params": {
-      "validated_content": "text - The validated email content to analyze"
+      "validated_content": "string - The validated email content to analyze"
     },
     "returns": {
       "spam_score": "number - A score between 0 and 1 indicating spam likelihood"
@@ -128,10 +128,8 @@ export async function handleStepsPhase(
 
   const parsed = parseWithSchema(response, stepsSchema, 'steps');
 
-  const steps = parsed.map((step: WorkflowStep) => ({
-    ...step,
-    service: step.service as WorkflowService,
-  }));
+  // Ensure we always return an array of WorkflowStep
+  const steps = Array.isArray(parsed) ? parsed : [parsed];
 
   return steps;
 }
@@ -140,11 +138,25 @@ function parseWithSchema(
   response: string,
   schema: any,
   phase: 'interface' | 'steps',
-): WorkflowStep[] {
+): WorkflowStep | WorkflowStep[] {
   try {
-    const parsed = parseOrRepairJson<WorkflowStep[]>(response, schema);
+    const parsed = parseOrRepairJson<any>(response, schema);
     if (!parsed) throw new Error('Failed even after repair');
-    return parsed;
+
+    // For steps, we need to ensure it's always an array
+    if (phase === 'steps' && !Array.isArray(parsed)) {
+      // If it's an object but not an array, wrap it in an array
+      const steps = [parsed].map(step => ({ ...step, service: step.service as WorkflowService }));
+      return steps;
+    }
+
+    // For steps that are already arrays
+    if (phase === 'steps' && Array.isArray(parsed)) {
+      return parsed.map(step => ({ ...step, service: step.service as WorkflowService }));
+    }
+
+    // For interface (single object)
+    return { ...parsed, service: parsed.service as WorkflowService };
   } catch (err) {
     throw new WorkflowValidationError(
       `Failed to parse ${phase} JSON`,

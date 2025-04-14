@@ -32,6 +32,68 @@ function extractFirstWord(text: string | undefined | null): string {
 }
 
 /**
+ * Fixes param and return type formats to match the expected "type - description" format
+ *
+ * @param obj The workflow step object to fix
+ * @returns The fixed workflow step object
+ */
+function fixParamAndReturnFormats(obj: any): any {
+  // Helper to fix an individual param/return value
+  const fixTypeValue = (value: any): string => {
+    if (typeof value !== 'string') {
+      // If it's an array, convert to array type with description
+      if (Array.isArray(value)) {
+        return `array - ${JSON.stringify(value)}`;
+      }
+      // If it's another non-string type (e.g., object), convert to appropriate type
+      return `object - ${JSON.stringify(value)}`;
+    }
+
+    // If it already follows the format "type - description", return as is
+    if (/^(string|number|boolean|function|object|array) - .+/i.test(value)) {
+      return value;
+    }
+
+    // Convert simple types to the required format with a generic description
+    const typeMap: Record<string, string> = {
+      text: 'string - Text value',
+      string: 'string - Text value',
+      number: 'number - Numeric value',
+      boolean: 'boolean - Boolean value',
+      function: 'function - Function value',
+      object: 'object - Object value',
+      array: 'array - Array value',
+    };
+
+    if (typeMap[value]) {
+      return typeMap[value];
+    }
+
+    // Default fallback - assume it's the description part and prefix with "string - "
+    return `string - ${value}`;
+  };
+
+  // Clone the object to avoid modifying the original
+  const result = { ...obj };
+
+  // Fix params if present
+  if (result.params && typeof result.params === 'object') {
+    for (const key in result.params) {
+      result.params[key] = fixTypeValue(result.params[key]);
+    }
+  }
+
+  // Fix returns if present
+  if (result.returns && typeof result.returns === 'object') {
+    for (const key in result.returns) {
+      result.returns[key] = fixTypeValue(result.returns[key]);
+    }
+  }
+
+  return result;
+}
+
+/**
  * Tries to parse a string as JSON, attempting repairs if necessary.
  *
  * @param text The raw text from the LLM, potentially containing malformed JSON and markdown blocks.
@@ -55,10 +117,16 @@ export function parseOrRepairJson<T = unknown>(text: string, schema?: z.ZodType<
             item.service = extractFirstWord(item.service);
             console.log('Extracted first word for service (array item):', item.service);
           }
+          // Fix param and return formats
+          parsed = fixParamAndReturnFormats(item);
         });
-      } else if (parsed && typeof parsed === 'object' && 'service' in parsed) {
-        parsed.service = extractFirstWord(parsed.service);
-        console.log('Extracted first word for service (object):', parsed.service);
+      } else if (parsed && typeof parsed === 'object') {
+        if ('service' in parsed) {
+          parsed.service = extractFirstWord(parsed.service);
+          console.log('Extracted first word for service (object):', parsed.service);
+        }
+        // Fix param and return formats
+        parsed = fixParamAndReturnFormats(parsed);
       }
 
       // If a schema is provided, validate against it

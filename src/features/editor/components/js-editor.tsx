@@ -1,3 +1,4 @@
+// src/features/editor/components/js-editor.tsx
 import Editor from '@monaco-editor/react';
 import { useEffect, useRef, useState } from 'react';
 import { jsonToJs } from '../transpilers/json-to-js';

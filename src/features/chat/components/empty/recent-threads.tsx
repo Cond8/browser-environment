@@ -1,4 +1,4 @@
-// src/features/chat/components/recent-threads.tsx
+// src/features/chat/components/empty/recent-threads.tsx
 import { ShortcutsDisplay } from '@/features/chat/components/ui/shortcuts-display';
 import { Clock, Hash, MessageCircle, Trash2 } from 'lucide-react';
 import React from 'react';

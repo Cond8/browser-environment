@@ -1,3 +1,4 @@
+// src/features/editor/components/dsl-editor.tsx
 import Editor from '@monaco-editor/react';
 import { editor, languages } from 'monaco-editor';
 import { useEffect, useRef, useState } from 'react';

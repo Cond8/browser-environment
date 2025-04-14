@@ -1,3 +1,4 @@
+// src/features/chat/components/assistant-display.tsx
 import { cn } from '@/lib/utils';
 import InterfaceDetails from './json/json-interface-details';
 import { JsonViewer } from './json/json-viewer';

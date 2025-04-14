@@ -1,4 +1,4 @@
-// src/features/chat/components/json-parser.tsx
+// src/features/chat/components/json/json-parser.tsx
 import { Button } from '@/components/ui/button';
 import { useVfsStore } from '@/features/vfs/store/vfs-store';
 import { cn } from '@/lib/utils';
@@ -27,6 +27,66 @@ const looksLikeJson = (content: string): boolean => {
     content.includes('```json') ||
     (content.includes('```') && (trimmed.includes('{') || trimmed.includes('[')))
   );
+};
+
+// Validate the structure of a workflow object
+const isValidWorkflowStructure = (obj: any): boolean => {
+  if (!obj || typeof obj !== 'object') return false;
+
+  // Check for interface structure
+  if ('interface' in obj) {
+    const interfaceObj = obj.interface;
+    if (!interfaceObj || typeof interfaceObj !== 'object') return false;
+    if (!interfaceObj.name || !interfaceObj.service || !interfaceObj.method || !interfaceObj.goal) return false;
+    
+    // Validate params format if present
+    if (interfaceObj.params) {
+      if (typeof interfaceObj.params !== 'object') return false;
+      for (const [key, value] of Object.entries(interfaceObj.params)) {
+        if (typeof value !== 'string') return false;
+        if (!value.includes(' - ')) return false;
+      }
+    }
+    
+    // Validate returns format if present
+    if (interfaceObj.returns) {
+      if (typeof interfaceObj.returns !== 'object') return false;
+      for (const [key, value] of Object.entries(interfaceObj.returns)) {
+        if (typeof value !== 'string') return false;
+        if (!value.includes(' - ')) return false;
+      }
+    }
+  }
+
+  // Check for steps structure
+  if ('steps' in obj) {
+    const steps = obj.steps;
+    if (!Array.isArray(steps)) return false;
+    for (const step of steps) {
+      if (!step || typeof step !== 'object') return false;
+      if (!step.name || !step.service || !step.method || !step.goal) return false;
+      
+      // Validate params format if present
+      if (step.params) {
+        if (typeof step.params !== 'object') return false;
+        for (const [key, value] of Object.entries(step.params)) {
+          if (typeof value !== 'string') return false;
+          if (!value.includes(' - ')) return false;
+        }
+      }
+      
+      // Validate returns format if present
+      if (step.returns) {
+        if (typeof step.returns !== 'object') return false;
+        for (const [key, value] of Object.entries(step.returns)) {
+          if (typeof value !== 'string') return false;
+          if (!value.includes(' - ')) return false;
+        }
+      }
+    }
+  }
+
+  return true;
 };
 
 export const JsonParser = ({ displayContent }: JsonParserProps) => {
@@ -73,10 +133,7 @@ export const JsonParser = ({ displayContent }: JsonParserProps) => {
   }
 
   // Check if the successfully parsed object is a valid workflow structure
-  const isValidInterface =
-    parsed != null &&
-    typeof parsed === 'object' &&
-    (('interface' in parsed && 'steps' in parsed) || 'service' in parsed || 'name' in parsed);
+  const isValidInterface = isValidWorkflowStructure(parsed);
 
   const handleSaveToVfs = () => {
     if (isValidInterface && 'name' in parsed) {

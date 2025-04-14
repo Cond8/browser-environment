@@ -1,4 +1,4 @@
-// src/features/chat/components/empty-chat-state.tsx
+// src/features/chat/components/empty/empty-chat-state.tsx
 import { cn } from '@/lib/utils';
 import { MessageSquare } from 'lucide-react';
 import React from 'react';

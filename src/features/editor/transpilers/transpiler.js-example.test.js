@@ -1,3 +1,4 @@
+// src/features/editor/transpilers/transpiler.js-example.test.js
 export { CoreRedprint, StrictKVStoreService, createDirector } from '@cond8/core';
 
 class AppConduit extends CoreRedprint {
