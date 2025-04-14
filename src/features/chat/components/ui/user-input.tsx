@@ -1,8 +1,8 @@
 // src/features/chat/components/ui/user-input.tsx
 import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/features/chat/store/chat-store';
-import { useConnStore } from '@/features/ollama-api/store/conn-store';
-import { WorkflowValidationError } from '@/features/ollama-api/workflow-chain';
+import { WorkflowValidationError } from '@/features/ollama-api/streaming/api/workflow-chain';
+import { useStreamSourceStore } from '@/features/ollama-api/streaming/infra/stream-source-store';
 import { Send, StopCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAbortEventBusStore } from '../../store/abort-eventbus-store';
@@ -46,9 +46,9 @@ export function UserInput() {
 
   const addUserMessage = useChatStore(state => state.addUserMessage);
   const triggerAbort = useAbortEventBusStore(state => state.triggerAbort);
-  const isLoading = useConnStore(state => state.isLoading);
-  const setIsLoading = useConnStore(state => state.setIsLoading);
-  const startWorkflowChain = useConnStore(state => state.startWorkflowChain);
+  const isLoading = useStreamSourceStore(state => state.isStreaming);
+  const setIsLoading = useStreamSourceStore(state => state.setIsStreaming);
+  const startWorkflowChain = useStreamSourceStore(state => state.startWorkflowChain);
   const stopLoading = useAbortEventBusStore(state => state.triggerAbort);
 
   const handleSubmit = async (e: React.FormEvent) => {

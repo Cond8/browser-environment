@@ -1,125 +1,45 @@
 // src/features/editor/components/dsl-editor.tsx
 import Editor from '@monaco-editor/react';
 import { editor, languages } from 'monaco-editor';
-import { useEffect, useRef, useState } from 'react';
-import { jsonToDsl } from '../transpilers/json-to-dsl';
+import { useEffect, useRef } from 'react';
 
 export interface DslEditorProps {
-  jsonContent: string;
+  dslContent: string;
 }
 
-// DSL Language Configuration
-const dslLanguageConfig: languages.ILanguageExtensionPoint = {
-  id: 'cond8-dsl',
-  extensions: ['.dsl'],
-  aliases: ['cond8-dsl', 'dsl'],
-};
-
-// DSL Tokenization Rules
-const dslTokenProvider: languages.IMonarchLanguage = {
+// JSDoc-based DSL custom tokenizer (for highlighting only parseable tags)
+const jsdocDslTokenizer: languages.IMonarchLanguage = {
   defaultToken: '',
-  tokenPostfix: '.dsl',
-
-  // Define keyword categories
-  interfaceKeywords: ['INTERFACE', 'SERVICE', 'METHOD', 'GOAL', 'PARAMS', 'RETURNS'],
-  serviceKeywords: [
-    'EXTRACT',
-    'PARSE',
-    'VALIDATE',
-    'TRANSFORM',
-    'LOGIC',
-    'CALCULATE',
-    'FORMAT',
-    'IO',
-    'STORAGE',
-    'INTEGRATE',
-    'UNDERSTAND',
-    'GENERATE',
-  ],
+  tokenPostfix: '.jsdoc-dsl',
+  name: 'jsdoc-dsl',
 
   tokenizer: {
     root: [
-      // Individual interface keywords
-      [/(INTERFACE)\b/, 'INTERFACE'],
-      [/(SERVICE)\b/, 'SERVICE'],
-      [/(METHOD)\b/, 'METHOD'],
-      [/(GOAL)\b/, 'GOAL'],
-      [/(PARAMS)\b/, 'PARAMS'],
-      [/(RETURNS)\b/, 'RETURNS'],
-
-      // Service keywords
-      [
-        /(EXTRACT|PARSE|VALIDATE|TRANSFORM|LOGIC|CALCULATE|FORMAT|IO|STORAGE|INTEGRATE|UNDERSTAND|GENERATE)\b/,
-        { cases: { '@serviceKeywords': 'keyword.service' } },
-      ],
-
-      // PascalCase names (for interface and step names)
-      [/[A-Z][a-zA-Z0-9]*/, 'identifier'],
-
-      // snake_case identifiers (for methods, params, returns)
-      [/[a-z][a-z0-9]*(_[a-z0-9]+)*/, 'parameter'],
-
-      // Comma-separated lists (for params and returns)
-      [/([a-z][a-z0-9]*(_[a-z0-9]+)*)(\s*,\s*[a-z][a-z0-9]*(_[a-z0-9]+)*)*/, 'parameter'],
-
-      // Strings (for goals and descriptions)
-      [/"([^"\\]|\\.)*$/, 'string.invalid'], // non-terminated string
-      [/'([^'\\]|\\.)*$/, 'string.invalid'], // non-terminated string
-      [/"/, 'string', '@string_double'],
-      [/'/, 'string', '@string_single'],
-
-      // Braces and brackets
-      [/[{}]/, 'delimiter.curly'],
-      [/[\[\]]/, 'delimiter.square'],
-
-      // Whitespace
-      { include: '@whitespace' },
+      [/\/\*\*/, 'comment.doc', '@jsdoc'],
+      [/\/\/.*/, 'comment'],
+      [/[^/]+/, ''],
     ],
 
-    whitespace: [
-      [/\s+/, 'white'],
-      [/\/\*/, 'comment', '@comment'],
-      [/\/\/.*$/, 'comment'],
-    ],
-
-    comment: [
-      [/[^/*]+/, 'comment'],
-      [/\*\//, 'comment', '@pop'],
-      [/[/*]/, 'comment'],
-    ],
-
-    string_double: [
-      [/[^\\"]+/, 'string'],
-      [/"/, 'string', '@pop'],
-    ],
-
-    string_single: [
-      [/[^\\']+/, 'string'],
-      [/'/, 'string', '@pop'],
+    jsdoc: [
+      [/\*\s*/, 'comment.doc'],
+      [/@(?:name|module|function|param|returns)/, 'comment.doc.tag'],
+      [/\{[^}]+\}/, 'comment.doc.type'],
+      [/\*\//, 'comment.doc', '@pop'],
+      [/\*[^/]/, 'comment.doc'],
+      [/[^*]+/, 'comment.doc'],
     ],
   },
 };
 
-// Custom DSL theme
-const dslTheme: editor.IStandaloneThemeData = {
-  base: 'vs-dark' as editor.BuiltinTheme,
+// Custom theme for validated JSDoc DSL
+const jsdocDslTheme: editor.IStandaloneThemeData = {
+  base: 'vs-dark',
   inherit: true,
   rules: [
-    // Individual keyword colors
-    { token: 'INTERFACE', foreground: 'FF6B6B', fontStyle: 'bold underline' },
-    { token: 'SERVICE', foreground: '4EC9B0', fontStyle: 'bold underline' },
-    { token: 'METHOD', foreground: 'C586C0', fontStyle: 'bold' },
-    { token: 'GOAL', foreground: 'DCDCAA', fontStyle: 'bold' },
-    { token: 'PARAMS', foreground: '9CDCFE', fontStyle: 'bold' },
-    { token: 'RETURNS', foreground: '569CD6', fontStyle: 'bold underline' },
-
-    // Other tokens
-    { token: 'string', foreground: 'CE9178' },
-    { token: 'identifier', foreground: '9CDCFE' },
-    { token: 'parameter', foreground: '9CDCFE' },
-    { token: 'comment', foreground: '6A9955' },
-    { token: 'delimiter.curly', foreground: 'D4D4D4' },
-    { token: 'delimiter.square', foreground: 'D4D4D4' },
+    { token: 'comment.doc', foreground: '6A9955', fontStyle: 'italic' },
+    { token: 'comment.doc.tag', foreground: '569CD6', fontStyle: 'bold' },
+    { token: 'comment.doc.type', foreground: 'C586C0' },
+    { token: 'comment.doc.name', foreground: 'DCDCAA' },
   ],
   colors: {
     'editor.background': '#1E1E1E',
@@ -131,8 +51,7 @@ const dslTheme: editor.IStandaloneThemeData = {
   },
 };
 
-export const DslEditor = ({ jsonContent }: DslEditorProps) => {
-  const [dslContent, setDslContent] = useState<string>(jsonToDsl(jsonContent));
+export const DslEditor = ({ dslContent }: DslEditorProps) => {
   const editorRef = useRef<any>(null);
 
   const handleEditorDidMount = (editor: any) => {
@@ -140,13 +59,6 @@ export const DslEditor = ({ jsonContent }: DslEditorProps) => {
     editorRef.current = editor;
     editorRef.current.setValue(dslContent);
   };
-
-  useEffect(() => {
-    const dsl = jsonToDsl(jsonContent);
-    console.log('[DslEditir] JSON content:', jsonContent);
-    setDslContent(dsl);
-    console.log('[DslEditor] Editor content:', dsl);
-  }, [jsonContent]);
 
   useEffect(() => {
     if (editorRef.current && typeof dslContent === 'string') {
@@ -157,8 +69,8 @@ export const DslEditor = ({ jsonContent }: DslEditorProps) => {
   return (
     <Editor
       height="100%"
-      defaultLanguage="cond8-dsl"
-      theme="dsl-theme"
+      defaultLanguage="jsdoc-dsl"
+      theme="jsdoc-dsl-theme"
       options={{
         readOnly: true,
         minimap: { enabled: false },
@@ -167,9 +79,11 @@ export const DslEditor = ({ jsonContent }: DslEditorProps) => {
       }}
       onMount={handleEditorDidMount}
       beforeMount={monaco => {
-        monaco.editor.defineTheme('dsl-theme', dslTheme);
-        monaco.languages.register(dslLanguageConfig);
-        monaco.languages.setMonarchTokensProvider('cond8-dsl', dslTokenProvider);
+        monaco.languages.register({
+          id: 'jsdoc-dsl',
+        });
+        monaco.languages.setMonarchTokensProvider('jsdoc-dsl', jsdocDslTokenizer);
+        monaco.editor.defineTheme('jsdoc-dsl-theme', jsdocDslTheme);
       }}
     />
   );

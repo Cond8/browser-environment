@@ -1,0 +1,122 @@
+// src/features/ollama-api/streaming/api/workflow-chain.ts
+import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
+import { useAssistantConfigStore } from '../../../chat/store/assistant-config-store';
+import { useChatStore } from '../../../chat/store/chat-store';
+import { useEditorStore } from '../../../editor/stores/editor-store';
+import { useWorkflowStore } from '../../../vfs/store/workflow-store';
+import { createCompletion } from '../infra/create-completion';
+import { retryWithDelay } from '../infra/retry-with-delay';
+import { alignmentPhase } from '../phases/alignment-phase';
+import { interfacePhase } from '../phases/interface-phase';
+import { handleStepPhase } from '../phases/step-phase';
+
+export class WorkflowChainError extends Error {
+  public metadata: unknown[];
+  constructor(
+    message: string,
+    public phase: 'interface' | 'step' | 'stream' | 'alignment',
+    public originalError?: Error,
+    ...metadata: unknown[]
+  ) {
+    super(message);
+    this.name = 'WorkflowChainError';
+    this.metadata = metadata;
+  }
+}
+
+export class WorkflowValidationError extends WorkflowChainError {
+  constructor(
+    message: string,
+    phase: 'interface' | 'step' | 'alignment',
+    public validationErrors: string[],
+    ...metadata: unknown[]
+  ) {
+    super(message, phase, undefined, ...metadata);
+    this.name = 'WorkflowValidationError';
+  }
+}
+
+export async function* executeWorkflowChain(): AsyncGenerator<
+  unknown,
+  {
+    interface?: WorkflowStep;
+    steps?: WorkflowStep[];
+    error?: WorkflowChainError;
+  }
+> {
+  const { selectedModel, parameters, ollamaUrl } = useAssistantConfigStore.getState();
+
+  const chatStore = useChatStore.getState();
+  const messages = chatStore.getAllMessages();
+
+  if (messages.length > 1) {
+    throw new WorkflowChainError('Only one message is supported', 'stream', undefined, {
+      messageCount: messages.length,
+    });
+  }
+
+  const completionFn = createCompletion(ollamaUrl, selectedModel, parameters);
+
+  try {
+    /* ===========================
+     * ===== ALIGNMENT PHASE =====
+     * ===========================*/
+    const alignmentResult = yield* retryWithDelay(
+      () => alignmentPhase(messages[0].content, completionFn),
+      'alignment',
+      messages[0].content,
+    );
+    chatStore.addAlignmentMessage(alignmentResult);
+
+    /* ===========================
+     * ===== INTERFACE PHASE =====
+     * ===========================*/
+    const parsedInterfaceResult = yield* retryWithDelay(
+      () => interfacePhase(messages[0].content, alignmentResult, completionFn),
+      'interface',
+      messages[0].content,
+      alignmentResult,
+    );
+    chatStore.addInterfaceMessage(parsedInterfaceResult);
+    const workflowPath = useWorkflowStore.getState().createWorkflow(parsedInterfaceResult);
+    useEditorStore.getState().setActiveEditor('workflow', workflowPath);
+
+    /* =======================
+     * ===== STEPS PHASE =====
+     * =======================*/
+    const parsedStepsResult = yield* retryWithDelay(
+      () =>
+        handleStepPhase(messages[0].content, alignmentResult, parsedInterfaceResult, completionFn),
+      'step',
+      messages[0].content,
+      alignmentResult,
+      parsedInterfaceResult,
+    );
+    // chatStore.addStepsMessage(parsedStepsResult);
+    // useWorkflowStore.getState().addStepsToWorkflow(workflowPath, parsedStepsResult);
+    // useVfsStore.getState().upsertServices(stepsResult.steps);
+
+    return {
+      interface: parsedInterfaceResult,
+      steps: parsedStepsResult,
+    };
+  } catch (error) {
+    const err =
+      error instanceof WorkflowChainError
+        ? error
+        : new WorkflowChainError('Unexpected error in workflow chain', 'stream', error as Error);
+
+    const errorContent = JSON.stringify(
+      {
+        error: err.message,
+        phase: err.phase,
+        validationErrors: err instanceof WorkflowValidationError ? err.validationErrors : undefined,
+      },
+      null,
+      2,
+    );
+    console.error('[WorkflowChain] Error content:', errorContent);
+
+    return { error: err };
+  }
+}

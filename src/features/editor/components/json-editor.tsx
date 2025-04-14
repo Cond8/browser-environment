@@ -1,9 +1,10 @@
 // src/features/editor/components/json-editor.tsx
+import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
 import Editor from '@monaco-editor/react';
 import { useEffect, useRef } from 'react';
 
 export interface JsonEditorProps {
-  jsonContent: string;
+  jsonContent: WorkflowStep[];
 }
 
 export const JsonEditor = ({ jsonContent }: JsonEditorProps) => {
@@ -12,13 +13,11 @@ export const JsonEditor = ({ jsonContent }: JsonEditorProps) => {
   const handleEditorDidMount = (editor: any) => {
     console.log('[JsonEditor] Editor mounted');
     editorRef.current = editor;
-    editorRef.current.setValue(jsonContent);
+    editorRef.current.setValue(JSON.stringify(jsonContent, null, 2));
   };
 
   useEffect(() => {
-    if (editorRef.current && typeof jsonContent === 'string') {
-      editorRef.current.setValue(jsonContent);
-    }
+    editorRef.current.setValue(JSON.stringify(jsonContent, null, 2));
   }, [jsonContent]);
 
   return (

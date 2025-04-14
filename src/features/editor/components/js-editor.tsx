@@ -2,9 +2,11 @@
 import Editor from '@monaco-editor/react';
 import { useEffect, useRef, useState } from 'react';
 import { jsonToJs } from '../transpilers/json-to-js';
+import { dslToJson } from '../transpilers/dsl-to-json';
+import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
 
 export interface JsEditorProps {
-  jsonContent: string;
+  jsonContent: WorkflowStep[];
 }
 
 export const JsEditor = ({ jsonContent }: JsEditorProps) => {
@@ -18,8 +20,10 @@ export const JsEditor = ({ jsonContent }: JsEditorProps) => {
   };
 
   useEffect(() => {
-    setJsContent(jsonToJs(jsonContent));
-  }, [jsonContent]);
+    const js = jsonToJs(dslToJson(dslContent))
+    setJsContent(js)
+    editorRef.current.setValue(js)
+  }, [dslContent]);
 
   useEffect(() => {
     if (editorRef.current && typeof jsContent === 'string') {

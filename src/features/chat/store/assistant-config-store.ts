@@ -1,45 +1,32 @@
 // src/features/chat/store/assistant-config-store.ts
+import { Options } from 'ollama';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-interface ModelParameters {
-  temperature: number;
-  topP: number;
-  topK: number;
-  numPredict: number;
-  repeatPenalty: number;
-  repeatLastN: number;
-  tfsZ: number;
-  mirostat: 0 | 1 | 2;
-  mirostatEta: number;
-  mirostatTau: number;
-  numCtx: number;
-}
-
 interface AssistantState {
-  parameters: ModelParameters;
+  parameters: Partial<Options>;
   selectedModel: string;
   ollamaUrl: string;
 
   setUrl: (url: string) => void;
-  setParameters: (params: Partial<ModelParameters>) => void;
+  setParameters: (params: Partial<Options>) => void;
   resetParameters: () => void;
   setSelectedModel: (model: string) => void;
 }
 
-const defaultParameters: ModelParameters = {
-  temperature: 0.7,
-  topP: 0.9,
-  topK: 40,
-  numPredict: 2048,
-  repeatPenalty: 1.1,
-  repeatLastN: 64,
-  tfsZ: 1.0,
+const defaultParameters: Partial<Options> = {
+  temperature: 0.5,
+  top_p: 0.9,
+  top_k: 40,
+  num_predict: 2048,
+  repeat_penalty: 1.1,
+  repeat_last_n: 64,
+  tfs_z: 1.0,
   mirostat: 0,
-  mirostatEta: 0.1,
-  mirostatTau: 5.0,
-  numCtx: 2048,
+  mirostat_eta: 0.1,
+  mirostat_tau: 5.0,
+  num_ctx: 2048,
 };
 
 export const useAssistantConfigStore = create<AssistantState>()(

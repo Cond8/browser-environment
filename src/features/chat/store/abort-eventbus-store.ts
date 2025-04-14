@@ -5,7 +5,7 @@ type AbortCallback = () => void;
 
 interface AbortEventBusStore {
   abortCallbacks: Set<AbortCallback>;
-  registerAbortCallback: (callback: AbortCallback) => void;
+  registerAbortCallback: (callback: AbortCallback) => AbortCallback;
   unregisterAbortCallback: (callback: AbortCallback) => void;
   triggerAbort: () => void;
 }
@@ -17,6 +17,8 @@ export const useAbortEventBusStore = create<AbortEventBusStore>()((set, get) => 
     set(state => ({
       abortCallbacks: new Set(state.abortCallbacks).add(callback),
     }));
+
+    return callback;
   },
 
   unregisterAbortCallback: (callback: AbortCallback) => {

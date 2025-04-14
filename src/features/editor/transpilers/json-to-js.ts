@@ -1,228 +1,223 @@
 // src/features/editor/transpilers/json-to-js.ts
-import { WorkflowStep } from '@/features/ollama-api/tool-schemas/workflow-schema';
+import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
+import { jsonToDsl } from './json-to-dsl';
 
-interface ParsedJson {
-  interface: WorkflowStep;
-  steps: WorkflowStep[];
-}
-
-// Assume CoreBlueprint is globally available or imported elsewhere in the target JS environment
-declare var CoreBlueprint: any;
-
-// Helper function to extract type and description from different formats
-function extractTypeAndDescription(
-  typeWithComment: string | { type: string; description: string },
-): [string, string] {
-  // Handle new object format
-  if (
-    typeWithComment &&
-    typeof typeWithComment === 'object' &&
-    'type' in typeWithComment &&
-    'description' in typeWithComment
-  ) {
-    return [typeWithComment.type, typeWithComment.description];
-  }
-
-  // Handle string format in "type - description" pattern
-  if (typeof typeWithComment === 'string') {
-    const parts = typeWithComment.split(' - ');
-    if (parts.length >= 2) {
-      return [parts[0], parts.slice(1).join(' - ')];
-    }
-  }
-
-  // Default fallback
-  return [typeof typeWithComment === 'string' ? typeWithComment : 'string', ''];
-}
-
-// Map LLM types to TypeScript/JSDoc types
-function mapTypeToJsDocType(type: string): string {
-  const typeMap: Record<string, string> = {
-    text: 'string',
-    string: 'string',
-    number: 'number',
-    boolean: 'boolean',
-    function: 'Function',
-    object: 'Object',
-    array: 'Array',
-  };
-
-  return typeMap[type.toLowerCase()] || 'any';
-}
-
-export const jsonToJs = (jsonContent: string): string => {
-  // Handle empty input
-  if (jsonContent === '{}') return '';
-
-  // Parse JSON
-  let parsedJson: ParsedJson;
-  try {
-    parsedJson = JSON.parse(jsonContent);
-  } catch (error) {
-    throw new Error('Invalid JSON format');
-  }
-
-  // Ensure required parts exist
-  if (!parsedJson.interface) {
+export const jsonToJs = (json: WorkflowStep[]): string => {
+  if (!json || json.length === 0) {
     return '';
   }
 
-  const { interface: intf, steps = [] } = parsedJson;
+  // Get the main workflow step (first one typically)
+  const mainStep = json[0];
 
-  // --- Generate JS Code ---
+  // Start building the JS output
+  let output = `export { CoreRedprint, StrictKVStoreService, createDirector, createRole } from '@cond8/core';\n\n`;
 
-  let jsOutput = `export { createDirector, CoreRedprint, StrictKVStoreService } from '@cond8/core';
+  // Add JSDoc for the main workflow using jsonToDsl
+  output += jsonToDsl(mainStep) + '\n';
 
-`;
-
-  // Workflow Definition
-  jsOutput += `export const ${intf.name}Workflow = createDirector(
-  '${intf.name}',
-  '${intf.goal}',
+  // Create the main workflow director
+  output += `export const ${mainStep.name}Workflow = createDirector(
+  '${mainStep.name}',
+  '${mainStep.goal}',
 ).init(input => ({
   conduit: new AppConduit(input),
   recorder: null,
-}))(
-  c8 => {
+}))(c8 => {
 `;
-  // Initial params from c8.body
-  if (intf.params) {
-    Object.entries(intf.params).forEach(([param, type]) => {
-      jsOutput += `    const ${param} = c8.body.get('${param}');
-`;
-      jsOutput += `    c8.var('${param}', ${param});
 
-`;
+  // Add initialization code for main parameters
+  if (mainStep.params) {
+    Object.keys(mainStep.params).forEach(paramName => {
+      output += `  const ${paramName} = c8.body.get('${paramName}');\n`;
+      output += `  c8.var('${paramName}', ${paramName});\n\n`;
     });
   }
-  jsOutput += `    return c8;
+
+  output += `  return c8;\n});\n\n`;
+
+  // Add workflow steps
+  output += `// Workflow Steps\n${mainStep.name}Workflow(\n`;
+
+  // Process each step (starting from the second step if it exists)
+  const stepsToProcess = json.slice(1);
+  if (stepsToProcess.length === 0) {
+    // If there's only one step, process it
+    stepsToProcess.push(mainStep);
   }
-)
 
-`;
+  stepsToProcess.forEach((step, index) => {
+    output += `  // STEP ${index + 1} — ${step.name}\n`;
+    output += `  createRole(
+    '${step.name}',
+    "${step.goal}",
+  )(c8 => {`;
 
-  // Only add workflow steps if they exist
-  if (steps.length > 0) {
-    jsOutput += `${intf.name}Workflow(
-`;
-    steps.forEach((step: WorkflowStep, index: number) => {
-      jsOutput += `  c8 => {
-`;
-      // Get params from c8.var
-      if (step.params) {
-        Object.keys(step.params).forEach(param => {
-          jsOutput += `    const ${param} = c8.var('${param}');
-`;
-        });
-      }
-      // Service method call
-      const returnsString = step.returns ? Object.keys(step.returns).join(', ') : '';
-      const paramsString = step.params ? Object.keys(step.params).join(', ') : '';
-      jsOutput += `    const { ${returnsString} } = c8.${step.service}.${step.method}(${paramsString});
-`;
-      // Store returns in c8.var
+    // Add variables and service calls
+    if (step.params) {
+      // Get parameters from previous variables
+      Object.keys(step.params).forEach(paramName => {
+        output += `\n    const ${paramName} = c8.var('${paramName}');`;
+      });
+    }
+
+    // Add service method call
+    if (step.module && step.function) {
+      output += `\n    const { `;
+
+      // Add return properties
       if (step.returns) {
-        Object.keys(step.returns).forEach(ret => {
-          jsOutput += `    c8.var('${ret}', ${ret});
-`;
+        output += Object.keys(step.returns).join(', ');
+      }
+
+      output += ` } =\n      c8.${step.module}.${step.function}(`;
+
+      // Add parameters to method call
+      if (step.params) {
+        output += Object.keys(step.params)
+          .map(param => param)
+          .join(',\n      ');
+      }
+
+      output += `\n    );`;
+
+      // Store return values in variables
+      if (step.returns) {
+        Object.keys(step.returns).forEach(returnKey => {
+          output += `\n    c8.var('${returnKey}', ${returnKey});`;
         });
       }
-      jsOutput += `    return c8;
-  }${index < steps.length - 1 ? ',' : ''}
-`;
-    });
-    jsOutput += `)
+    }
 
-`;
+    // For the last step, add a return statement if it's not already there
+    if (index === stepsToProcess.length - 1 && step.returns) {
+      const returnKeys = Object.keys(step.returns);
+      if (returnKeys.length > 0) {
+        output += `\n    return c8.return({ ${returnKeys.join(', ')} });`;
+      } else {
+        output += `\n    return c8;`;
+      }
+    } else {
+      output += `\n    return c8;`;
+    }
+
+    output += `\n  })`;
+
+    if (index < stepsToProcess.length - 1) {
+      output += ',\n';
+    } else {
+      output += '\n';
+    }
+  });
+
+  output += ');\n\n';
+
+  // Add default export with final result
+  const finalReturns = json[json.length - 1].returns;
+  if (finalReturns) {
+    const finalReturnKeys = Object.keys(finalReturns);
+    if (finalReturnKeys.length > 0) {
+      output += `export default ${mainStep.name}Workflow.fin(c8 => c8.var('${finalReturnKeys[0]}'));\n\n`;
+    }
   }
 
-  // Workflow Finalization
-  const finalReturnsString = intf.returns
-    ? Object.keys(intf.returns)
-        .map(ret => `c8.var('${ret}')`)
-        .join(', ')
-    : '';
-  jsOutput += `export default ${intf.name}Workflow.fin(c8 => [${finalReturnsString}]);
+  // Add service classes
+  const services = new Set<string>();
+  json.forEach(step => {
+    if (step.module) {
+      services.add(step.module);
+    }
+  });
 
-`;
-
-  // Generate service classes if there are steps
-  if (steps.length > 0) {
-    const serviceNames = [...new Set(steps.map((step: WorkflowStep) => step.service))];
-    serviceNames.forEach((service: string) => {
-      const serviceClassName = service.charAt(0).toUpperCase() + service.slice(1) + 'Service';
-      jsOutput += `class ${serviceClassName} extends CoreBlueprint {
+  // Create service classes
+  services.forEach(service => {
+    const capitalizedService = service.charAt(0).toUpperCase() + service.slice(1);
+    output += `class ${capitalizedService}Service extends CoreBlueprint {
   constructor(key) {
     super(key);
   }
+\n`;
 
-`;
-      steps
-        .filter((step: WorkflowStep) => step.service === service)
-        .forEach((step: WorkflowStep) => {
-          const paramsString = step.params ? Object.keys(step.params).join(', ') : '';
-          const returnsString = step.returns ? Object.keys(step.returns).join(', ') : '';
+    // Add methods for each service
+    const methodsForService = json.filter(step => step.module === service);
+    const uniqueMethods = new Map();
 
-          jsOutput += `  /**
-   * ${step.goal}
-`;
-          if (step.params) {
-            Object.entries(step.params).forEach(([param, typeWithComment]) => {
-              const [type, description] = extractTypeAndDescription(typeWithComment);
-              jsOutput += `   * @param {${mapTypeToJsDocType(type)}} ${param} - ${description}
-`;
-            });
+    methodsForService.forEach(step => {
+      // Skip if we've already defined this method for this service
+      if (uniqueMethods.has(step.function)) return;
+      uniqueMethods.set(step.function, true);
+
+      // Add JSDoc for the method using jsonToDsl with proper indentation
+      const jsDoc = jsonToDsl(step)
+        .split('\n')
+        .map(line => `  ${line}`)
+        .join('\n');
+      output += `${jsDoc}\n`;
+
+      // Add method definition
+      output += `  ${step.function}(`;
+
+      // Add parameters
+      if (step.params) {
+        output += Object.keys(step.params).join(', ');
+      }
+
+      output += `) {
+    `;
+
+      // Declare return variables
+      if (step.returns) {
+        const returnVars = Object.keys(step.returns);
+        if (returnVars.length === 1) {
+          output += `let ${returnVars[0]}`;
+          if (step.returns[returnVars[0]].type === 'boolean') {
+            output += ` = false`;
+          } else if (step.returns[returnVars[0]].type === 'number') {
+            output += ` = 0`;
+          } else if (step.returns[returnVars[0]].type === 'string') {
+            output += ` = ''`;
           }
-          jsOutput += `   * @returns {Object} An object containing the return values
-`;
-          if (step.returns) {
-            Object.entries(step.returns).forEach(([ret, typeWithComment]) => {
-              const [type, description] = extractTypeAndDescription(typeWithComment);
-              jsOutput += `   * @property {${mapTypeToJsDocType(type)}} ${ret} - ${description}
-`;
-            });
-          }
-          jsOutput += `   */
-`;
-          jsOutput += `  ${step.method}(${paramsString}) {
-`;
-          if (step.returns) {
-            Object.keys(step.returns).forEach(ret => {
-              jsOutput += `    let ${ret};
-`;
-            });
-          }
-          jsOutput += `    // Implement business logic here
-`;
-          jsOutput += `    return { ${returnsString} }
+          output += `;`;
+        } else {
+          output += `let ${returnVars.join(', ')};`;
+        }
+      } else {
+        output += 'let result;';
+      }
+
+      output += `
+    return { `;
+
+      // Return object
+      if (step.returns) {
+        output += Object.keys(step.returns).join(', ');
+      } else {
+        output += 'result';
+      }
+
+      output += ` };
   }
-`;
-        });
-      jsOutput += `}
-
-`;
+\n`;
     });
-  }
 
-  // AppConduit Class at the end
-  jsOutput += `class AppConduit extends CoreRedprint {
+    output += `}\n\n`;
+  });
+
+  // Add AppConduit class
+  output += `class AppConduit extends CoreRedprint {
   constructor(input) {
     super(input);
   }
 
-  locals = new StrictKVStoreService('locals');
-`;
-  // Only add services if there are steps
-  if (steps.length > 0) {
-    const serviceNames = [...new Set(steps.map((step: WorkflowStep) => step.service))];
-    serviceNames.forEach((service: string) => {
-      const serviceClassName = service.charAt(0).toUpperCase() + service.slice(1) + 'Service';
-      jsOutput += `  ${service} = new ${serviceClassName}('${service}');
-`;
-    });
-  }
-  jsOutput += `}
-`;
+  locals = new StrictKVStoreService('locals');\n`;
 
-  return jsOutput.trim(); // Trim trailing whitespace
+  // Add service instances
+  services.forEach(service => {
+    const capitalizedService = service.charAt(0).toUpperCase() + service.slice(1);
+    output += `  ${service} = new ${capitalizedService}Service('${service}');\n`;
+  });
+
+  output += `}\n`;
+
+  return output;
 };
