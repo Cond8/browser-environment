@@ -12,8 +12,13 @@ Each workflow consists of two main sections: interface and steps. Here's an exam
     "service": "transform",
     "method": "transform_user_data",
     "goal": "Transform raw user data into standardized format",
-    "params": ["raw_data", "format_type"],
-    "returns": ["processed_data"]
+    "params": {
+      "raw_data": "text - The unprocessed user data that needs transformation",
+      "format_type": "text - The target format specification"
+    },
+    "returns": {
+      "processed_data": "text - The standardized user data in the target format"
+    }
   },
   "steps": [
     {
@@ -21,16 +26,26 @@ Each workflow consists of two main sections: interface and steps. Here's an exam
       "service": "validate",
       "method": "validate_input",
       "goal": "Ensure input data meets required format and constraints",
-      "params": ["raw_data", "format_type"],
-      "returns": ["validated_data"]
+      "params": {
+        "raw_data": "text - The unprocessed user data to validate",
+        "format_type": "text - The format specification to validate against"
+      },
+      "returns": {
+        "validated_data": "text - The validated user data"
+      }
     },
     {
       "name": "ExtractData",
       "service": "extract",
       "method": "extract_data",
       "goal": "Extract data from input",
-      "params": ["validated_data", "extract_type"],
-      "returns": ["extracted_data"]
+      "params": {
+        "validated_data": "text - The validated user data to extract from",
+        "extract_type": "text - The type of data to extract"
+      },
+      "returns": {
+        "extracted_data": "text - The extracted data meeting the criteria"
+      }
     }
   ]
 }

@@ -30,8 +30,10 @@ export type WorkflowStep = {
   service: WorkflowService;
   method: string;
   goal: string;
-  params?: string[];
-  returns?: string[];
+  /** Record of parameter names to their type and description in the format "type - description" */
+  params?: Record<string, string>;
+  /** Record of return value names to their type and description in the format "type - description" */
+  returns?: Record<string, string>;
 };
 
 // Helper functions for validation
@@ -56,6 +58,8 @@ const variableNameSchema = z
 
 const goalSchema = z.string().min(1).describe('Short, clear task summary');
 
+const paramTypeSchema = z.enum(['text', 'number', 'boolean', 'function']);
+
 // Enhanced interface schema
 export const interfaceSchema = z.object({
   name: nameSchema,
@@ -67,8 +71,22 @@ export const interfaceSchema = z.object({
     ),
   method: methodSchema,
   goal: goalSchema,
-  params: z.array(variableNameSchema).optional(),
-  returns: z.array(variableNameSchema).optional(),
+  params: z
+    .record(
+      variableNameSchema,
+      z
+        .string()
+        .regex(/^(text|number|boolean|function) - .+$/, 'Type must be followed by a comment'),
+    )
+    .optional(),
+  returns: z
+    .record(
+      variableNameSchema,
+      z
+        .string()
+        .regex(/^(text|number|boolean|function) - .+$/, 'Type must be followed by a comment'),
+    )
+    .optional(),
 });
 
 // Enhanced steps schema

@@ -4,8 +4,8 @@ interface JsonStep {
   service: string;
   method: string;
   goal: string;
-  params: string[];
-  returns: string[];
+  params?: Record<string, string>; // now "type - description" format
+  returns?: Record<string, string>; // now "type - description" format
 }
 
 interface JsonInterface {
@@ -13,8 +13,8 @@ interface JsonInterface {
   service: string;
   method: string;
   goal: string;
-  params: string[];
-  returns: string[];
+  params?: Record<string, string>; // now "type - description" format
+  returns?: Record<string, string>; // now "type - description" format
 }
 
 interface ParsedJson {
@@ -24,6 +24,15 @@ interface ParsedJson {
 
 // Assume CoreBlueprint is globally available or imported elsewhere in the target JS environment
 declare var CoreBlueprint: any;
+
+// Helper function to extract type from "type - description" format
+function extractTypeAndDescription(typeWithComment: string): [string, string] {
+  const parts = typeWithComment.split(' - ');
+  if (parts.length >= 2) {
+    return [parts[0], parts.slice(1).join(' - ')];
+  }
+  return [typeWithComment, ''];
+}
 
 export const jsonToJs = (jsonContent: string): string => {
   // Handle empty input
@@ -61,8 +70,8 @@ export const jsonToJs = (jsonContent: string): string => {
   c8 => {
 `;
   // Initial params from c8.body
-  if (intf.params && intf.params.length > 0) {
-    intf.params.forEach((param: string) => {
+  if (intf.params) {
+    Object.entries(intf.params).forEach(([param, type]) => {
       jsOutput += `    const ${param} = c8.body.get('${param}');
 `;
       jsOutput += `    c8.var('${param}', ${param});
@@ -84,20 +93,20 @@ export const jsonToJs = (jsonContent: string): string => {
       jsOutput += `  c8 => {
 `;
       // Get params from c8.var
-      if (step.params && step.params.length > 0) {
-        step.params.forEach((param: string) => {
+      if (step.params) {
+        Object.keys(step.params).forEach(param => {
           jsOutput += `    const ${param} = c8.var('${param}');
 `;
         });
       }
       // Service method call
-      const returnsString = step.returns?.join(', ') || '';
-      const paramsString = step.params?.join(', ') || '';
-      jsOutput += `    const [${returnsString}] = c8.${step.service}.${step.method}(${paramsString});
+      const returnsString = step.returns ? Object.keys(step.returns).join(', ') : '';
+      const paramsString = step.params ? Object.keys(step.params).join(', ') : '';
+      jsOutput += `    const { ${returnsString} } = c8.${step.service}.${step.method}(${paramsString});
 `;
       // Store returns in c8.var
-      if (step.returns && step.returns.length > 0) {
-        step.returns.forEach((ret: string) => {
+      if (step.returns) {
+        Object.keys(step.returns).forEach(ret => {
           jsOutput += `    c8.var('${ret}', ${ret});
 `;
         });
@@ -112,8 +121,11 @@ export const jsonToJs = (jsonContent: string): string => {
   }
 
   // Workflow Finalization
-  const finalReturnsString =
-    intf.returns?.map((ret: string) => `c8.var('${ret}')`).join(', ') || '';
+  const finalReturnsString = intf.returns
+    ? Object.keys(intf.returns)
+        .map(ret => `c8.var('${ret}')`)
+        .join(', ')
+    : '';
   jsOutput += `export default ${intf.name}Workflow.fin(c8 => [${finalReturnsString}]);
 
 `;
@@ -132,30 +144,41 @@ export const jsonToJs = (jsonContent: string): string => {
       steps
         .filter((step: JsonStep) => step.service === service)
         .forEach((step: JsonStep) => {
-          const paramsString = step.params?.join(', ') || '';
-          const returnsString = step.returns?.join(', ') || '';
+          const paramsString = step.params ? Object.keys(step.params).join(', ') : '';
+          const returnsString = step.returns ? Object.keys(step.returns).join(', ') : '';
 
           jsOutput += `  /**
    * ${step.goal}
 `;
-          if (step.params && step.params.length > 0) {
-            step.params.forEach((param: string) => {
-              jsOutput += `   * @param ${param}
+          if (step.params) {
+            Object.entries(step.params).forEach(([param, typeWithComment]) => {
+              const [type, description] = extractTypeAndDescription(typeWithComment);
+              jsOutput += `   * @param {${type}} ${param} - ${description}
 `;
             });
           }
-          jsOutput += `   * @returns [${returnsString}]
-   */
+          jsOutput += `   * @returns {Object} An object containing the return values
+`;
+          if (step.returns) {
+            Object.entries(step.returns).forEach(([ret, typeWithComment]) => {
+              const [type, description] = extractTypeAndDescription(typeWithComment);
+              jsOutput += `   * @property {${type}} ${ret} - ${description}
+`;
+            });
+          }
+          jsOutput += `   */
 `;
           jsOutput += `  ${step.method}(${paramsString}) {
 `;
-          if (step.returns && step.returns.length > 0) {
-            jsOutput += `    let ${returnsString};
+          if (step.returns) {
+            Object.keys(step.returns).forEach(ret => {
+              jsOutput += `    let ${ret};
 `;
+            });
           }
           jsOutput += `    // Implement business logic here
 `;
-          jsOutput += `    return [${returnsString}]
+          jsOutput += `    return { ${returnsString} }
   }
 `;
         });

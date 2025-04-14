@@ -25,8 +25,8 @@ Your task is to generate the **steps** section of the JSON workflow.
 - service: One of the predefined services (see below)
 - method: snake_case method name
 - goal: Clear description of the step's purpose
-- params: Array of input variable names in snake_case
-- returns: Array of output variable names in snake_case
+- params: Record of input variable names with types and descriptions (e.g., "text - Description here")
+- returns: Record of output variable names with types and descriptions (e.g., "number - Description here")
 
 ### AVAILABLE SERVICES
 You must use one of these predefined services:
@@ -52,16 +52,24 @@ You must use one of these predefined services:
     "service": "validate",
     "method": "validate_email_content",
     "goal": "Validate the email content format",
-    "params": ["email_body"],
-    "returns": ["validated_content"]
+    "params": {
+      "email_body": "text - The raw email body content to validate"
+    },
+    "returns": {
+      "validated_content": "text - The validated and sanitized email content"
+    }
   },
   {
     "name": "AnalyzeContent",
     "service": "understand",
     "method": "analyze_email_patterns",
     "goal": "Analyze email content for spam patterns",
-    "params": ["validated_content"],
-    "returns": ["spam_score"]
+    "params": {
+      "validated_content": "text - The validated email content to analyze"
+    },
+    "returns": {
+      "spam_score": "number - A score between 0 and 1 indicating spam likelihood"
+    }
   }
 ]
 \`\`\`
@@ -71,6 +79,7 @@ RULES:
 - Each step MUST have ALL required fields
 - Steps MUST be logically connected
 - Final step MUST produce the interface's returns
+- Each param and return MUST include both type and description in format "type - description"
 - Do NOT include any text before or after the JSON
 
 USER REQUEST:
