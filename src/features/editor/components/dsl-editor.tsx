@@ -24,12 +24,13 @@ const dslTheme: editor.IStandaloneThemeData = {
 };
 
 export const DslEditor = ({ jsonContent }: DslEditorProps) => {
-  const [dslContent, setDslContent] = useState<string>('');
+  const [dslContent, setDslContent] = useState<string>(jsonToDsl(jsonContent));
   const editorRef = useRef<any>(null);
 
   const handleEditorDidMount = (editor: any) => {
     console.log('[DslEditor] Editor mounted');
     editorRef.current = editor;
+    editorRef.current.setValue(dslContent);
   };
 
   useEffect(() => {

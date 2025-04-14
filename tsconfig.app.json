@@ -23,7 +23,8 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@cond8/core": ["./src/lib/cond8/_core/index.ts"]
     }
   },
   "include": ["src"]

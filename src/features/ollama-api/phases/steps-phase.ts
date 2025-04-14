@@ -25,8 +25,8 @@ Your task is to generate the **steps** section of the JSON workflow.
 - service: One of the predefined services (see below)
 - method: snake_case method name
 - goal: Clear description of the step's purpose
-- inputs: Array of input variable names in snake_case
-- outputs: Array of output variable names in snake_case
+- params: Array of input variable names in snake_case
+- returns: Array of output variable names in snake_case
 
 ### AVAILABLE SERVICES
 You must use one of these predefined services:
@@ -52,16 +52,16 @@ You must use one of these predefined services:
     "service": "validate",
     "method": "validate_email_content",
     "goal": "Validate the email content format",
-    "inputs": ["email_body"],
-    "outputs": ["validated_content"]
+    "params": ["email_body"],
+    "returns": ["validated_content"]
   },
   {
     "name": "AnalyzeContent",
     "service": "understand",
     "method": "analyze_email_patterns",
     "goal": "Analyze email content for spam patterns",
-    "inputs": ["validated_content"],
-    "outputs": ["spam_score"]
+    "params": ["validated_content"],
+    "returns": ["spam_score"]
   }
 ]
 \`\`\`
@@ -70,7 +70,7 @@ RULES:
 - Generate 2-4 steps maximum
 - Each step MUST have ALL required fields
 - Steps MUST be logically connected
-- Final step MUST produce the interface's outputs
+- Final step MUST produce the interface's returns
 - Do NOT include any text before or after the JSON
 
 USER REQUEST:

@@ -7,12 +7,13 @@ export interface JsEditorProps {
 }
 
 export const JsEditor = ({ jsonContent }: JsEditorProps) => {
-  const [jsContent, setJsContent] = useState<string>('');
+  const [jsContent, setJsContent] = useState<string>(jsonToJs(jsonContent));
   const editorRef = useRef<any>(null);
 
   const handleEditorDidMount = (editor: any) => {
     console.log('[JsEditor] Editor mounted');
     editorRef.current = editor;
+    editorRef.current.setValue(jsContent);
   };
 
   useEffect(() => {

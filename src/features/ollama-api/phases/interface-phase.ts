@@ -21,8 +21,8 @@ Your task is to generate the **interface** section of a JSON workflow.
 - service: One of the predefined services (see below)
 - method: snake_case method name
 - goal: Clear description of the workflow's purpose
-- inputs: Array of input variable names in snake_case
-- outputs: Array of output variable names in snake_case
+- params: Array of input variable names in snake_case
+- returns: Array of output variable names in snake_case
 
 ### AVAILABLE SERVICES
 You must use one of these predefined services:
@@ -47,8 +47,8 @@ You must use one of these predefined services:
   "service": "transform",
   "method": "transform_user_data",
   "goal": "Transform raw user data into standardized format",
-  "inputs": ["raw_data", "format_type"],
-  "outputs": ["processed_data"]
+  "params": ["raw_data", "format_type"],
+  "returns": ["processed_data"]
 }
   \`\`\`
 
@@ -56,7 +56,7 @@ RULES:
 - The \`service\` field MUST be one of the predefined services listed above
 - The \`method\` field MUST be in snake_case
 - The \`name\` field MUST be in PascalCase
-- Inputs and outputs MUST be arrays of variable names in snake_case
+- Params and returns MUST be arrays of variable names in snake_case
 
 USER REQUEST:
 \`\`\`

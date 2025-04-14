@@ -12,8 +12,8 @@ Each workflow consists of two main sections: interface and steps. Here's an exam
     "service": "transform",
     "method": "transform_user_data",
     "goal": "Transform raw user data into standardized format",
-    "inputs": ["raw_data", "format_type"],
-    "outputs": ["processed_data"]
+    "params": ["raw_data", "format_type"],
+    "returns": ["processed_data"]
   },
   "steps": [
     {
@@ -21,16 +21,16 @@ Each workflow consists of two main sections: interface and steps. Here's an exam
       "service": "validate",
       "method": "validate_input",
       "goal": "Ensure input data meets required format and constraints",
-      "inputs": ["raw_data", "format_type"],
-      "outputs": ["validated_data"]
+      "params": ["raw_data", "format_type"],
+      "returns": ["validated_data"]
     },
     {
       "name": "ExtractData",
       "service": "extract",
       "method": "extract_data",
       "goal": "Extract data from input",
-      "inputs": ["validated_data", "extract_type"],
-      "outputs": ["extracted_data"]
+      "params": ["validated_data", "extract_type"],
+      "returns": ["extracted_data"]
     }
   ]
 }
@@ -62,8 +62,8 @@ The steps section defines 4-6 sequential, atomic operations:
 - Each step must be:
   - Independent and self-contained
   - Have a single, clear purpose
-  - Produce exactly defined outputs
-  - Use inputs from interface or previous steps
+  - Produce exactly defined returns
+  - Use params from interface or previous steps
   - Include error handling specifications
 
 - Step structure is an array of the interface structure

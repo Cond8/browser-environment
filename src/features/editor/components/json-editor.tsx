@@ -12,6 +12,7 @@ export const JsonEditor = ({ jsonContent }: JsonEditorProps) => {
   const handleEditorDidMount = (editor: any) => {
     console.log('[JsonEditor] Editor mounted');
     editorRef.current = editor;
+    editorRef.current.setValue(jsonContent);
   };
 
   useEffect(() => {

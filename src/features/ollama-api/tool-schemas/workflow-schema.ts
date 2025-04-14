@@ -30,8 +30,8 @@ export type WorkflowStep = {
   service: WorkflowService;
   method: string;
   goal: string;
-  inputs?: string[];
-  outputs?: string[];
+  params?: string[];
+  returns?: string[];
 };
 
 // Helper functions for validation
@@ -67,8 +67,8 @@ export const interfaceSchema = z.object({
     ),
   method: methodSchema,
   goal: goalSchema,
-  inputs: z.array(variableNameSchema).optional(),
-  outputs: z.array(variableNameSchema).optional(),
+  params: z.array(variableNameSchema).optional(),
+  returns: z.array(variableNameSchema).optional(),
 });
 
 // Enhanced steps schema

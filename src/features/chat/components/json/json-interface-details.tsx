@@ -10,8 +10,8 @@ interface Interface {
   service: string;
   method: string;
   goal: string;
-  inputs?: string[];
-  outputs?: string[];
+  params?: string[];
+  returns?: string[];
 }
 
 type Props = {
@@ -177,12 +177,12 @@ function InterfaceCard({
 
             <div className="grid grid-cols-2 gap-4 text-xs">
               <div className="space-y-1">
-                <h3 className="text-xs font-medium tracking-wide text-primary">Inputs</h3>
+                <h3 className="text-xs font-medium tracking-wide text-primary">Params</h3>
                 <ul className="list-none space-y-1">
-                  {Array.isArray(data.inputs) &&
-                    data.inputs.map((input: string | { [key: string]: string }, idx: number) => {
-                      if (typeof input === 'string') {
-                        const parsed = parseWithComments(input);
+                  {Array.isArray(data.params) &&
+                    data.params.map((param: string | { [key: string]: string }, idx: number) => {
+                      if (typeof param === 'string') {
+                        const parsed = parseWithComments(param);
                         return (
                           <li key={idx} className="flex items-start gap-1">
                             <span className="mt-1 h-1 w-1 rounded-full bg-primary/50" />
@@ -197,7 +197,7 @@ function InterfaceCard({
                           </li>
                         );
                       }
-                      const [name, desc] = Object.entries(input)[0];
+                      const [name, desc] = Object.entries(param)[0];
                       const parsedName = parseWithComments(name);
                       const parsedDesc = parseWithComments(desc);
                       return (
@@ -225,12 +225,12 @@ function InterfaceCard({
                 </ul>
               </div>
               <div className="space-y-1">
-                <h3 className="text-xs font-medium tracking-wide text-primary">Outputs</h3>
+                <h3 className="text-xs font-medium tracking-wide text-primary">Returns</h3>
                 <ul className="list-none space-y-1">
-                  {Array.isArray(data.outputs) &&
-                    data.outputs.map((output: string | { [key: string]: string }, idx: number) => {
-                      if (typeof output === 'string') {
-                        const parsed = parseWithComments(output);
+                  {Array.isArray(data.returns) &&
+                    data.returns.map((ret: string | { [key: string]: string }, idx: number) => {
+                      if (typeof ret === 'string') {
+                        const parsed = parseWithComments(ret);
                         return (
                           <li key={idx} className="flex items-start gap-1">
                             <span className="mt-1 h-1 w-1 rounded-full bg-primary/50" />
@@ -245,7 +245,7 @@ function InterfaceCard({
                           </li>
                         );
                       }
-                      const [name, desc] = Object.entries(output)[0];
+                      const [name, desc] = Object.entries(ret)[0];
                       const parsedName = parseWithComments(name);
                       const parsedDesc = parseWithComments(desc);
                       return (

@@ -15,6 +15,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@cond8/core': path.resolve(__dirname, './src/lib/cond8/_core/index.ts'),
     },
   },
   // Optimized build settings
