@@ -1,25 +1,9 @@
 // src/features/editor/transpilers/json-to-js.ts
-interface JsonStep {
-  name: string;
-  service: string;
-  method: string;
-  goal: string;
-  params?: Record<string, string>; // now "type - description" format
-  returns?: Record<string, string>; // now "type - description" format
-}
-
-interface JsonInterface {
-  name: string;
-  service: string;
-  method: string;
-  goal: string;
-  params?: Record<string, string>; // now "type - description" format
-  returns?: Record<string, string>; // now "type - description" format
-}
+import { WorkflowStep } from '@/features/ollama-api/tool-schemas/workflow-schema';
 
 interface ParsedJson {
-  interface: JsonInterface;
-  steps: JsonStep[];
+  interface: WorkflowStep;
+  steps: WorkflowStep[];
 }
 
 // Assume CoreBlueprint is globally available or imported elsewhere in the target JS environment
@@ -104,7 +88,7 @@ export const jsonToJs = (jsonContent: string): string => {
   if (steps.length > 0) {
     jsOutput += `${intf.name}Workflow(
 `;
-    steps.forEach((step: JsonStep, index: number) => {
+    steps.forEach((step: WorkflowStep, index: number) => {
       jsOutput += `  c8 => {
 `;
       // Get params from c8.var
@@ -147,7 +131,7 @@ export const jsonToJs = (jsonContent: string): string => {
 
   // Generate service classes if there are steps
   if (steps.length > 0) {
-    const serviceNames = [...new Set(steps.map((step: JsonStep) => step.service))];
+    const serviceNames = [...new Set(steps.map((step: WorkflowStep) => step.service))];
     serviceNames.forEach((service: string) => {
       const serviceClassName = service.charAt(0).toUpperCase() + service.slice(1) + 'Service';
       jsOutput += `class ${serviceClassName} extends CoreBlueprint {
@@ -157,8 +141,8 @@ export const jsonToJs = (jsonContent: string): string => {
 
 `;
       steps
-        .filter((step: JsonStep) => step.service === service)
-        .forEach((step: JsonStep) => {
+        .filter((step: WorkflowStep) => step.service === service)
+        .forEach((step: WorkflowStep) => {
           const paramsString = step.params ? Object.keys(step.params).join(', ') : '';
           const returnsString = step.returns ? Object.keys(step.returns).join(', ') : '';
 
@@ -213,7 +197,7 @@ export const jsonToJs = (jsonContent: string): string => {
 `;
   // Only add services if there are steps
   if (steps.length > 0) {
-    const serviceNames = [...new Set(steps.map((step: JsonStep) => step.service))];
+    const serviceNames = [...new Set(steps.map((step: WorkflowStep) => step.service))];
     serviceNames.forEach((service: string) => {
       const serviceClassName = service.charAt(0).toUpperCase() + service.slice(1) + 'Service';
       jsOutput += `  ${service} = new ${serviceClassName}('${service}');

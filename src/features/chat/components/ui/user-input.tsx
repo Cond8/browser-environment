@@ -3,13 +3,45 @@ import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/features/chat/store/chat-store';
 import { useConnStore } from '@/features/ollama-api/store/conn-store';
 import { Send, StopCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAbortEventBusStore } from '../../store/abort-eventbus-store';
 import { SelectedModel } from './selected-model';
 import { ShortcutsDisplay } from './shortcuts-display';
 
+const EXAMPLE_REQUESTS = [
+  // Offline tasks
+  'Create a function that generates random passwords with specific requirements',
+  'Design a database schema for a social media platform',
+  'Write a script to analyze website performance metrics',
+  'Design a REST API for a todo list application',
+  'Design a caching strategy for a high-traffic web application',
+  'Write a script to automate file organization on my computer',
+  'Create a data visualization dashboard for sales metrics',
+  'Design a microservices architecture for a food delivery app',
+  'Write a function to validate and sanitize user input',
+  'Design a system to handle real-time notifications',
+
+  // AI-required tasks
+  'I want to classify emails as spam or not spam',
+  'Create a machine learning model to predict housing prices',
+  'Write a function to detect anomalies in time series data',
+  'Create a recommendation system for an e-commerce website',
+  'Create a chatbot that can answer customer support questions',
+  'Analyze this code and suggest improvements for better performance',
+  'Explain the differences between various machine learning algorithms',
+  'Help me debug this complex multi-threaded application',
+  'Suggest the best architecture for a real-time collaborative editor',
+  'Review this security implementation and identify potential vulnerabilities',
+];
+
 export function UserInput() {
-  const [message, setMessage] = useState('I want to classify emails as spam or not spam');
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    // Set a random example request when component mounts
+    const randomIndex = Math.floor(Math.random() * EXAMPLE_REQUESTS.length);
+    setMessage(EXAMPLE_REQUESTS[randomIndex]);
+  }, []);
 
   const addUserMessage = useChatStore(state => state.addUserMessage);
   const triggerAbort = useAbortEventBusStore(state => state.triggerAbort);

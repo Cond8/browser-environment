@@ -58,17 +58,10 @@ const variableNameSchema = z
 
 const goalSchema = z.string().min(1).describe('Short, clear task summary');
 
-const paramTypeSchema = z.enum(['text', 'number', 'boolean', 'function']);
-
-// Enhanced interface schema
-export const interfaceSchema = z.object({
+// Base step schema (used for both interface and steps)
+const stepSchema = z.object({
   name: nameSchema,
-  service: z
-    .string()
-    .min(1)
-    .describe(
-      'Primary domain service action (e.g., extract, parse, understand). Use single words if possible.',
-    ),
+  service: z.enum(SERVICES),
   method: methodSchema,
   goal: goalSchema,
   params: z
@@ -95,24 +88,101 @@ export const interfaceSchema = z.object({
     .optional(),
 });
 
-// Enhanced steps schema
-export const stepsSchema = z.array(interfaceSchema).min(1, 'At least one step is required');
+// Interface schema
+const interfaceSchema = stepSchema;
+
+// Steps schema
+const stepsSchema = z.array(stepSchema).min(1, 'At least one step is required');
+
+// Workflow schema that combines interface and steps
+const workflowSchema = z.object({
+  interface: interfaceSchema,
+  steps: stepsSchema,
+});
+
+export { interfaceSchema, stepsSchema, workflowSchema };
+
+// Helper functions for validation
+export function validateInterface(
+  interfaceData: unknown,
+): z.SafeParseReturnType<unknown, WorkflowStep> {
+  try {
+    return interfaceSchema.safeParse(interfaceData);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error validating interface:', error);
+    return {
+      success: false,
+      error: new z.ZodError([
+        {
+          code: 'custom',
+          message: `Failed to validate interface: ${errorMessage}`,
+          path: [],
+        },
+      ]),
+    };
+  }
+}
+
+export function validateSteps(steps: unknown): z.SafeParseReturnType<unknown, WorkflowStep[]> {
+  try {
+    return stepsSchema.safeParse(steps);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error validating steps:', error);
+    return {
+      success: false,
+      error: new z.ZodError([
+        {
+          code: 'custom',
+          message: `Failed to validate steps: ${errorMessage}`,
+          path: [],
+        },
+      ]),
+    };
+  }
+}
+
+export function validateWorkflow(workflow: unknown): z.SafeParseReturnType<unknown, Workflow> {
+  try {
+    return workflowSchema.safeParse(workflow);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error validating workflow:', error);
+    return {
+      success: false,
+      error: new z.ZodError([
+        {
+          code: 'custom',
+          message: `Failed to validate workflow: ${errorMessage}`,
+          path: [],
+        },
+      ]),
+    };
+  }
+}
 
 function zodToOllamaTool(name: string, description: string, schema: z.ZodTypeAny): Tool {
-  const jsonSchema = zodToJsonSchema(schema, name);
-  return {
-    type: 'function',
-    function: {
-      name,
-      description,
-      parameters: {
-        type: 'object',
-        required: [],
-        properties: {},
-        ...(jsonSchema.definitions?.[name] || jsonSchema),
+  try {
+    const jsonSchema = zodToJsonSchema(schema, name);
+    return {
+      type: 'function',
+      function: {
+        name,
+        description,
+        parameters: {
+          type: 'object',
+          required: [],
+          properties: {},
+          ...(jsonSchema.definitions?.[name] || jsonSchema),
+        },
       },
-    },
-  };
+    };
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`Error converting schema to Ollama tool for ${name}:`, error);
+    throw new Error(`Failed to convert schema to Ollama tool: ${errorMessage}`);
+  }
 }
 
 export const interfaceTool: Tool = zodToOllamaTool(
@@ -122,7 +192,7 @@ export const interfaceTool: Tool = zodToOllamaTool(
 );
 
 export const stepsTool: Tool = zodToOllamaTool(
-  'generate_step',
-  'Generate a single workflow step',
+  'generate_steps',
+  'Generate workflow steps',
   stepsSchema,
 );

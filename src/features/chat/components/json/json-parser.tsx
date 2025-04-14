@@ -2,14 +2,22 @@
 import { Button } from '@/components/ui/button';
 import { useVfsStore } from '@/features/vfs/store/vfs-store';
 import { cn } from '@/lib/utils';
-import { jsonrepair } from 'jsonrepair';
+import { parseOrRepairJson } from '@/features/ollama-api/llm-output-fixer';
 import { ErrorDisplay } from '../layout/error-display';
 import InterfaceDetails from './json-interface-details';
 import { JsonViewer } from './json-viewer';
+import { WorkflowStep } from '@/features/ollama-api/tool-schemas/workflow-schema';
 
 type JsonParserProps = {
   displayContent: string;
 };
+
+interface WorkflowData {
+  interface?: WorkflowStep;
+  steps?: WorkflowStep[];
+  name?: string;
+  service?: string;
+}
 
 // Extract JSON from fenced blocks if available.
 const extractJsonContent = (content: string): string => {
@@ -29,64 +37,25 @@ const looksLikeJson = (content: string): boolean => {
   );
 };
 
-// Validate the structure of a workflow object
-const isValidWorkflowStructure = (obj: any): boolean => {
-  if (!obj || typeof obj !== 'object') return false;
-
-  // Check for interface structure
-  if ('interface' in obj) {
-    const interfaceObj = obj.interface;
-    if (!interfaceObj || typeof interfaceObj !== 'object') return false;
-    if (!interfaceObj.name || !interfaceObj.service || !interfaceObj.method || !interfaceObj.goal) return false;
-    
-    // Validate params format if present
-    if (interfaceObj.params) {
-      if (typeof interfaceObj.params !== 'object') return false;
-      for (const [key, value] of Object.entries(interfaceObj.params)) {
-        if (typeof value !== 'string') return false;
-        if (!value.includes(' - ')) return false;
-      }
-    }
-    
-    // Validate returns format if present
-    if (interfaceObj.returns) {
-      if (typeof interfaceObj.returns !== 'object') return false;
-      for (const [key, value] of Object.entries(interfaceObj.returns)) {
-        if (typeof value !== 'string') return false;
-        if (!value.includes(' - ')) return false;
-      }
-    }
+// Normalize the parsed data into a consistent format
+const normalizeWorkflowData = (parsed: any): WorkflowData => {
+  // If it's an array, treat it as steps
+  if (Array.isArray(parsed)) {
+    return { steps: parsed };
   }
-
-  // Check for steps structure
-  if ('steps' in obj) {
-    const steps = obj.steps;
-    if (!Array.isArray(steps)) return false;
-    for (const step of steps) {
-      if (!step || typeof step !== 'object') return false;
-      if (!step.name || !step.service || !step.method || !step.goal) return false;
-      
-      // Validate params format if present
-      if (step.params) {
-        if (typeof step.params !== 'object') return false;
-        for (const [key, value] of Object.entries(step.params)) {
-          if (typeof value !== 'string') return false;
-          if (!value.includes(' - ')) return false;
-        }
-      }
-      
-      // Validate returns format if present
-      if (step.returns) {
-        if (typeof step.returns !== 'object') return false;
-        for (const [key, value] of Object.entries(step.returns)) {
-          if (typeof value !== 'string') return false;
-          if (!value.includes(' - ')) return false;
-        }
-      }
-    }
+  
+  // If it's an object with steps, return as is
+  if (typeof parsed === 'object' && 'steps' in parsed) {
+    return parsed;
   }
-
-  return true;
+  
+  // If it's a single step object, wrap it in an array
+  if (typeof parsed === 'object' && 'name' in parsed && 'service' in parsed) {
+    return { steps: [parsed] };
+  }
+  
+  // Otherwise return as is
+  return parsed;
 };
 
 export const JsonParser = ({ displayContent }: JsonParserProps) => {
@@ -102,62 +71,50 @@ export const JsonParser = ({ displayContent }: JsonParserProps) => {
     );
   }
 
-  let parsed: any;
-  let parsingError: { message: string; type: string } | null = null;
   const jsonContent = extractJsonContent(displayContent);
+  const parsed = parseOrRepairJson<any>(jsonContent);
+  const normalizedData = normalizeWorkflowData(parsed);
 
-  try {
-    // Attempt to parse the extracted content first
-    parsed = JSON.parse(jsonContent);
-  } catch (e) {
-    // If extracted content parsing fails, try repairing the content
-    try {
-      const repairedJson = jsonrepair(displayContent);
-      parsed = JSON.parse(repairedJson);
-    } catch (repairError) {
-      parsingError = {
-        message: `Initial parse failed: ${(e as Error).message}. Repair failed: ${(repairError as Error).message}`,
-        type: 'JSONParsingError',
-      };
-    }
-  }
-
-  // If there was a parsing error after repair attempt, display it
-  if (parsingError) {
+  // If parsing failed, display error
+  if (!parsed) {
     return (
       <ErrorDisplay
-        error={parsingError}
+        error={{ message: 'Failed to parse JSON content', type: 'JSONParsingError' }}
         context={`Invalid JSON Content (length: ${displayContent.length})`}
       />
     );
   }
 
-  // Check if the successfully parsed object is a valid workflow structure
-  const isValidInterface = isValidWorkflowStructure(parsed);
+  // Check if the parsed object has the basic structure of a workflow
+  const isValidInterface = 
+    normalizedData != null &&
+    (('interface' in normalizedData && 'steps' in normalizedData) || 
+     ('steps' in normalizedData && Array.isArray(normalizedData.steps)) ||
+     ('service' in normalizedData && 'name' in normalizedData));
 
   const handleSaveToVfs = () => {
-    if (isValidInterface && 'name' in parsed) {
-      const workflowName = parsed.name;
+    if (isValidInterface && 'name' in normalizedData) {
+      const workflowName = normalizedData.name;
       const workflowPath = `/workflows/${workflowName}`;
 
       // Check if workflow already exists
       const existingWorkflow = vfsStore.getNode(workflowPath);
       if (existingWorkflow) {
         // Update existing workflow
-        if ('interface' in parsed) {
-          vfsStore.commitInterface(workflowPath, parsed.interface);
+        if ('interface' in normalizedData) {
+          vfsStore.commitInterface(workflowPath, normalizedData.interface);
         }
-        if ('steps' in parsed) {
-          vfsStore.commitSteps(workflowPath, parsed.steps);
+        if ('steps' in normalizedData) {
+          vfsStore.commitSteps(workflowPath, normalizedData.steps);
         }
       } else {
         // Create new workflow
         vfsStore.createFile('/workflows', workflowName, 'workflow');
-        if ('interface' in parsed) {
-          vfsStore.commitInterface(workflowPath, parsed.interface);
+        if ('interface' in normalizedData) {
+          vfsStore.commitInterface(workflowPath, normalizedData.interface);
         }
-        if ('steps' in parsed) {
-          vfsStore.commitSteps(workflowPath, parsed.steps);
+        if ('steps' in normalizedData) {
+          vfsStore.commitSteps(workflowPath, normalizedData.steps);
         }
       }
     }
@@ -168,7 +125,7 @@ export const JsonParser = ({ displayContent }: JsonParserProps) => {
     return (
       <div className={cn('p-4', 'bg-muted/30')}>
         <div className="space-y-4">
-          <InterfaceDetails data={parsed} />
+          <InterfaceDetails data={normalizedData} />
           <Button onClick={handleSaveToVfs} className="mt-4" variant="outline">
             Save to VFS
           </Button>
