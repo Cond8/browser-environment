@@ -11,11 +11,10 @@ export const EditorWrapper = () => {
   const [editorType, setEditorType] = useState<EditorType>('json');
   const jsonContent = useEditorStore(state => state.content);
 
-  console.log('jsonContent', jsonContent);
-
   const renderEditor = () => {
     switch (editorType) {
       case 'dsl':
+        console.log('[EditorWrapper] DSL content:', jsonContent);
         return <DslEditor jsonContent={jsonContent} />;
       case 'json':
         return <JsonEditor jsonContent={jsonContent} />;

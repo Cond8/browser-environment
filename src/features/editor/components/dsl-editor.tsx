@@ -38,11 +38,13 @@ const dslTokenProvider: languages.IMonarchLanguage = {
 
   tokenizer: {
     root: [
-      // Interface keywords
-      [
-        /(INTERFACE|SERVICE|METHOD|GOAL|PARAMS|RETURNS)\b/,
-        { cases: { '@interfaceKeywords': 'keyword.interface' } },
-      ],
+      // Individual interface keywords
+      [/(INTERFACE)\b/, 'INTERFACE'],
+      [/(SERVICE)\b/, 'SERVICE'],
+      [/(METHOD)\b/, 'METHOD'],
+      [/(GOAL)\b/, 'GOAL'],
+      [/(PARAMS)\b/, 'PARAMS'],
+      [/(RETURNS)\b/, 'RETURNS'],
 
       // Service keywords
       [
@@ -102,11 +104,13 @@ const dslTheme: editor.IStandaloneThemeData = {
   base: 'vs-dark' as editor.BuiltinTheme,
   inherit: true,
   rules: [
-    // Interface keywords - Blue
-    { token: 'keyword.interface', foreground: '569CD6', fontStyle: 'bold' },
-
-    // Service keywords - Teal
-    { token: 'keyword.service', foreground: '4EC9B0', fontStyle: 'bold' },
+    // Individual keyword colors
+    { token: 'INTERFACE', foreground: 'FF6B6B', fontStyle: 'bold underline' },
+    { token: 'SERVICE', foreground: '4EC9B0', fontStyle: 'bold underline' },
+    { token: 'METHOD', foreground: 'C586C0', fontStyle: 'bold' },
+    { token: 'GOAL', foreground: 'DCDCAA', fontStyle: 'bold' },
+    { token: 'PARAMS', foreground: '9CDCFE', fontStyle: 'bold' },
+    { token: 'RETURNS', foreground: '569CD6', fontStyle: 'bold underline' },
 
     // Other tokens
     { token: 'string', foreground: 'CE9178' },
@@ -137,7 +141,10 @@ export const DslEditor = ({ jsonContent }: DslEditorProps) => {
   };
 
   useEffect(() => {
-    setDslContent(jsonToDsl(jsonContent));
+    const dsl = jsonToDsl(jsonContent);
+    console.log('[DslEditir] JSON content:', jsonContent);
+    setDslContent(dsl);
+    console.log('[DslEditor] Editor content:', dsl);
   }, [jsonContent]);
 
   useEffect(() => {

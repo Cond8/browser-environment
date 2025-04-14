@@ -94,7 +94,7 @@ export async function executeWorkflowChain(): Promise<{
     /* ===========================
      * ===== INTERFACE PHASE =====
      * ===========================*/
-    const interfaceResult = await retryWithDelay(
+    const parsedInterfaceResult = await retryWithDelay(
       () => handleInterfacePhase(messages[0].content, alignmentResult.response, chatFn),
       'interface',
       {
@@ -102,35 +102,35 @@ export async function executeWorkflowChain(): Promise<{
         alignmentResponse: alignmentResult.response,
       },
     );
-    chatStore.addInterfaceMessage(interfaceResult.interface);
-    const workflowPath = useWorkflowStore.getState().createWorkflow(interfaceResult.interface);
+    chatStore.addInterfaceMessage(parsedInterfaceResult);
+    const workflowPath = useWorkflowStore.getState().createWorkflow(parsedInterfaceResult);
     useEditorStore.getState().setActiveEditor('workflow', workflowPath);
 
     /* =======================
      * ===== STEPS PHASE =====
      * =======================*/
-    const stepsResult = await retryWithDelay(
+    const parsedStepsResult = await retryWithDelay(
       () =>
         handleStepsPhase(
           messages[0].content,
           alignmentResult.response,
-          interfaceResult.interface,
+          parsedInterfaceResult,
           chatFn,
         ),
       'steps',
       {
         userRequest: messages[0].content,
         alignmentResponse: alignmentResult.response,
-        interface: interfaceResult.interface,
+        interface: parsedInterfaceResult,
       },
     );
-    chatStore.addStepsMessage(stepsResult.steps);
-    useWorkflowStore.getState().addStepsToWorkflow(workflowPath, stepsResult.steps);
+    chatStore.addStepsMessage(parsedStepsResult);
+    useWorkflowStore.getState().addStepsToWorkflow(workflowPath, parsedStepsResult);
     // useVfsStore.getState().upsertServices(stepsResult.steps);
 
     return {
-      interface: interfaceResult.interface,
-      steps: stepsResult.steps,
+      interface: parsedInterfaceResult,
+      steps: parsedStepsResult,
     };
   } catch (error) {
     const err =

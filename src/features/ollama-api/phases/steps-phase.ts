@@ -93,7 +93,7 @@ export async function handleStepsPhase(
   alignmentResponse: string,
   interfaceParsed: WorkflowStep,
   chatFn: (request: Omit<ChatRequest, 'model'>) => Promise<string>,
-): Promise<{ steps: WorkflowStep[] }> {
+): Promise<WorkflowStep[]> {
   console.log('[StepsPhase] Starting steps phase with:', {
     userRequest,
     alignmentResponse,
@@ -124,7 +124,7 @@ export async function handleStepsPhase(
     service: step.service as WorkflowService,
   }));
 
-  return { steps };
+  return steps;
 }
 
 function parseWithSchema(

@@ -138,7 +138,7 @@ function InterfaceCard({
         isStep ? 'border-muted-foreground/10' : 'border-primary/20',
       )}
     >
-      <CardHeader className="space-y-1">
+      <CardHeader className="space-y-0.5">
         <div className="flex items-center justify-between">
           <Badge variant="secondary" className="text-xs">
             {isStep ? 'Step' : 'Interface'}
@@ -147,24 +147,26 @@ function InterfaceCard({
             {serviceInfo.category} - {serviceInfo.type}
           </Badge>
         </div>
-        <CardTitle className="text-xl">{addSpacesToTitle(data.name)}</CardTitle>
-        <CardDescription className="leading-relaxed font-light">{data.goal}</CardDescription>
+        <CardTitle className="text-lg">{addSpacesToTitle(data.name)}</CardTitle>
+        <CardDescription className="leading-relaxed font-light text-sm">
+          {data.goal}
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-1">
         <Collapsible>
-          <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground">
+          <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md px-2 py-1 text-sm font-medium hover:bg-accent hover:text-accent-foreground">
             <span>More info...</span>
-            <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+            <ChevronDown className="h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
           </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-2 pt-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
+          <CollapsibleContent className="space-y-1 pt-2">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1">
                 <p className="text-xs font-medium text-primary">Service:</p>
-                <span className="text-base font-semibold">{addSpacesToTitle(data.service)}</span>
+                <span className="text-sm font-semibold">{addSpacesToTitle(data.service)}</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <p className="text-xs font-medium text-primary">Method:</p>
-                <span className="text-base font-semibold">
+                <span className="text-sm font-semibold">
                   {formatSnakeCase(parseWithComments(data.method).value)}
                   {parseWithComments(data.method).comment && (
                     <span className="text-muted-foreground ml-1">
@@ -175,10 +177,10 @@ function InterfaceCard({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="space-y-1">
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="space-y-0.5">
                 <h3 className="text-xs font-medium tracking-wide text-primary">Params</h3>
-                <ul className="list-none space-y-1">
+                <ul className="list-none space-y-0.5">
                   {Array.isArray(data.params) &&
                     data.params.map((param: string | { [key: string]: string }, idx: number) => {
                       if (typeof param === 'string') {
@@ -224,9 +226,9 @@ function InterfaceCard({
                     })}
                 </ul>
               </div>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 <h3 className="text-xs font-medium tracking-wide text-primary">Returns</h3>
-                <ul className="list-none space-y-1">
+                <ul className="list-none space-y-0.5">
                   {Array.isArray(data.returns) &&
                     data.returns.map((ret: string | { [key: string]: string }, idx: number) => {
                       if (typeof ret === 'string') {
@@ -276,9 +278,9 @@ function InterfaceCard({
 
             {/* Render Steps if provided and this is not already a step card */}
             {!isStep && steps && steps.length > 0 && (
-              <div className="space-y-2 pt-4 mt-4 border-t border-muted-foreground/10">
-                <h3 className="text-sm font-semibold tracking-wide text-primary">Steps</h3>
-                <div className="space-y-2">
+              <div className="space-y-1 pt-2 mt-2 border-t border-muted-foreground/10">
+                <h3 className="text-xs font-semibold tracking-wide text-primary">Steps</h3>
+                <div className="space-y-1">
                   {steps.map((step, index) => (
                     <InterfaceCard key={index} interface={step} isStep={true} />
                   ))}
