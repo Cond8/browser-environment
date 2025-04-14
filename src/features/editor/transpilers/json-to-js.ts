@@ -38,35 +38,15 @@ export const jsonToJs = (jsonContent: string): string => {
   }
 
   // Ensure required parts exist
-  if (!parsedJson.interface || !parsedJson.steps) {
-    // Or handle this case more gracefully depending on requirements
+  if (!parsedJson.interface) {
     return '';
   }
 
-  const { interface: intf, steps } = parsedJson;
+  const { interface: intf, steps = [] } = parsedJson;
 
   // --- Generate JS Code ---
 
   let jsOutput = `export { createDirector, CoreRedprint, StrictKVStoreService } from '@cond8/core';
-
-`;
-
-  // AppConduit Class
-  jsOutput += `class AppConduit extends CoreRedprint {
-  constructor(input) {
-    super(input);
-  }
-
-  locals = new StrictKVStoreService('locals');
-`;
-  // Dynamically add services based on steps
-  const serviceNames = [...new Set(steps.map((step: JsonStep) => step.service))];
-  serviceNames.forEach((service: string) => {
-    const serviceClassName = service.charAt(0).toUpperCase() + service.slice(1) + 'Service';
-    jsOutput += `  ${service} = new ${serviceClassName}('${service}');
-`;
-  });
-  jsOutput += `}
 
 `;
 
@@ -81,106 +61,129 @@ export const jsonToJs = (jsonContent: string): string => {
   c8 => {
 `;
   // Initial params from c8.body
-  intf.params.forEach((param: string) => {
-    jsOutput += `    const ${param} = c8.body.get('${param}');
+  if (intf.params && intf.params.length > 0) {
+    intf.params.forEach((param: string) => {
+      jsOutput += `    const ${param} = c8.body.get('${param}');
 `;
-    jsOutput += `    c8.var('${param}', ${param});
+      jsOutput += `    c8.var('${param}', ${param});
 
 `;
-  });
+    });
+  }
   jsOutput += `    return c8;
   }
 )
 
 `;
 
-  // Workflow Steps
-  jsOutput += `${intf.name}Workflow(
+  // Only add workflow steps if they exist
+  if (steps.length > 0) {
+    jsOutput += `${intf.name}Workflow(
 `;
-  steps.forEach((step: JsonStep, index: number) => {
-    jsOutput += `  c8 => {
+    steps.forEach((step: JsonStep, index: number) => {
+      jsOutput += `  c8 => {
 `;
-    // Get params from c8.var
-    step.params.forEach((param: string) => {
-      jsOutput += `    const ${param} = c8.var('${param}');
+      // Get params from c8.var
+      if (step.params && step.params.length > 0) {
+        step.params.forEach((param: string) => {
+          jsOutput += `    const ${param} = c8.var('${param}');
 `;
-    });
-    // Service method call
-    const returnsString = step.returns.join(', ');
-    const paramsString = step.params.join(', ');
-    jsOutput += `    const [${returnsString}] = c8.${step.service}.${step.method}(${paramsString});
+        });
+      }
+      // Service method call
+      const returnsString = step.returns?.join(', ') || '';
+      const paramsString = step.params?.join(', ') || '';
+      jsOutput += `    const [${returnsString}] = c8.${step.service}.${step.method}(${paramsString});
 `;
-    // Store returns in c8.var
-    step.returns.forEach((ret: string) => {
-      jsOutput += `    c8.var('${ret}', ${ret});
+      // Store returns in c8.var
+      if (step.returns && step.returns.length > 0) {
+        step.returns.forEach((ret: string) => {
+          jsOutput += `    c8.var('${ret}', ${ret});
 `;
-    });
-    jsOutput += `    return c8;
+        });
+      }
+      jsOutput += `    return c8;
   }${index < steps.length - 1 ? ',' : ''}
 `;
-  });
-  jsOutput += `)
+    });
+    jsOutput += `)
 
 `;
+  }
 
   // Workflow Finalization
-  const finalReturnsString = intf.returns.map((ret: string) => `c8.var('${ret}')`).join(', ');
+  const finalReturnsString =
+    intf.returns?.map((ret: string) => `c8.var('${ret}')`).join(', ') || '';
   jsOutput += `export default ${intf.name}Workflow.fin(c8 => [${finalReturnsString}]);
 
 `;
 
-  // Service Classes
-  serviceNames.forEach((service: string) => {
-    const serviceClassName = service.charAt(0).toUpperCase() + service.slice(1) + 'Service';
-    jsOutput += `class ${serviceClassName} extends CoreBlueprint {
+  // Generate service classes if there are steps
+  if (steps.length > 0) {
+    const serviceNames = [...new Set(steps.map((step: JsonStep) => step.service))];
+    serviceNames.forEach((service: string) => {
+      const serviceClassName = service.charAt(0).toUpperCase() + service.slice(1) + 'Service';
+      jsOutput += `class ${serviceClassName} extends CoreBlueprint {
   constructor(key) {
     super(key);
   }
 
 `;
-    steps
-      .filter((step: JsonStep) => step.service === service)
-      .forEach((step: JsonStep) => {
-        const paramsString = step.params.join(', ');
-        const returnsString = step.returns.join(', ');
+      steps
+        .filter((step: JsonStep) => step.service === service)
+        .forEach((step: JsonStep) => {
+          const paramsString = step.params?.join(', ') || '';
+          const returnsString = step.returns?.join(', ') || '';
 
-        // Match exact goal text from example for LogicService
-        let goalText = step.goal;
-        if (step.name === 'ClassifyEmail' && step.service === 'logic') {
-          goalText =
-            "Classify the email into 'spam' or 'not spam' based on a predefined threshold for spam score";
-        }
-
-        jsOutput += `  /**
-   * ${goalText}
+          jsOutput += `  /**
+   * ${step.goal}
 `;
-        step.params.forEach((param: string) => {
-          jsOutput += `   * @param ${param}
+          if (step.params && step.params.length > 0) {
+            step.params.forEach((param: string) => {
+              jsOutput += `   * @param ${param}
 `;
-        });
-        jsOutput += `   * @returns [${returnsString}]
+            });
+          }
+          jsOutput += `   * @returns [${returnsString}]
    */
 `;
-        jsOutput += `  ${step.method}(${paramsString}) {
+          jsOutput += `  ${step.method}(${paramsString}) {
 `;
-        // Match exact variable declaration style from example
-        if (step.returns.length > 0) {
-          // Declare all return variables on one line with let
-          jsOutput += `    let ${returnsString};
+          if (step.returns && step.returns.length > 0) {
+            jsOutput += `    let ${returnsString};
 `;
-        } else {
-          // No variables to declare if returns array is empty
-        }
-        jsOutput += `    // Implement business logic here
+          }
+          jsOutput += `    // Implement business logic here
 `;
-        jsOutput += `    return [${returnsString}]
+          jsOutput += `    return [${returnsString}]
   }
 `;
-      });
-    jsOutput += `}
+        });
+      jsOutput += `}
 
 `;
-  });
+    });
+  }
+
+  // AppConduit Class at the end
+  jsOutput += `class AppConduit extends CoreRedprint {
+  constructor(input) {
+    super(input);
+  }
+
+  locals = new StrictKVStoreService('locals');
+`;
+  // Only add services if there are steps
+  if (steps.length > 0) {
+    const serviceNames = [...new Set(steps.map((step: JsonStep) => step.service))];
+    serviceNames.forEach((service: string) => {
+      const serviceClassName = service.charAt(0).toUpperCase() + service.slice(1) + 'Service';
+      jsOutput += `  ${service} = new ${serviceClassName}('${service}');
+`;
+    });
+  }
+  jsOutput += `}
+`;
 
   return jsOutput.trim(); // Trim trailing whitespace
 };

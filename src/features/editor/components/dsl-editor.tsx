@@ -1,5 +1,5 @@
 import Editor from '@monaco-editor/react';
-import { editor } from 'monaco-editor';
+import { editor, languages } from 'monaco-editor';
 import { useEffect, useRef, useState } from 'react';
 import { jsonToDsl } from '../transpilers/json-to-dsl';
 
@@ -7,19 +7,122 @@ export interface DslEditorProps {
   jsonContent: string;
 }
 
+// DSL Language Configuration
+const dslLanguageConfig: languages.ILanguageExtensionPoint = {
+  id: 'cond8-dsl',
+  extensions: ['.dsl'],
+  aliases: ['cond8-dsl', 'dsl'],
+};
+
+// DSL Tokenization Rules
+const dslTokenProvider: languages.IMonarchLanguage = {
+  defaultToken: '',
+  tokenPostfix: '.dsl',
+
+  // Define keyword categories
+  interfaceKeywords: ['INTERFACE', 'SERVICE', 'METHOD', 'GOAL', 'PARAMS', 'RETURNS'],
+  serviceKeywords: [
+    'EXTRACT',
+    'PARSE',
+    'VALIDATE',
+    'TRANSFORM',
+    'LOGIC',
+    'CALCULATE',
+    'FORMAT',
+    'IO',
+    'STORAGE',
+    'INTEGRATE',
+    'UNDERSTAND',
+    'GENERATE',
+  ],
+
+  tokenizer: {
+    root: [
+      // Interface keywords
+      [
+        /(INTERFACE|SERVICE|METHOD|GOAL|PARAMS|RETURNS)\b/,
+        { cases: { '@interfaceKeywords': 'keyword.interface' } },
+      ],
+
+      // Service keywords
+      [
+        /(EXTRACT|PARSE|VALIDATE|TRANSFORM|LOGIC|CALCULATE|FORMAT|IO|STORAGE|INTEGRATE|UNDERSTAND|GENERATE)\b/,
+        { cases: { '@serviceKeywords': 'keyword.service' } },
+      ],
+
+      // PascalCase names (for interface and step names)
+      [/[A-Z][a-zA-Z0-9]*/, 'identifier'],
+
+      // snake_case identifiers (for methods, params, returns)
+      [/[a-z][a-z0-9]*(_[a-z0-9]+)*/, 'parameter'],
+
+      // Comma-separated lists (for params and returns)
+      [/([a-z][a-z0-9]*(_[a-z0-9]+)*)(\s*,\s*[a-z][a-z0-9]*(_[a-z0-9]+)*)*/, 'parameter'],
+
+      // Strings (for goals and descriptions)
+      [/"([^"\\]|\\.)*$/, 'string.invalid'], // non-terminated string
+      [/'([^'\\]|\\.)*$/, 'string.invalid'], // non-terminated string
+      [/"/, 'string', '@string_double'],
+      [/'/, 'string', '@string_single'],
+
+      // Braces and brackets
+      [/[{}]/, 'delimiter.curly'],
+      [/[\[\]]/, 'delimiter.square'],
+
+      // Whitespace
+      { include: '@whitespace' },
+    ],
+
+    whitespace: [
+      [/\s+/, 'white'],
+      [/\/\*/, 'comment', '@comment'],
+      [/\/\/.*$/, 'comment'],
+    ],
+
+    comment: [
+      [/[^/*]+/, 'comment'],
+      [/\*\//, 'comment', '@pop'],
+      [/[/*]/, 'comment'],
+    ],
+
+    string_double: [
+      [/[^\\"]+/, 'string'],
+      [/"/, 'string', '@pop'],
+    ],
+
+    string_single: [
+      [/[^\\']+/, 'string'],
+      [/'/, 'string', '@pop'],
+    ],
+  },
+};
+
 // Custom DSL theme
 const dslTheme: editor.IStandaloneThemeData = {
   base: 'vs-dark' as editor.BuiltinTheme,
   inherit: true,
   rules: [
-    { token: 'keyword', foreground: '569CD6' },
+    // Interface keywords - Blue
+    { token: 'keyword.interface', foreground: '569CD6', fontStyle: 'bold' },
+
+    // Service keywords - Teal
+    { token: 'keyword.service', foreground: '4EC9B0', fontStyle: 'bold' },
+
+    // Other tokens
     { token: 'string', foreground: 'CE9178' },
-    { token: 'number', foreground: 'B5CEA8' },
+    { token: 'identifier', foreground: '9CDCFE' },
+    { token: 'parameter', foreground: '9CDCFE' },
     { token: 'comment', foreground: '6A9955' },
+    { token: 'delimiter.curly', foreground: 'D4D4D4' },
+    { token: 'delimiter.square', foreground: 'D4D4D4' },
   ],
   colors: {
     'editor.background': '#1E1E1E',
     'editor.foreground': '#D4D4D4',
+    'editor.lineHighlightBackground': '#2D2D2D',
+    'editor.selectionBackground': '#264F78',
+    'editor.inactiveSelectionBackground': '#3A3D41',
+    'editor.lineHighlightBorder': '#2D2D2D',
   },
 };
 
@@ -46,7 +149,7 @@ export const DslEditor = ({ jsonContent }: DslEditorProps) => {
   return (
     <Editor
       height="100%"
-      defaultLanguage="plaintext"
+      defaultLanguage="cond8-dsl"
       theme="dsl-theme"
       options={{
         readOnly: true,
@@ -57,6 +160,8 @@ export const DslEditor = ({ jsonContent }: DslEditorProps) => {
       onMount={handleEditorDidMount}
       beforeMount={monaco => {
         monaco.editor.defineTheme('dsl-theme', dslTheme);
+        monaco.languages.register(dslLanguageConfig);
+        monaco.languages.setMonarchTokensProvider('cond8-dsl', dslTokenProvider);
       }}
     />
   );
