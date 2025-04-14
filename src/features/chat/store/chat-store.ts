@@ -1,5 +1,5 @@
 // src/features/chat/store/chat-store.ts
-import { WorkflowStep } from '@/features/ollama-api/tool-schemas/workflow-schema';
+import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
 import { nanoid } from 'nanoid';
 import { Message } from 'ollama';
 import { create } from 'zustand';
@@ -8,14 +8,14 @@ import { immer } from 'zustand/middleware/immer';
 
 export interface ThreadMessage extends Message {
   id: number;
-  type: 'alignment' | 'interface' | 'steps';
+  type: 'alignment' | 'interface' | 'step';
   error?: {
     message: string;
     type: string;
     details?: {
-      phase?: 'interface' | 'steps' | 'stream' | 'alignment';
+      phase?: 'interface' | 'step' | 'stream' | 'alignment';
       validationErrors?: string[];
-      context?: Record<string, unknown>;
+      metadata?: unknown[];
     };
   };
 }
@@ -39,7 +39,7 @@ export interface ChatStore {
 
   addAlignmentMessage: (message: string) => void;
   addInterfaceMessage: (message: WorkflowStep) => void;
-  addStepsMessage: (message: WorkflowStep[]) => void;
+  addStepMessage: (message: WorkflowStep) => void;
 
   setMessageError: (id: number, error: ThreadMessage['error']) => void;
 
@@ -132,12 +132,12 @@ export const useChatStore = create<ChatStore>()(
         });
       },
 
-      addStepsMessage: (message: WorkflowStep[]) => {
+      addStepMessage: (message: WorkflowStep) => {
         const stepsMessage: ThreadMessage = {
           id: parseInt(nanoid(10), 36),
           role: 'assistant',
           content: JSON.stringify(message, null, 2),
-          type: 'steps',
+          type: 'step',
         };
         set(state => {
           const currentId = state.currentThreadId;

@@ -1,12 +1,10 @@
 // src/features/chat/components/assistant-display.tsx
 import { cn } from '@/lib/utils';
-import InterfaceDetails from './json/json-interface-details';
-import { JsonViewer } from './json/json-viewer';
 import { ErrorDisplay } from './layout/error-display';
 
 type MessageDisplayProps = {
   content: string;
-  type: 'alignment' | 'interface' | 'steps';
+  type: 'alignment' | 'interface' | 'step';
 };
 
 export const AssistantDisplay = ({ content, type }: MessageDisplayProps) => {
@@ -21,32 +19,8 @@ export const AssistantDisplay = ({ content, type }: MessageDisplayProps) => {
 
   // For interface and steps messages (JSON)
   try {
-    const parsed = JSON.parse(content);
-
-    // For interface messages (single WorkflowStep)
-    if (type === 'interface') {
-      return (
-        <div className={cn('p-4', 'bg-muted/30')}>
-          <InterfaceDetails data={{ interface: parsed }} />
-        </div>
-      );
-    }
-
-    // For steps messages (WorkflowStep[])
-    if (type === 'steps') {
-      return (
-        <div className={cn('p-4', 'bg-muted/30')}>
-          <InterfaceDetails data={{ steps: parsed }} />
-        </div>
-      );
-    }
-
     // Fallback for any other JSON content
-    return (
-      <div className={cn('p-4', 'bg-muted/30')}>
-        <JsonViewer content={JSON.stringify(parsed, null, 2)} isStreaming={false} />
-      </div>
-    );
+    return <div className={cn('p-4', 'bg-muted/30')}>{content}</div>;
   } catch (error) {
     return (
       <ErrorDisplay

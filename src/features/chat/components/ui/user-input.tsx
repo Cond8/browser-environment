@@ -76,7 +76,7 @@ export function UserInput() {
             type: result.error.name || 'WorkflowChainError',
             details: {
               phase: result.error.phase,
-              context: result.error.context,
+              metadata: result.error.metadata,
               validationErrors:
                 result.error instanceof WorkflowValidationError
                   ? result.error.validationErrors

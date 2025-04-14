@@ -8,7 +8,7 @@ interface ErrorDisplayProps {
     message: string;
     type: string;
     details?: {
-      phase?: 'interface' | 'steps' | 'stream' | 'alignment';
+      phase?: 'interface' | 'step' | 'stream' | 'alignment';
       validationErrors?: string[];
       context?: Record<string, unknown>;
     } | null;

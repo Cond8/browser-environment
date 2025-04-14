@@ -102,12 +102,11 @@ export async function* interfacePhase(
 ): AsyncGenerator<string, WorkflowStep, unknown> {
   let response;
   try {
-    response = yield* completionFn(
-      SYSTEM_PROMPT(INTERFACE_PROMPT(userRequest, alignmentResponse)),
-      {
-        stop: ['*/'],
-      },
-    );
+    const prompt = SYSTEM_PROMPT(INTERFACE_PROMPT(userRequest, alignmentResponse));
+    console.log('[interfacePhase] Prompt:', prompt);
+    response = yield* completionFn(prompt, {
+      stop: ['*/'],
+    });
 
     return dslToJson(response);
   } catch (err) {
