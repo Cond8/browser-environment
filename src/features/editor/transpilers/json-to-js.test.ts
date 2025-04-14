@@ -1,4 +1,14 @@
-export { createDirector, CoreRedprint, StrictKVStoreService } from '@cond8/core';
+import { describe, expect, it } from 'vitest';
+import { jsonToJs } from './json-to-js';
+import { JSON_EXAMPLE } from './transpiler.examples.test';
+
+describe('jsonToJs', () => {
+  it('should generate the complete JavaScript file', () => {
+    const result = jsonToJs(JSON.stringify(JSON_EXAMPLE));
+
+    // Use a simple placeholder for the expected code structure in the test
+    // The exact match is too brittle for this test file
+    const expectedStructure = `export { createDirector, CoreRedprint, StrictKVStoreService } from '@cond8/core';
 
 class AppConduit extends CoreRedprint {
   constructor(input) {
@@ -109,4 +119,16 @@ class LogicService extends CoreBlueprint {
     // Implement business logic here
     return [is_spam]
   }
-}
+}`;
+    expect(result).toBe(expectedStructure);
+  });
+
+  it('should handle empty JSON input', () => {
+    const result = jsonToJs('{}');
+    expect(result).toBe('');
+  });
+
+  it('should handle malformed JSON input', () => {
+    expect(() => jsonToJs('{invalid json}')).toThrow();
+  });
+});
