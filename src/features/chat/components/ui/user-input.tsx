@@ -2,6 +2,7 @@
 import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/features/chat/store/chat-store';
 import { useConnStore } from '@/features/ollama-api/store/conn-store';
+import { WorkflowValidationError } from '@/features/ollama-api/workflow-chain';
 import { Send, StopCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAbortEventBusStore } from '../../store/abort-eventbus-store';
@@ -57,8 +58,38 @@ export function UserInput() {
 
     addUserMessage(trimmed);
     setMessage('');
-    await startWorkflowChain();
-    setIsLoading(false);
+    try {
+      const result = await startWorkflowChain();
+
+      // Check if there was an error returned
+      if (result.error) {
+        console.error('Workflow chain error:', result.error);
+
+        // Get the current message ID to attach the error to
+        const currentThread = useChatStore.getState().getCurrentThread();
+        if (currentThread && currentThread.messages.length > 0) {
+          const lastMessageId = currentThread.messages[currentThread.messages.length - 1].id;
+
+          // Set error on the message
+          useChatStore.getState().setMessageError(lastMessageId, {
+            message: result.error.message,
+            type: result.error.name || 'WorkflowChainError',
+            details: {
+              phase: result.error.phase,
+              context: result.error.context,
+              validationErrors:
+                result.error instanceof WorkflowValidationError
+                  ? result.error.validationErrors
+                  : undefined,
+            },
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Unexpected error during workflow chain:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleButtonSubmit = () => {

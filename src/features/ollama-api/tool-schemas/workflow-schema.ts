@@ -30,10 +30,10 @@ export type WorkflowStep = {
   service: WorkflowService;
   method: string;
   goal: string;
-  /** Record of parameter names to their type and description in the format "type - description" */
-  params?: Record<string, string>;
-  /** Record of return value names to their type and description in the format "type - description" */
-  returns?: Record<string, string>;
+  /** Record of parameter names to their type and description */
+  params?: Record<string, { type: string; description: string }>;
+  /** Record of return value names to their type and description */
+  returns?: Record<string, { type: string; description: string }>;
 };
 
 // Helper functions for validation
@@ -67,23 +67,19 @@ const stepSchema = z.object({
   params: z
     .record(
       variableNameSchema,
-      z
-        .string()
-        .regex(
-          /^(string|number|boolean|function|object|array) - .+/i,
-          'Type must be followed by a comment',
-        ),
+      z.object({
+        type: z.enum(['string', 'number', 'boolean', 'function', 'object', 'array']),
+        description: z.string().min(1),
+      }),
     )
     .optional(),
   returns: z
     .record(
       variableNameSchema,
-      z
-        .string()
-        .regex(
-          /^(string|number|boolean|function|object|array) - .+/i,
-          'Type must be followed by a comment',
-        ),
+      z.object({
+        type: z.enum(['string', 'number', 'boolean', 'function', 'object', 'array']),
+        description: z.string().min(1),
+      }),
     )
     .optional(),
 });

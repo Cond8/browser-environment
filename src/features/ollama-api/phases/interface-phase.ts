@@ -21,8 +21,8 @@ Your task is to generate the **interface** section of a JSON workflow.
 - service: One of the predefined services (see below)
 - method: snake_case method name
 - goal: Clear description of the workflow's purpose
-- params: Record of input variable names with types and descriptions (e.g., "string - Description here") 
-- returns: Record of output variable names with types and descriptions (e.g., "number - Description here")
+- params: Record of input variable names with type and description objects (e.g., {"type": "string", "description": "Description here"}) 
+- returns: Record of output variable names with type and description objects (e.g., {"type": "number", "description": "Description here"})
 
 ### AVAILABLE SERVICES
 You must use one of these predefined services:
@@ -48,11 +48,11 @@ You must use one of these predefined services:
   "method": "transform_user_data",
   "goal": "Transform raw user data into standardized format",
   "params": {
-    "raw_data": "string - The unprocessed user data that needs transformation",
-    "format_type": "string - The target format specification"
+    "raw_data": {"type": "string", "description": "The unprocessed user data that needs transformation"},
+    "format_type": {"type": "string", "description": "The target format specification"}
   },
   "returns": {
-    "processed_data": "string - The standardized user data in the target format"
+    "processed_data": {"type": "string", "description": "The standardized user data in the target format"}
   }
 }
 \`\`\`
@@ -62,7 +62,7 @@ RULES:
 - The \`method\` field MUST be in snake_case
 - The \`name\` field MUST be in PascalCase
 - Params and returns MUST be records with variable names in snake_case 
-- Each param and return MUST include both type and description in format "type - description"
+- Each param and return MUST include both type and description as an object with "type" and "description" fields
 
 USER REQUEST:
 \`\`\`

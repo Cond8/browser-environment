@@ -10,8 +10,8 @@ interface Interface {
   service: string;
   method: string;
   goal: string;
-  params?: Record<string, string>;
-  returns?: Record<string, string>;
+  params?: Record<string, string | { type: string; description: string }>;
+  returns?: Record<string, string | { type: string; description: string }>;
 }
 
 type Props = {
@@ -19,11 +19,21 @@ type Props = {
   isStep?: boolean;
 };
 
-// Utility function to parse a string with type and description in format "type - description"
-export function parseWithComments(str: string): {
+// Utility function to parse either string or object format for type and description
+export function parseWithComments(value: string | { type: string; description: string }): {
   type: string;
   description?: string;
 } {
+  // Handle new object format
+  if (value && typeof value === 'object' && 'type' in value && 'description' in value) {
+    return {
+      type: value.type.trim(),
+      description: value.description.trim(),
+    };
+  }
+
+  // Handle string format
+  const str = typeof value === 'string' ? value : '';
   if (!str) {
     return { type: '' };
   }

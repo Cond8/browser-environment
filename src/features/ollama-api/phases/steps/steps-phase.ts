@@ -1,10 +1,10 @@
 // src/features/ollama-api/phases/steps-phase.ts
 import { ChatRequest } from 'ollama/browser';
-import { parseOrRepairJson } from '../llm-output-fixer';
-import { SYSTEM_PROMPT } from '../prompts/prompts-system';
-import { stepsSchema, WorkflowService, WorkflowStep } from '../tool-schemas/workflow-schema';
+import { parseOrRepairJson } from '../../llm-output-fixer';
+import { SYSTEM_PROMPT } from '../../prompts/prompts-system';
+import { stepsSchema, WorkflowService, WorkflowStep } from '../../tool-schemas/workflow-schema';
 
-import { WorkflowChainError, WorkflowValidationError } from '../workflow-chain';
+import { WorkflowChainError, WorkflowValidationError } from '../../workflow-chain';
 
 export const STEPS_PROMPT = (userRequest: string, alignmentResponse: string) =>
   `
@@ -25,8 +25,8 @@ Your task is to generate the **steps** section of the JSON workflow.
 - service: One of the predefined services (see below)
 - method: snake_case method name
 - goal: Clear description of the step's purpose
-- params: Record of input variable names with types and descriptions (e.g., "string - Description here")
-- returns: Record of output variable names with types and descriptions (e.g., "number - Description here")
+- params: Record of input variable names with type and description objects (e.g., {"type": "string", "description": "Description here"})
+- returns: Record of output variable names with type and description objects (e.g., {"type": "number", "description": "Description here"})
 
 ### AVAILABLE SERVICES
 You must use one of these predefined services:
@@ -53,10 +53,10 @@ You must use one of these predefined services:
     "method": "validate_email_content",
     "goal": "Validate the email content format",
     "params": {
-      "email_body": "string - The raw email body content to validate"
+      "email_body": {"type": "string", "description": "The raw email body content to validate"}
     },
     "returns": {
-      "validated_content": "string - The validated and sanitized email content"
+      "validated_content": {"type": "string", "description": "The validated and sanitized email content"}
     }
   },
   {
@@ -65,10 +65,10 @@ You must use one of these predefined services:
     "method": "analyze_email_patterns",
     "goal": "Analyze email content for spam patterns",
     "params": {
-      "validated_content": "string - The validated email content to analyze"
+      "validated_content": {"type": "string", "description": "The validated email content to analyze"}
     },
     "returns": {
-      "spam_score": "number - A score between 0 and 1 indicating spam likelihood"
+      "spam_score": {"type": "number", "description": "A score between 0 and 1 indicating spam likelihood"}
     }
   }
 ]
@@ -79,7 +79,7 @@ RULES:
 - Each step MUST have ALL required fields
 - Steps MUST be logically connected
 - Final step MUST produce the interface's returns
-- Each param and return MUST include both type and description in format "type - description"
+- Each param and return MUST include both type and description as an object with "type" and "description" fields
 - Do NOT include any text before or after the JSON
 
 USER REQUEST:

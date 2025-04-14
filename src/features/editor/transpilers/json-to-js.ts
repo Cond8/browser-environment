@@ -9,13 +9,30 @@ interface ParsedJson {
 // Assume CoreBlueprint is globally available or imported elsewhere in the target JS environment
 declare var CoreBlueprint: any;
 
-// Helper function to extract type and description from "type - description" format
-function extractTypeAndDescription(typeWithComment: string): [string, string] {
-  const parts = typeWithComment.split(' - ');
-  if (parts.length >= 2) {
-    return [parts[0], parts.slice(1).join(' - ')];
+// Helper function to extract type and description from different formats
+function extractTypeAndDescription(
+  typeWithComment: string | { type: string; description: string },
+): [string, string] {
+  // Handle new object format
+  if (
+    typeWithComment &&
+    typeof typeWithComment === 'object' &&
+    'type' in typeWithComment &&
+    'description' in typeWithComment
+  ) {
+    return [typeWithComment.type, typeWithComment.description];
   }
-  return [typeWithComment, ''];
+
+  // Handle string format in "type - description" pattern
+  if (typeof typeWithComment === 'string') {
+    const parts = typeWithComment.split(' - ');
+    if (parts.length >= 2) {
+      return [parts[0], parts.slice(1).join(' - ')];
+    }
+  }
+
+  // Default fallback
+  return [typeof typeWithComment === 'string' ? typeWithComment : 'string', ''];
 }
 
 // Map LLM types to TypeScript/JSDoc types

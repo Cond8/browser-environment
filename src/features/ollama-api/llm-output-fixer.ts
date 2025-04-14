@@ -32,45 +32,62 @@ function extractFirstWord(text: string | undefined | null): string {
 }
 
 /**
- * Fixes param and return type formats to match the expected "type - description" format
+ * Fixes param and return type formats to match the expected format with type and description fields
  *
  * @param obj The workflow step object to fix
  * @returns The fixed workflow step object
  */
 function fixParamAndReturnFormats(obj: any): any {
   // Helper to fix an individual param/return value
-  const fixTypeValue = (value: any): string => {
-    if (typeof value !== 'string') {
-      // If it's an array, convert to array type with description
-      if (Array.isArray(value)) {
-        return `array - ${JSON.stringify(value)}`;
-      }
-      // If it's another non-string type (e.g., object), convert to appropriate type
-      return `object - ${JSON.stringify(value)}`;
-    }
-
-    // If it already follows the format "type - description", return as is
-    if (/^(string|number|boolean|function|object|array) - .+/i.test(value)) {
+  const fixTypeValue = (value: any): { type: string; description: string } => {
+    // If it's already in the correct format (object with type and description)
+    if (value && typeof value === 'object' && 'type' in value && 'description' in value) {
       return value;
     }
 
-    // Convert simple types to the required format with a generic description
-    const typeMap: Record<string, string> = {
-      text: 'string - Text value',
-      string: 'string - Text value',
-      number: 'number - Numeric value',
-      boolean: 'boolean - Boolean value',
-      function: 'function - Function value',
-      object: 'object - Object value',
-      array: 'array - Array value',
-    };
+    // If it's a string in the old "type - description" format
+    if (typeof value === 'string') {
+      // If it already follows the format "type - description", parse it
+      const match = /^(string|number|boolean|function|object|array) - (.+)/i.exec(value);
+      if (match) {
+        return {
+          type: match[1],
+          description: match[2],
+        };
+      }
 
-    if (typeMap[value]) {
-      return typeMap[value];
+      // Map simple type names to the proper object format
+      const typeMap: Record<string, { type: string; description: string }> = {
+        text: { type: 'string', description: 'Text value' },
+        string: { type: 'string', description: 'Text value' },
+        number: { type: 'number', description: 'Numeric value' },
+        boolean: { type: 'boolean', description: 'Boolean value' },
+        function: { type: 'function', description: 'Function value' },
+        object: { type: 'object', description: 'Object value' },
+        array: { type: 'array', description: 'Array value' },
+      };
+
+      if (typeMap[value]) {
+        return typeMap[value];
+      }
+
+      // Default fallback - assume it's the description part and prefix with string type
+      return { type: 'string', description: value };
     }
 
-    // Default fallback - assume it's the description part and prefix with "string - "
-    return `string - ${value}`;
+    // If it's an array or other non-string type
+    if (Array.isArray(value)) {
+      return {
+        type: 'array',
+        description: JSON.stringify(value),
+      };
+    }
+
+    // Default for other non-string types (e.g., object)
+    return {
+      type: 'object',
+      description: typeof value === 'object' ? JSON.stringify(value) : String(value),
+    };
   };
 
   // Clone the object to avoid modifying the original
