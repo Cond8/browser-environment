@@ -19,14 +19,32 @@ const toSpaceCase = (input: unknown): string => {
     .trim(); // Remove any leading/trailing spaces
 };
 
+// Format a default value for display
+const formatDefaultValue = (value: unknown): string => {
+  if (value === null) return 'null';
+  if (value === undefined) return 'undefined';
+  if (typeof value === 'string') return `"${value}"`;
+  if (Array.isArray(value)) return `[${value.map(formatDefaultValue).join(', ')}]`;
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+};
+
 interface PropertyDefinition {
   type: string | string[] | unknown;
-  description: string;
+  description?: string;
   optional?: boolean;
+  default?: unknown;
+  format?: string;
   enum?: string[];
+  required?: string[];
+  additionalProperties?: boolean;
   items?: {
     type: string | string[] | unknown;
-    description: string;
+    description?: string;
+    default?: unknown;
+    format?: string;
+    properties?: Record<string, PropertyDefinition>;
+    required?: string[];
   };
   properties?: Record<string, PropertyDefinition>;
 }
@@ -41,16 +59,21 @@ const PropertyDisplay = ({
   name,
   property,
   level = 0,
+  isRequired = false,
 }: {
   name: string;
   property: PropertyDefinition;
   level?: number;
+  isRequired?: boolean;
 }) => {
   const hasNestedProperties = property.properties && Object.keys(property.properties).length > 0;
   const isArray = Array.isArray(property.type)
     ? property.type.includes('array')
     : property.type === 'array';
   const hasEnum = property.enum && property.enum.length > 0;
+  const hasDefault = property.default !== undefined;
+  const hasFormat = property.format !== undefined;
+  const hasAdditionalProperties = property.additionalProperties !== undefined;
 
   return (
     <div className="space-y-2">
@@ -59,14 +82,28 @@ const PropertyDisplay = ({
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium truncate">{toSpaceCase(name)}</span>
-            {property.optional && (
+            {isRequired && <span className="text-xs text-destructive shrink-0">(required)</span>}
+            {!isRequired && property.optional && (
               <span className="text-xs text-muted-foreground shrink-0">(optional)</span>
             )}
             <span className="text-xs text-muted-foreground shrink-0">
               ({toSpaceCase(property.type)})
             </span>
+            {hasFormat && (
+              <span className="text-xs text-muted-foreground shrink-0">({property.format})</span>
+            )}
           </div>
-          <p className="text-xs text-muted-foreground">{property.description}</p>
+          {property.description && (
+            <p className="text-xs text-muted-foreground">{property.description}</p>
+          )}
+          {hasDefault && (
+            <div className="mt-1 flex items-center gap-1">
+              <span className="text-xs text-muted-foreground">Default:</span>
+              <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                {formatDefaultValue(property.default)}
+              </code>
+            </div>
+          )}
           {hasEnum && (
             <div className="mt-1 flex flex-wrap gap-1">
               {property.enum!.map(value => (
@@ -79,10 +116,40 @@ const PropertyDisplay = ({
               ))}
             </div>
           )}
+          {hasAdditionalProperties && (
+            <div className="mt-1">
+              <span className="text-xs text-muted-foreground">
+                Additional properties: {property.additionalProperties ? 'allowed' : 'not allowed'}
+              </span>
+            </div>
+          )}
           {isArray && property.items && (
             <div className="mt-1 pl-4 border-l-2 border-muted">
               <div className="text-xs text-muted-foreground">
                 <span className="font-medium">Items:</span> {property.items.description}
+                {property.items.format && (
+                  <span className="text-muted-foreground"> ({property.items.format})</span>
+                )}
+                {property.items.default !== undefined && (
+                  <div className="mt-1 flex items-center gap-1">
+                    <span className="text-muted-foreground">Default:</span>
+                    <code className="bg-muted px-1.5 py-0.5 rounded">
+                      {formatDefaultValue(property.items.default)}
+                    </code>
+                  </div>
+                )}
+                {property.items.properties && (
+                  <div className="mt-2 space-y-2">
+                    {Object.entries(property.items.properties).map(([itemName, itemProperty]) => (
+                      <PropertyDisplay
+                        key={itemName}
+                        name={itemName}
+                        property={itemProperty}
+                        isRequired={property.items?.required?.includes(itemName)}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -96,6 +163,7 @@ const PropertyDisplay = ({
               name={nestedName}
               property={nestedProperty}
               level={level + 1}
+              isRequired={property.required?.includes(nestedName)}
             />
           ))}
         </div>
