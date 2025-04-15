@@ -1,6 +1,4 @@
 // src/features/ollama-api/streaming/phases/steps/step-1-phase.ts
-import { dslToJson } from '@/features/editor/transpilers-dsl-source/dsl-to-json';
-import { jsonToDsl } from '@/features/editor/transpilers-dsl-source/json-to-dsl';
 import { SYSTEM_PROMPT } from '@/features/ollama-api/streaming/phases/prompts-system';
 import { ChatRequest } from 'ollama';
 import { WorkflowChainError } from '../../api/workflow-chain';
@@ -8,47 +6,45 @@ import { WorkflowStep } from '../../api/workflow-step';
 
 export const FIRST_STEP_PROMPT = (userRequest: string, alignmentResponse: string) =>
   `
-You are an assistant that helps users define structured workflows using a **JSDoc-based format**.
+You are an assistant that helps users define structured workflows using a **JSON-based format**.
 
-Each workflow is a sequence of exactly **7 JSDoc comment blocks**:
-- The **first block** is the workflow interface.
-- The **next 6 blocks** are individual validation steps that progressively prepare and check the inputs.
+Each workflow is a sequence of exactly **7 JSON objects**:
+- The **first object** is the workflow interface.
+- The **next 6 objects** are individual validation steps that progressively prepare and check the inputs.
 
 ---
 ## FORMAT REQUIREMENTS
 
-Each step must follow this format:
+The first validation step should follow this general format:
 
-\`\`\`ts
-/**
- * <Goal of this specific step>
- *
- * @name <StepName>              // PascalCase, unique
- * @module <module>              // One of the validation-related modules below
- * @function <snake_case_function> // Describes the action
- * @param {<type>} <param_name> - <Short description>
- * @returns {<type>} <result_name> - <Short description>
- */
+\`\`\`json
+{
+  "step": {
+    "name": "StepName",
+    "module": "validate",
+    "function": "functionName",
+    "goal": "Description of what this step accomplishes",
+    "params": {
+      // Parameters from the interface
+    },
+    "returns": {
+      // Results of validation
+    }
+  }
+}
 \`\`\`
 
-- Use only inputs from the interface or prior steps.
+- Use only inputs from the interface.
 - Types must be one of: \`string\`, \`number\`, \`boolean\`, \`object\`, \`array\`.
-- Each tag must be syntactically correct.
-- Do NOT output anything other than the next valid JSDoc block.
+- Focus on validation as the first step in the workflow.
 
 ---
-## AVAILABLE MODULES (Validation-Oriented)
+## VALIDATION FOCUS
 
-Use one of these for the \`@module\` tag in each step:
-
-- validate
-- sanitize
-- normalize
-- verify
-- check
-- assert
-
-Each one represents a different aspect of validating or preparing input data.
+This first step should focus on validating the inputs by:
+- Checking required fields are present
+- Validating data types and structure
+- Ensuring basic format requirements
 
 ---
 ## USER REQUEST
@@ -64,7 +60,7 @@ ${alignmentResponse}
 ---
 ## TASK
 
-You must now generate the **first validation step**, using \`@module validate\`. Focus on checking required fields and structure.
+Generate the first validation step based on the interface provided. Output only the JSON for the step.
 `.trim();
 
 export async function* firstStepPhase(
@@ -85,19 +81,32 @@ export async function* firstStepPhase(
         },
         {
           role: 'user',
-          content: jsonToDsl(interfaceResponse),
+          content: JSON.stringify({ interface: interfaceResponse }, null, 2),
         },
       ],
       options: {
-        stop: ['*/'],
+        stop: ['}'],
       },
     });
 
-    return dslToJson(response);
+    // Parse the JSON response
+    try {
+      // Add closing brace if needed
+      const jsonString = response.endsWith('}') ? response : response + '}';
+      const parsedResponse = JSON.parse(jsonString);
+      return parsedResponse.step;
+    } catch (parseErr) {
+      throw new WorkflowChainError(
+        'Failed to parse first step JSON',
+        'step',
+        parseErr instanceof Error ? parseErr : undefined,
+        { response },
+      );
+    }
   } catch (err) {
     throw new WorkflowChainError(
-      'Interface generation failed',
-      'interface',
+      'First step generation failed',
+      'step',
       err instanceof Error ? err : undefined,
       { userRequest, alignmentResponse },
     );
