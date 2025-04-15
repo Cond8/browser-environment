@@ -1,14 +1,15 @@
 // src/features/chat/store/chat-store.ts
-import { JsonParseResult } from '@/features/editor/transpilers-json-source/my-json-parse';
+import { SLMOutput } from '@/features/editor/transpilers-json-source/extract-text-parse';
 import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
 import { nanoid } from 'nanoid';
-import { Message } from 'ollama';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-export interface ThreadMessage extends Message {
+export interface ThreadMessage {
   id: number;
+  role: 'user' | 'assistant';
+  content: string | SLMOutput;
   type: 'alignment' | 'interface' | 'step';
   error?: {
     message: string;
@@ -39,7 +40,7 @@ export interface ChatStore {
   addUserMessage: (message: string) => void;
 
   addAlignmentMessage: (message: string) => void;
-  addInterfaceMessage: (message: JsonParseResult) => void;
+  addInterfaceMessage: (chunks: SLMOutput) => void;
   addStepMessage: (message: WorkflowStep) => void;
 
   setMessageError: (id: number, error: ThreadMessage['error']) => void;
@@ -118,36 +119,19 @@ export const useChatStore = create<ChatStore>()(
         });
       },
 
-      addInterfaceMessage: (message: JsonParseResult) => {
-        const interfaceTextBefore: ThreadMessage = {
-          id: parseInt(nanoid(10), 36),
-          role: 'assistant',
-          content: message.textBefore,
-          type: 'alignment',
-        };
-        const interfaceJson: ThreadMessage = {
-          id: parseInt(nanoid(10), 36),
-          role: 'assistant',
-          content: JSON.stringify(message.json, null, 2),
-          type: 'interface',
-        };
-        const interfaceTextAfter: ThreadMessage = {
-          id: parseInt(nanoid(10), 36),
-          role: 'assistant',
-          content: message.textAfter,
-          type: 'alignment',
-        };
+      addInterfaceMessage: (chunks: SLMOutput) => {
         set(state => {
           const currentId = state.currentThreadId;
-          if (currentId) {
-            if (message.textBefore) {
-              state.threads[currentId].messages.push(interfaceTextBefore);
-            }
-            state.threads[currentId].messages.push(interfaceJson);
-            if (message.textAfter) {
-              state.threads[currentId].messages.push(interfaceTextAfter);
-            }
-          }
+          if (!currentId) return;
+
+          const interfaceMessage: ThreadMessage = {
+            id: parseInt(nanoid(10), 36),
+            role: 'assistant',
+            content: chunks,
+            type: 'interface',
+          };
+
+          state.threads[currentId].messages.push(interfaceMessage);
         });
       },
 

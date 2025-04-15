@@ -49,8 +49,11 @@ export const ChatContent = () => {
             </div>
           );
         })}
-        {isStreaming && <AssistantDisplay content={streamMessage} type={'alignment'} />}
-
+        {isStreaming && streamMessage && (
+          <div className="w-full border-b bg-background">
+            <AssistantDisplay content={streamMessage} type="alignment" />
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
     </ScrollArea>

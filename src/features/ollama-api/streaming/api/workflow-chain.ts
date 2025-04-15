@@ -74,7 +74,10 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * ===========================*/
     const parsedInterfaceResult = yield* retryWithDelay(
       () => interfacePhase(messages[0].content, alignmentResult, chatFn),
-      response => myJsonParse(response),
+      response => {
+        console.log('response', response);
+        return myJsonParse(response);
+      },
       'interface',
       messages[0].content,
       alignmentResult,
@@ -98,7 +101,11 @@ export async function* executeWorkflowChain(): AsyncGenerator<
     // useWorkflowStore.getState().addStepsToWorkflow(workflowPath, parsedStepsResult);
     // useVfsStore.getState().upsertServices(stepsResult.steps);
 
-    return { workflow: [parsedInterfaceResult.json] };
+    return {
+      workflow: parsedInterfaceResult
+        .filter(chunk => chunk.type === 'json')
+        .map(chunk => chunk.content),
+    };
   } catch (error) {
     const err =
       error instanceof WorkflowChainError
