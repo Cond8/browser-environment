@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react';
 import { ThreadMessage, useChatStore } from '../../store/chat-store';
 import { AssistantDisplay } from '../assistant-display';
 import { EmptyChatState } from '../empty/empty-chat-state';
+import { UserDisplay } from '../user-display';
 import { ErrorDisplay } from './error-display';
 
 export const ChatContent = () => {
@@ -41,10 +42,12 @@ export const ChatContent = () => {
                 message.role === 'user' ? 'bg-card' : 'bg-background',
               )}
             >
-              {message.error ? (
+              {message.role === 'assistant' && message.error ? (
                 <ErrorDisplay error={message.error} />
-              ) : (
+              ) : message.role === 'assistant' ? (
                 <AssistantDisplay content={message.content} type={message.type} />
+              ) : (
+                <UserDisplay content={message.content} />
               )}
             </div>
           );

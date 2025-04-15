@@ -1,7 +1,7 @@
 // src/features/ollama-api/streaming/phases/steps/step-1-phase.ts
 import { dslToJson } from '@/features/editor/transpilers-dsl-source/dsl-to-json';
 import { jsonToDsl } from '@/features/editor/transpilers-dsl-source/json-to-dsl';
-import { SYSTEM_PROMPT } from '@/features/ollama-api/prompts/prompts-system';
+import { SYSTEM_PROMPT } from '@/features/ollama-api/streaming/phases/prompts-system';
 import { ChatRequest } from 'ollama';
 import { WorkflowChainError } from '../../api/workflow-chain';
 import { WorkflowStep } from '../../api/workflow-step';

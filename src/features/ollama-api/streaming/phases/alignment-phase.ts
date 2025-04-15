@@ -1,7 +1,7 @@
 // src/features/ollama-api/streaming/phases/alignment-phase.ts
 import { ChatRequest } from 'ollama';
-import { SYSTEM_PROMPT } from '../../prompts/prompts-system';
 import { WorkflowChainError } from '../api/workflow-chain';
+import { SYSTEM_PROMPT } from './prompts-system';
 
 export const ALIGNMENT_PROMPT = () =>
   `

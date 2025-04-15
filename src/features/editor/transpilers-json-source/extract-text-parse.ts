@@ -27,74 +27,111 @@ export function extractTextParts(input: string): SLMOutput {
   const chunks: SLMOutput = [];
   let currentIndex = 0;
 
-  // Regular expression to match code fences with optional json specifier
+  // First handle code fence blocks to avoid confusing example JSON with actual JSON
   const codeFenceRegex = /```(?:json)?\s*\n?([\s\S]*?)\n?```/g;
-  let match;
+  let codeFenceMatch;
+  const processedRanges: Array<[number, number]> = [];
 
-  try {
-    while ((match = codeFenceRegex.exec(input)) !== null) {
-      // Add text before the code fence if it exists
-      const textBefore = input.substring(currentIndex, match.index).trim();
+  while ((codeFenceMatch = codeFenceRegex.exec(input)) !== null) {
+    const matchStart = codeFenceMatch.index;
+    const matchEnd = matchStart + codeFenceMatch[0].length;
+    processedRanges.push([matchStart, matchEnd]);
+
+    // Add text before the code fence if it exists
+    const textBefore = input.substring(currentIndex, matchStart).trim();
+    if (textBefore) {
+      chunks.push({ type: 'text', content: textBefore });
+    }
+
+    // Try to parse the code fence content as JSON
+    try {
+      const jsonContent = codeFenceMatch[1].trim();
+      const parsedJson = JSON.parse(jsonContent);
+
+      // Only process if it's a valid object and doesn't look like an example
+      if (
+        typeof parsedJson === 'object' &&
+        parsedJson !== null &&
+        !jsonContent.includes('// ... more') &&
+        !jsonContent.includes('// Example')
+      ) {
+        if ('interface' in parsedJson || 'type' in parsedJson) {
+          chunks.push({ type: 'json', content: parsedJson });
+        } else {
+          chunks.push({ type: 'text', content: codeFenceMatch[0] });
+        }
+      } else {
+        chunks.push({ type: 'text', content: codeFenceMatch[0] });
+      }
+    } catch (error) {
+      chunks.push({ type: 'text', content: codeFenceMatch[0] });
+    }
+
+    currentIndex = matchEnd;
+  }
+
+  // Then look for JSON objects in the remaining unprocessed text
+  const remainingRanges = getUnprocessedRanges(input.length, processedRanges);
+  for (const [start, end] of remainingRanges) {
+    const text = input.substring(start, end);
+    const jsonRegex = /\{(?:[^{}]|(?:\{[^{}]*\}))*\}/g;
+    let match;
+    let lastIndex = 0;
+
+    while ((match = jsonRegex.exec(text)) !== null) {
+      // Add text before the JSON if it exists
+      const textBefore = text.substring(lastIndex, match.index).trim();
       if (textBefore) {
         chunks.push({ type: 'text', content: textBefore });
       }
 
-      // Try to parse the JSON content
-      const jsonContent = match[1].trim();
       try {
-        const parsedJson = JSON.parse(jsonContent);
+        const jsonStr = match[0];
+        const parsedJson = JSON.parse(jsonStr);
 
-        // Validate that the parsed JSON is an object
-        if (typeof parsedJson !== 'object' || parsedJson === null) {
-          throw new TextExtractionError('JSON content must be an object', { jsonContent });
-        }
-
-        // Check for either WorkflowStep type or interface structure
-        if ('type' in parsedJson) {
-          // This is a WorkflowStep
-          if (typeof parsedJson.type !== 'string') {
-            throw new TextExtractionError('WorkflowStep type must be a string', { jsonContent });
+        if (typeof parsedJson === 'object' && parsedJson !== null) {
+          if ('interface' in parsedJson || 'type' in parsedJson) {
+            chunks.push({ type: 'json', content: parsedJson });
+          } else {
+            chunks.push({ type: 'text', content: jsonStr });
           }
-        } else if ('interface' in parsedJson) {
-          // This is an interface structure
-          if (typeof parsedJson.interface !== 'object' || parsedJson.interface === null) {
-            throw new TextExtractionError('Interface must be an object', { jsonContent });
-          }
-          // Add type property to make it compatible with WorkflowStep
-          parsedJson.type = 'interface';
-        } else {
-          throw new TextExtractionError('JSON must contain either "type" or "interface" property', {
-            jsonContent,
-          });
         }
-
-        chunks.push({ type: 'json', content: parsedJson });
       } catch (error) {
-        if (error instanceof TextExtractionError) {
-          throw error;
-        }
-        // If JSON parsing fails, treat it as text
-        chunks.push({ type: 'text', content: jsonContent });
+        // If JSON parsing fails, treat as text
+        chunks.push({ type: 'text', content: match[0] });
       }
 
-      // Update the current index to after the code fence
-      currentIndex = match.index + match[0].length;
+      lastIndex = match.index + match[0].length;
     }
 
-    // Add any remaining text after the last code fence
-    const remainingText = input.substring(currentIndex).trim();
+    // Add remaining text
+    const remainingText = text.substring(lastIndex).trim();
     if (remainingText) {
       chunks.push({ type: 'text', content: remainingText });
     }
-
-    return chunks;
-  } catch (error) {
-    if (error instanceof TextExtractionError) {
-      throw error;
-    }
-    throw new TextExtractionError('Failed to extract text parts', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      input: input.substring(0, 100) + '...', // Include first 100 chars for context
-    });
   }
+
+  return chunks;
+}
+
+function getUnprocessedRanges(
+  totalLength: number,
+  processedRanges: Array<[number, number]>,
+): Array<[number, number]> {
+  const sortedRanges = [...processedRanges].sort((a, b) => a[0] - b[0]);
+  const unprocessedRanges: Array<[number, number]> = [];
+  let currentPos = 0;
+
+  for (const [start, end] of sortedRanges) {
+    if (currentPos < start) {
+      unprocessedRanges.push([currentPos, start]);
+    }
+    currentPos = end;
+  }
+
+  if (currentPos < totalLength) {
+    unprocessedRanges.push([currentPos, totalLength]);
+  }
+
+  return unprocessedRanges;
 }

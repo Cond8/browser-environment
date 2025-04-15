@@ -13,7 +13,9 @@ export const TopBar: React.FC = () => {
       <div className="h-4 flex items-center justify-between px-4">
         <div className="flex items-baseline gap-2">
           <h1 className="text-lg font-semibold tracking-tight">Cond8 Webview</h1>
-          <h2 className="text-sm text-muted-foreground">v0.0.1 - Browser environment only</h2>
+          <h2 className="text-sm text-muted-foreground">
+            v0.0.1 - restricted to <b>Browser environment</b>
+          </h2>
         </div>
         <Button variant="ghost" size="icon" onClick={() => setOpen(true)}>
           <Settings className="h-5 w-5" />

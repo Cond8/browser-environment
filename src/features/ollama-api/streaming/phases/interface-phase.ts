@@ -1,14 +1,24 @@
 // src/features/ollama-api/streaming/phases/interface-phase.ts
 import { ChatRequest } from 'ollama';
-import { SYSTEM_PROMPT } from '../../prompts/prompts-system';
 import { WorkflowChainError } from '../api/workflow-chain';
+import { SYSTEM_PROMPT } from './prompts-system';
 
 export const INTERFACE_PROMPT = (userRequest: string) =>
   `
+You are an assistant that generates structured **JSON-based interfaces** for workflows.
+
+Each response must be a **single, valid JSON object** and nothing else. Do not include any extra text, markdown, backticks, or explanations.
+
+Respond only with the raw JSON, like:
+{
+  "interface": {
+    ...
+  }
+}
+
 User request: ${userRequest}
 
-Output only the JSON block and nothing else.
-
+Output a single JSON object only.
 `.trim();
 
 export async function* interfacePhase(
