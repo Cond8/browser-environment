@@ -5,13 +5,15 @@ import { WorkflowPhase } from '../phases/types';
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
-export async function* retryWithDelay<T, TReturn>(
-  asyncGeneratorFn: () => AsyncGenerator<T, string, unknown>,
+const timeoutFn = (resolve: (value: unknown) => void) => setTimeout(resolve, RETRY_DELAY_MS);
+
+export async function* retryWithDelay<TReturn>(
+  asyncGeneratorFn: () => AsyncGenerator<string, string, unknown>,
   parserFn: (response: string) => TReturn,
   validatorFn: (response: TReturn) => void,
   phase: WorkflowPhase,
   ...metadata: unknown[]
-): AsyncGenerator<T, TReturn, unknown> {
+): AsyncGenerator<string, TReturn, unknown> {
   let lastError: Error | undefined;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -28,8 +30,11 @@ export async function* retryWithDelay<T, TReturn>(
 
       if (attempt < MAX_RETRIES) {
         console.log(`[WorkflowChain] Retrying ${phase} phase connection in ${RETRY_DELAY_MS}ms...`);
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+        await new Promise((resolve: (value: unknown) => void) =>
+          setTimeout(resolve, RETRY_DELAY_MS),
+        );
       }
+      yield* '[BREAK]';
       continue;
     }
 
@@ -43,8 +48,11 @@ export async function* retryWithDelay<T, TReturn>(
         console.warn(`[WorkflowChain] ${phase} phase parser failed:`, error);
         if (attempt < MAX_RETRIES) {
           console.log(`[WorkflowChain] Retrying ${phase} phase parser in ${RETRY_DELAY_MS}ms...`);
-          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+          await new Promise((resolve: (value: unknown) => void) =>
+            setTimeout(resolve, RETRY_DELAY_MS),
+          );
         }
+        yield* '[BREAK]';
         continue;
       }
 
@@ -58,8 +66,11 @@ export async function* retryWithDelay<T, TReturn>(
           console.log(
             `[WorkflowChain] Retrying ${phase} phase validator in ${RETRY_DELAY_MS}ms...`,
           );
-          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+          await new Promise((resolve: (value: unknown) => void) =>
+            setTimeout(resolve, RETRY_DELAY_MS),
+          );
         }
+        yield* '[BREAK]';
         continue;
       }
     }
