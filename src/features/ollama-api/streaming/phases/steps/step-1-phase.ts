@@ -13,32 +13,6 @@ Each workflow is a sequence of exactly **7 JSON objects**:
 - The **next 6 objects** are individual validation steps that progressively prepare and check the inputs.
 
 ---
-## FORMAT REQUIREMENTS
-
-The first validation step should follow this general format:
-
-\`\`\`json
-{
-  "step": {
-    "name": "StepName",
-    "module": "validate",
-    "function": "functionName",
-    "goal": "Description of what this step accomplishes",
-    "params": {
-      // Parameters from the interface
-    },
-    "returns": {
-      // Results of validation
-    }
-  }
-}
-\`\`\`
-
-- Use only inputs from the interface.
-- Types must be one of: \`string\`, \`number\`, \`boolean\`, \`object\`, \`array\`.
-- Focus on validation as the first step in the workflow.
-
----
 ## VALIDATION FOCUS
 
 This first step should focus on validating the inputs by:
@@ -60,7 +34,8 @@ ${alignmentResponse}
 ---
 ## TASK
 
-Generate the first validation step based on the interface provided. Output only the JSON for the step.
+Generate the first validation step based on the interface provided. The format should match the structure of the interface response.
+Output only the JSON for the step.
 `.trim();
 
 export async function* firstStepPhase(
@@ -81,7 +56,7 @@ export async function* firstStepPhase(
         },
         {
           role: 'user',
-          content: JSON.stringify({ interface: interfaceResponse }, null, 2),
+          content: JSON.stringify({ interface: interfaceResponse }),
         },
       ],
       options: {

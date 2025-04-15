@@ -50,7 +50,7 @@ export interface ChatStore {
 
   addAlignmentMessage: (message: string) => void;
   addInterfaceMessage: (chunks: SLMOutput) => void;
-  addStepMessage: (message: WorkflowStep) => void;
+  addStepMessage: (message: SLMOutput) => void;
 
   setMessageError: (id: number, error: AssistantThreadMessage['error']) => void;
 
@@ -129,26 +129,25 @@ export const useChatStore = create<ChatStore>()(
       },
 
       addInterfaceMessage: (chunks: SLMOutput) => {
+        const interfaceMessage: AssistantThreadMessage = {
+          id: parseInt(nanoid(10), 36),
+          role: 'assistant',
+          content: chunks,
+          type: 'interface',
+        };
         set(state => {
           const currentId = state.currentThreadId;
           if (!currentId) return;
-
-          const interfaceMessage: AssistantThreadMessage = {
-            id: parseInt(nanoid(10), 36),
-            role: 'assistant',
-            content: chunks,
-            type: 'interface',
-          };
 
           state.threads[currentId].messages.push(interfaceMessage);
         });
       },
 
-      addStepMessage: (message: WorkflowStep) => {
+      addStepMessage: (chunks: SLMOutput) => {
         const stepsMessage: AssistantThreadMessage = {
           id: parseInt(nanoid(10), 36),
           role: 'assistant',
-          content: JSON.stringify(message, null, 2),
+          content: chunks,
           type: 'step',
         };
         set(state => {

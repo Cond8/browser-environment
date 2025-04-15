@@ -8,6 +8,7 @@ import { createChat } from '../infra/create-chat';
 import { retryWithDelay } from '../infra/retry-with-delay';
 import { alignmentPhase } from '../phases/alignment-phase';
 import { interfacePhase } from '../phases/interface-phase';
+import { firstStepPhase } from '../phases/steps/step-1-phase';
 import { WorkflowPhase } from '../phases/types';
 
 export class WorkflowChainError extends Error {
@@ -75,6 +76,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
     );
 
     chatStore.addAlignmentMessage(alignmentResult);
+    // TODO: add other store side-effects
     yield '[BREAK]';
 
     /* ===========================
@@ -108,19 +110,40 @@ export async function* executeWorkflowChain(): AsyncGenerator<
     chatStore.addInterfaceMessage(parsedInterfaceResult);
     // const workflowPath = useWorkflowStore.getState().createWorkflow(parsedInterfaceResult);
     // useEditorStore.getState().setFilePath(workflowPath);
+    // TODO: add other store side-effects
     yield '[BREAK]';
 
     /* ======================
      * ===== FIRST STEP =====
      * ======================*/
-    // const parsedStepsResult = yield* retryWithDelay(
-    //   () => firstStepPhase(messages[0].content, alignmentResult, parsedInterfaceResult, chatFn),
-    //   'step',
-    //   messages[0].content,
-    //   alignmentResult,
-    //   parsedInterfaceResult,
-    // );
-    // chatStore.addStepsMessage(parsedStepsResult);
+    const parsedStepsResult = yield* retryWithDelay(
+      () =>
+        firstStepPhase(
+          typeof messages[0].content === 'string'
+            ? messages[0].content
+            : JSON.stringify(messages[0].content),
+          alignmentResult,
+          parsedInterfaceResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
+          chatFn,
+        ),
+      response => {
+        console.log('response', response);
+        return myJsonParser(response);
+      },
+      parsed => {
+        // Validate each parsed workflow step
+        parsed.forEach(step => {
+          if (step.type === 'json') {
+            validateWorkflowStep(step.content);
+          }
+        });
+      },
+      'step',
+      messages[0].content,
+      alignmentResult,
+      parsedInterfaceResult,
+    );
+    chatStore.addStepMessage(parsedStepsResult);
     // useWorkflowStore.getState().addStepsToWorkflow(workflowPath, parsedStepsResult);
     // useVfsStore.getState().upsertServices(stepsResult.steps);
 

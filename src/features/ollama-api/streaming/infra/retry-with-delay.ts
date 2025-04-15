@@ -5,10 +5,8 @@ import { WorkflowPhase } from '../phases/types';
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
-const timeoutFn = (resolve: (value: unknown) => void) => setTimeout(resolve, RETRY_DELAY_MS);
-
 export async function* retryWithDelay<TReturn>(
-  asyncGeneratorFn: () => AsyncGenerator<string, string, unknown>,
+  asyncGeneratorFn: () => AsyncGenerator<string, any, unknown>,
   parserFn: (response: string) => TReturn,
   validatorFn: (response: TReturn) => void,
   phase: WorkflowPhase,
@@ -17,10 +15,14 @@ export async function* retryWithDelay<TReturn>(
   let lastError: Error | undefined;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    let response: string;
+    let response = '';
 
     try {
-      response = yield* asyncGeneratorFn();
+      const generator = asyncGeneratorFn();
+      for await (const chunk of generator) {
+        response += chunk;
+        yield chunk;
+      }
     } catch (error) {
       lastError = error as Error;
       console.warn(
