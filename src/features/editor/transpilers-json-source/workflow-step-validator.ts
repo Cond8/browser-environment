@@ -12,39 +12,11 @@ export class WorkflowStepValidationError extends Error {
   }
 }
 
-const VALID_TYPES = ['string', 'number', 'boolean', 'object', 'array', 'any'] as const;
-type ValidType = (typeof VALID_TYPES)[number];
 
 // Schema that accepts any JSON value
 const anyJson: z.ZodType<any> = z.lazy(() =>
   z.union([z.string(), z.number(), z.boolean(), z.array(anyJson), z.record(anyJson)]),
 );
-
-// A very lenient JSON schema that accepts nearly anything
-const jsonSchema = z
-  .object({
-    type: z.union([z.enum(VALID_TYPES), z.array(z.string())]).optional(),
-    description: z.string().optional(),
-    properties: z.record(anyJson).optional(),
-    required: z.array(z.string()).optional(),
-    additionalProperties: z.boolean().optional(),
-    items: anyJson.optional(),
-    patternProperties: z.record(anyJson).optional(),
-    $schema: z.string().optional(),
-    optionalProperties: z.boolean().optional(),
-    requiredProperties: z.array(z.string()).optional(),
-  })
-  .catchall(anyJson);
-
-// The main schema is also very lenient
-const workflowStepSchema = z.object({
-  name: z.string().min(1),
-  module: z.string().min(1),
-  function: z.string().min(1),
-  goal: z.string().min(1),
-  params: z.record(jsonSchema).optional(),
-  returns: z.record(jsonSchema).optional(),
-});
 
 // A very lenient schema for JSON Schema-like objects
 const jsonSchemaLike = z
