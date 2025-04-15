@@ -37,47 +37,45 @@ interface PartialWorkflowInterface {
 }
 
 interface WorkflowStepDisplayProps {
-  step: { interface: WorkflowInterface; type: string };
+  step: WorkflowInterface;
   className?: string;
 }
 
 interface PartialWorkflowStepDisplayProps {
-  step: { interface?: PartialWorkflowInterface; type?: string };
+  step: PartialWorkflowInterface;
   className?: string;
 }
 
 export const WorkflowStepDisplay = ({ step, className }: WorkflowStepDisplayProps) => {
-  const { interface: workflow } = step;
-
   return (
     <div className={cn('p-4 space-y-4 bg-card rounded-lg border', className)}>
       {/* Header Section */}
       <div className="flex items-center gap-2">
         <Code className="h-5 w-5 text-primary shrink-0" />
-        <h3 className="text-lg font-semibold truncate">{toSpaceCase(workflow.name)}</h3>
+        <h3 className="text-lg font-semibold truncate">{toSpaceCase(step.name)}</h3>
       </div>
 
       {/* Goal Section */}
       <div className="flex items-start gap-2">
         <Goal className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
-        <p className="text-sm text-muted-foreground">{workflow.goal}</p>
+        <p className="text-sm text-muted-foreground">{step.goal}</p>
       </div>
 
       {/* Module and Function Section */}
       <div className="grid grid-cols-2 gap-4">
         <div className="flex items-center gap-2">
           <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-          <span className="text-sm font-medium truncate">{toSpaceCase(workflow.module)}</span>
+          <span className="text-sm font-medium truncate">{toSpaceCase(step.module)}</span>
         </div>
         <div className="flex items-center gap-2">
           <FunctionSquare className="h-4 w-4 text-muted-foreground shrink-0" />
-          <span className="text-sm font-medium truncate">{toSpaceCase(workflow.function)}</span>
+          <span className="text-sm font-medium truncate">{toSpaceCase(step.function)}</span>
         </div>
       </div>
 
       {/* Parameters and Returns Sections */}
-      <JsonSchemaRenderer schema={workflow.params} title="Parameters" />
-      <JsonSchemaRenderer schema={workflow.returns} title="Returns" />
+      <JsonSchemaRenderer schema={step.params} title="Parameters" />
+      <JsonSchemaRenderer schema={step.returns} title="Returns" />
     </div>
   );
 };
@@ -86,47 +84,45 @@ export const PartialWorkflowStepDisplay = ({
   step,
   className,
 }: PartialWorkflowStepDisplayProps) => {
-  const workflow = step.interface || {};
-
   return (
     <div className={cn('p-4 space-y-4 bg-card rounded-lg border', className)}>
       {/* Header Section */}
       <div className="flex items-center gap-2">
         <Code className="h-5 w-5 text-primary shrink-0" />
         <h3 className="text-lg font-semibold truncate">
-          {workflow.name ? toSpaceCase(workflow.name) : 'Loading...'}
+          {step.name ? toSpaceCase(step.name) : 'Loading...'}
         </h3>
       </div>
 
       {/* Goal Section */}
-      {workflow.goal && (
+      {step.goal && (
         <div className="flex items-start gap-2">
           <Goal className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
-          <p className="text-sm text-muted-foreground">{workflow.goal}</p>
+          <p className="text-sm text-muted-foreground">{step.goal}</p>
         </div>
       )}
 
       {/* Module and Function Section */}
-      {(workflow.module || workflow.function) && (
+      {(step.module || step.function) && (
         <div className="grid grid-cols-2 gap-4">
-          {workflow.module && (
+          {step.module && (
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="text-sm font-medium truncate">{toSpaceCase(workflow.module)}</span>
+              <span className="text-sm font-medium truncate">{toSpaceCase(step.module)}</span>
             </div>
           )}
-          {workflow.function && (
+          {step.function && (
             <div className="flex items-center gap-2">
               <FunctionSquare className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="text-sm font-medium truncate">{toSpaceCase(workflow.function)}</span>
+              <span className="text-sm font-medium truncate">{toSpaceCase(step.function)}</span>
             </div>
           )}
         </div>
       )}
 
       {/* Parameters and Returns Sections */}
-      {workflow.params && <JsonSchemaRenderer schema={workflow.params} title="Parameters" />}
-      {workflow.returns && <JsonSchemaRenderer schema={workflow.returns} title="Returns" />}
+      {step.params && <JsonSchemaRenderer schema={step.params} title="Parameters" />}
+      {step.returns && <JsonSchemaRenderer schema={step.returns} title="Returns" />}
     </div>
   );
 };

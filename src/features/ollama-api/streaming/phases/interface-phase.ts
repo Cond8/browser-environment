@@ -15,17 +15,15 @@ The interface must be a single JSON object with this exact structure:
 
 \`\`\`json
 {
-  "interface": {
-    "name": "SingleWordWorkflow",
-    "module": "Choose one",
-    "function": "DoubleWorded function",
-    "goal": "md summary of the workflow goal",
-    "params": {
-      // ... params - json schema
-    },
-    "returns": {
-      // ... returns - json schema
-    }
+  "name": "SingleWordWorkflow",
+  "module": "Choose one",
+  "function": "DoubleWorded function",
+  "goal": "md summary of the workflow goal",
+  "params": {
+    // ... params - json schema
+  },
+  "returns": {
+    // ... returns - json schema
   }
 }
 \`\`\`
@@ -57,7 +55,6 @@ export async function* interfacePhase(
 ): AsyncGenerator<string, string, unknown> {
   try {
     const prompt = SYSTEM_PROMPT(INTERFACE_PROMPT(userRequest));
-    console.log('[interfacePhase] Prompt:', prompt);
     const messages = [
       {
         role: 'system',
@@ -68,9 +65,6 @@ export async function* interfacePhase(
         content: alignmentResponse,
       },
     ];
-
-    console.log('[interfacePhase] Messages:', messages);
-
     return yield* chatFn({
       messages,
       options: {

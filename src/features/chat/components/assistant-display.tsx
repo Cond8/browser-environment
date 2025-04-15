@@ -17,21 +17,20 @@ type StreamingMessageDisplayProps = {
 
 // Helper function to check if an object is a workflow step
 function isWorkflowStep(obj: any): obj is { interface: any; type: string } {
-  return obj && typeof obj === 'object' && 'interface' in obj;
+  return obj && typeof obj === 'object';
 }
 
 // Helper to check if it's a complete workflow step with all required fields
 function isCompleteWorkflowStep(obj: any): boolean {
   return (
     isWorkflowStep(obj) &&
-    obj.interface &&
-    typeof obj.interface === 'object' &&
-    'name' in obj.interface &&
-    'module' in obj.interface &&
-    'function' in obj.interface &&
-    'goal' in obj.interface &&
-    'params' in obj.interface &&
-    'returns' in obj.interface
+    typeof obj === 'object' &&
+    'name' in obj &&
+    'module' in obj &&
+    'function' in obj &&
+    'goal' in obj &&
+    'params' in obj &&
+    'returns' in obj
   );
 }
 

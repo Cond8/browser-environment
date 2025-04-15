@@ -4,13 +4,43 @@ import { ChatRequest } from 'ollama';
 import { WorkflowChainError } from '../../api/workflow-chain';
 import { WorkflowStep } from '../../api/workflow-step';
 
-export const FIRST_STEP_PROMPT = (userRequest: string, alignmentResponse: string) =>
+export const FIRST_STEP_PROMPT = (userRequest: string, interfaceResponse: WorkflowStep) =>
   `
 You are an assistant that helps users define structured workflows using a **JSON-based format**.
 
 Each workflow is a sequence of exactly **7 JSON objects**:
 - The **first object** is the workflow interface.
 - The **next 6 objects** are individual validation steps that progressively prepare and check the inputs.
+
+The first step must be a JSON object with this exact structure:
+
+\`\`\`json
+{
+  "name": "SingleWordStep",
+  "module": "Choose one",
+  "function": "DoubleWorded function",
+  "goal": "md summary of the step goal",
+  "params": {
+    // ... params - json schema
+  },
+  "returns": {
+    // ... returns - json schema
+  }
+}
+\`\`\`
+
+Available modules:
+- extract, parse, validate, transform, logic, calculate, format, io, storage, integrate, understand, generate
+
+Rules:
+- "name" must be a single word in PascalCase
+- "function" must be a single word in camelCase
+- All field names must be single words in camelCase
+- Use only types: string, number, boolean, array, object
+- Keep names concise and avoid multi-worded names
+- This step represents the first validation in the workflow
+- Define params and returns with meaningful names that describe their specific purpose
+- Each param and return should represent a distinct piece of data or configuration
 
 ---
 ## VALIDATION FOCUS
@@ -26,9 +56,9 @@ This first step should focus on validating the inputs by:
 ${userRequest}
 \`\`\`
 
-## ALIGNMENT RESPONSE
+## WORKFLOW INTERFACE
 \`\`\`
-${alignmentResponse}
+${JSON.stringify(interfaceResponse, null, 2)}
 \`\`\`
 
 ---
@@ -46,8 +76,9 @@ export async function* firstStepPhase(
     request: Omit<ChatRequest, 'model' | 'stream'>,
   ) => AsyncGenerator<string, string, unknown>,
 ): AsyncGenerator<string, WorkflowStep, unknown> {
-  const prompt = SYSTEM_PROMPT(FIRST_STEP_PROMPT(userRequest, alignmentResponse));
+  const prompt = SYSTEM_PROMPT(FIRST_STEP_PROMPT(userRequest, interfaceResponse));
   try {
+    console.log('[firstStepPhase] Starting step generation with prompt:', prompt);
     const response = yield* chatFn({
       messages: [
         {
@@ -56,21 +87,37 @@ export async function* firstStepPhase(
         },
         {
           role: 'user',
-          content: JSON.stringify({ interface: interfaceResponse }),
+          content: alignmentResponse,
         },
       ],
-      options: {
-        stop: ['}'],
-      },
     });
+
+    console.log('[firstStepPhase] Raw response:', response);
 
     // Parse the JSON response
     try {
+      // Remove markdown code block if present
+      let jsonString = response;
+      if (jsonString.startsWith('```json')) {
+        jsonString = jsonString.replace(/^```json\n?/, '').replace(/\n?```$/, '');
+      }
+
       // Add closing brace if needed
-      const jsonString = response.endsWith('}') ? response : response + '}';
+      jsonString = jsonString.endsWith('}') ? jsonString : jsonString + '}';
+
+      console.log('[firstStepPhase] Cleaned JSON string:', jsonString);
       const parsedResponse = JSON.parse(jsonString);
-      return parsedResponse.step;
+
+      // Handle both formats - with step property or direct step object
+      const step = parsedResponse.step || parsedResponse;
+
+      if (!step || typeof step !== 'object') {
+        throw new Error('Invalid step format');
+      }
+
+      return step;
     } catch (parseErr) {
+      console.error('[firstStepPhase] JSON parsing failed:', parseErr);
       throw new WorkflowChainError(
         'Failed to parse first step JSON',
         'step',
@@ -79,6 +126,7 @@ export async function* firstStepPhase(
       );
     }
   } catch (err) {
+    console.error('[firstStepPhase] Step generation failed:', err);
     throw new WorkflowChainError(
       'First step generation failed',
       'step',

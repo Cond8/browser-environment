@@ -12,7 +12,6 @@ export class WorkflowStepValidationError extends Error {
   }
 }
 
-
 // Schema that accepts any JSON value
 const anyJson: z.ZodType<any> = z.lazy(() =>
   z.union([z.string(), z.number(), z.boolean(), z.array(anyJson), z.record(anyJson)]),
@@ -44,16 +43,6 @@ const DEFAULT_GOAL = 'Process inputs and produce outputs';
 // Very lenient workflow step schema that allows for interface extraction
 const lenientWorkflowSchema = z
   .object({
-    interface: z
-      .object({
-        name: z.string().min(1).optional(),
-        module: z.string().min(1).optional(),
-        function: z.string().min(1).optional(),
-        goal: z.string().min(1).optional(),
-        params: z.record(jsonSchemaLike).optional(),
-        returns: z.record(jsonSchemaLike).optional(),
-      })
-      .optional(),
     // If no interface property, check for direct properties
     name: z.string().min(1).optional(),
     module: z.string().min(1).optional(),
@@ -104,7 +93,14 @@ export function validateWorkflowStep(step: unknown): WorkflowStep {
     const lenientParsed = lenientWorkflowSchema.parse(step);
 
     // Extract the actual workflow data (either from interface or direct properties)
-    const rawWorkflowData = lenientParsed.interface || {
+    const rawWorkflowData: {
+      name?: string;
+      module?: string;
+      function?: string;
+      goal?: string;
+      params?: Record<string, any>;
+      returns?: Record<string, any>;
+    } = lenientParsed.interface || {
       name: lenientParsed.name,
       module: lenientParsed.module,
       function: lenientParsed.function,
@@ -127,9 +123,12 @@ export function validateWorkflowStep(step: unknown): WorkflowStep {
     const transformedParams: Record<string, { type: string; description: string }> = {};
     if (Object.keys(workflowData.params).length > 0) {
       Object.entries(workflowData.params).forEach(([key, value]) => {
+        const typedValue = value as { type?: string | string[]; description?: string };
         transformedParams[key] = {
-          type: Array.isArray(value.type) ? value.type[0] : (value.type as string) || 'any',
-          description: value.description || `Parameter ${key}`,
+          type: Array.isArray(typedValue.type)
+            ? typedValue.type[0]
+            : (typedValue.type as string) || 'any',
+          description: typedValue.description || `Parameter ${key}`,
         };
       });
     } else {
@@ -144,9 +143,12 @@ export function validateWorkflowStep(step: unknown): WorkflowStep {
     const transformedReturns: Record<string, { type: string; description: string }> = {};
     if (Object.keys(workflowData.returns).length > 0) {
       Object.entries(workflowData.returns).forEach(([key, value]) => {
+        const typedValue = value as { type?: string | string[]; description?: string };
         transformedReturns[key] = {
-          type: Array.isArray(value.type) ? value.type[0] : (value.type as string) || 'any',
-          description: value.description || `Return value ${key}`,
+          type: Array.isArray(typedValue.type)
+            ? typedValue.type[0]
+            : (typedValue.type as string) || 'any',
+          description: typedValue.description || `Return value ${key}`,
         };
       });
     } else {

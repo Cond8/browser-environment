@@ -91,10 +91,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
           alignmentResult,
           chatFn,
         ),
-      response => {
-        console.log('response', response);
-        return myJsonParser(response);
-      },
+      response => myJsonParser(response),
       parsed => {
         // Validate each parsed workflow step
         parsed.forEach(step => {
