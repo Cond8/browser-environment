@@ -16,7 +16,7 @@ export interface StreamSourceState {
 }
 
 export const useStreamSourceStore = create<StreamSourceState>()(
-  immer((set, get) => ({
+  immer(set => ({
     isStreaming: false,
     workflows: [],
     message: '',
@@ -29,6 +29,10 @@ export const useStreamSourceStore = create<StreamSourceState>()(
       let message = '';
       try {
         for await (const token of executeWorkflowChain()) {
+          if (token === '[BREAK]') {
+            message = '';
+            continue;
+          }
           message += token;
           set(state => {
             state.message = message;
@@ -43,12 +47,6 @@ export const useStreamSourceStore = create<StreamSourceState>()(
         });
       }
       return { message };
-    },
-
-    workflowCollector: {
-      addWorkflow: (workflow: WorkflowStep) =>
-        set(state => ({ workflows: [...state.workflows, workflow] })),
-      getWorkflows: () => get().workflows,
     },
   })),
 );

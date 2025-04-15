@@ -3,7 +3,7 @@ import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step'
 import Editor from '@monaco-editor/react';
 import { editor, languages } from 'monaco-editor';
 import { useEffect, useRef } from 'react';
-import { jsonToDsl } from '../transpilers/json-to-dsl';
+import { jsonToDsl } from '../transpilers-dsl-source/json-to-dsl';
 export interface DslEditorProps {
   jsonContent: WorkflowStep[];
 }

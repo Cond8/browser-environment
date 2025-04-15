@@ -1,0 +1,1 @@
+export type WorkflowPhase = 'interface' | 'step' | 'stream' | 'alignment';

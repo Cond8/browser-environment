@@ -9,7 +9,7 @@ import { retryWithDelay } from '../infra/retry-with-delay';
 import { alignmentPhase } from '../phases/alignment-phase';
 import { interfacePhase } from '../phases/interface-phase';
 import { firstStepPhase } from '../phases/steps/step-1-phase';
-
+import { WorkflowPhase } from '../phases/types';
 export class WorkflowChainError extends Error {
   public metadata: unknown[];
   constructor(
@@ -27,7 +27,7 @@ export class WorkflowChainError extends Error {
 export class WorkflowValidationError extends WorkflowChainError {
   constructor(
     message: string,
-    phase: 'interface' | 'step' | 'alignment',
+    phase: WorkflowPhase,
     public validationErrors: string[],
     ...metadata: unknown[]
   ) {
@@ -66,6 +66,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
       messages[0].content,
     );
     chatStore.addAlignmentMessage(alignmentResult);
+    yield '[BREAK]';
 
     /* ===========================
      * ===== INTERFACE PHASE =====
@@ -79,6 +80,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
     chatStore.addInterfaceMessage(parsedInterfaceResult);
     const workflowPath = useWorkflowStore.getState().createWorkflow(parsedInterfaceResult);
     useEditorStore.getState().setFilePath(workflowPath);
+    yield '[BREAK]';
 
     /* ======================
      * ===== FIRST STEP =====
