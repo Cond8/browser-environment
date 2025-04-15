@@ -66,6 +66,8 @@ ${JSON.stringify(interfaceResponse, null, 2)}
 
 Generate the first validation step based on the interface provided. The format should match the structure of the interface response.
 Output only the JSON for the step.
+
+### Response:
 `.trim();
 
 export async function* firstStepPhase(
@@ -75,63 +77,19 @@ export async function* firstStepPhase(
   chatFn: (
     request: Omit<ChatRequest, 'model' | 'stream'>,
   ) => AsyncGenerator<string, string, unknown>,
-): AsyncGenerator<string, WorkflowStep, unknown> {
+): AsyncGenerator<string, string, unknown> {
   const prompt = SYSTEM_PROMPT(FIRST_STEP_PROMPT(userRequest, interfaceResponse));
-  try {
-    console.log('[firstStepPhase] Starting step generation with prompt:', prompt);
-    const response = yield* chatFn({
-      messages: [
-        {
-          role: 'system',
-          content: prompt,
-        },
-        {
-          role: 'user',
-          content: alignmentResponse,
-        },
-      ],
-    });
-
-    console.log('[firstStepPhase] Raw response:', response);
-
-    // Parse the JSON response
-    try {
-      // Remove markdown code block if present
-      let jsonString = response;
-      if (jsonString.startsWith('```json')) {
-        jsonString = jsonString.replace(/^```json\n?/, '').replace(/\n?```$/, '');
-      }
-
-      // Add closing brace if needed
-      jsonString = jsonString.endsWith('}') ? jsonString : jsonString + '}';
-
-      console.log('[firstStepPhase] Cleaned JSON string:', jsonString);
-      const parsedResponse = JSON.parse(jsonString);
-
-      // Handle both formats - with step property or direct step object
-      const step = parsedResponse.step || parsedResponse;
-
-      if (!step || typeof step !== 'object') {
-        throw new Error('Invalid step format');
-      }
-
-      return step;
-    } catch (parseErr) {
-      console.error('[firstStepPhase] JSON parsing failed:', parseErr);
-      throw new WorkflowChainError(
-        'Failed to parse first step JSON',
-        'step',
-        parseErr instanceof Error ? parseErr : undefined,
-        { response },
-      );
-    }
-  } catch (err) {
-    console.error('[firstStepPhase] Step generation failed:', err);
-    throw new WorkflowChainError(
-      'First step generation failed',
-      'step',
-      err instanceof Error ? err : undefined,
-      { userRequest, alignmentResponse },
-    );
-  }
+  console.log('[firstStepPhase] Starting step generation with prompt:', prompt);
+  return yield* chatFn({
+    messages: [
+      {
+        role: 'system',
+        content: prompt,
+      },
+      {
+        role: 'user',
+        content: alignmentResponse,
+      },
+    ],
+  });
 }

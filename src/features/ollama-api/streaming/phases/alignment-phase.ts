@@ -50,25 +50,16 @@ export async function* alignmentPhase(
     request: Omit<ChatRequest, 'model' | 'stream'>,
   ) => AsyncGenerator<string, string, unknown>,
 ): AsyncGenerator<string, string, unknown> {
-  try {
-    return yield* chatFn({
-      messages: [
-        {
-          role: 'system',
-          content: ALIGNMENT_PROMPT(),
-        },
-        {
-          role: 'user',
-          content: userRequest,
-        },
-      ],
-    });
-  } catch (err) {
-    throw new WorkflowChainError(
-      'Alignment phase failed',
-      'alignment',
-      err instanceof Error ? err : undefined,
-      userRequest,
-    );
-  }
+  return yield* chatFn({
+    messages: [
+      {
+        role: 'system',
+        content: ALIGNMENT_PROMPT(),
+      },
+      {
+        role: 'user',
+        content: userRequest,
+      },
+    ],
+  });
 }

@@ -1,6 +1,5 @@
 // src/features/ollama-api/streaming/phases/interface-phase.ts
 import { ChatRequest } from 'ollama';
-import { WorkflowChainError } from '../api/workflow-chain';
 import { SYSTEM_PROMPT } from './prompts-system';
 
 export const INTERFACE_PROMPT = (userRequest: string) =>
@@ -44,6 +43,8 @@ Rules:
 User request: ${userRequest}
 
 Output only the raw JSON interface.
+
+### Response:
 `.trim();
 
 export async function* interfacePhase(
@@ -53,30 +54,19 @@ export async function* interfacePhase(
     request: Omit<ChatRequest, 'model' | 'stream'>,
   ) => AsyncGenerator<string, string, unknown>,
 ): AsyncGenerator<string, string, unknown> {
-  try {
-    const prompt = SYSTEM_PROMPT(INTERFACE_PROMPT(userRequest));
-    const messages = [
+  return yield* chatFn({
+    messages: [
       {
         role: 'system',
-        content: prompt,
+        content: SYSTEM_PROMPT(INTERFACE_PROMPT(userRequest)),
       },
       {
         role: 'user',
         content: alignmentResponse,
       },
-    ];
-    return yield* chatFn({
-      messages,
-      options: {
-        stop: ['*/'],
-      },
-    });
-  } catch (err) {
-    throw new WorkflowChainError(
-      'Interface generation failed',
-      'interface',
-      err instanceof Error ? err : undefined,
-      { userRequest, alignmentResponse },
-    );
-  }
+    ],
+    options: {
+      stop: ['*/'],
+    },
+  });
 }

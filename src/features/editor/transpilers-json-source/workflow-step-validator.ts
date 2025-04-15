@@ -48,8 +48,8 @@ const lenientWorkflowSchema = z
     module: z.string().min(1).optional(),
     function: z.string().min(1).optional(),
     goal: z.string().min(1).optional(),
-    params: z.record(jsonSchemaLike).optional(),
-    returns: z.record(jsonSchemaLike).optional(),
+    params: z.union([z.record(jsonSchemaLike), z.array(z.any())]).optional(),
+    returns: z.union([z.record(jsonSchemaLike), z.array(z.any())]).optional(),
   })
   .passthrough();
 
@@ -122,15 +122,30 @@ export function validateWorkflowStep(step: unknown): WorkflowStep {
     // Transform params to match WorkflowStep type
     const transformedParams: Record<string, { type: string; description: string }> = {};
     if (Object.keys(workflowData.params).length > 0) {
-      Object.entries(workflowData.params).forEach(([key, value]) => {
-        const typedValue = value as { type?: string | string[]; description?: string };
-        transformedParams[key] = {
-          type: Array.isArray(typedValue.type)
-            ? typedValue.type[0]
-            : (typedValue.type as string) || 'any',
-          description: typedValue.description || `Parameter ${key}`,
-        };
-      });
+      if (Array.isArray(workflowData.params)) {
+        // Handle array format
+        workflowData.params.forEach((param: any, index: number) => {
+          const key = `param${index}`;
+          transformedParams[key] = {
+            type: typeof param === 'object' && param.type ? param.type : 'any',
+            description:
+              typeof param === 'object' && param.description
+                ? param.description
+                : `Parameter ${index}`,
+          };
+        });
+      } else {
+        // Handle object format
+        Object.entries(workflowData.params).forEach(([key, value]) => {
+          const typedValue = value as { type?: string | string[]; description?: string };
+          transformedParams[key] = {
+            type: Array.isArray(typedValue.type)
+              ? typedValue.type[0]
+              : (typedValue.type as string) || 'any',
+            description: typedValue.description || `Parameter ${key}`,
+          };
+        });
+      }
     } else {
       // Add a default param if none provided
       transformedParams['input'] = {
@@ -142,15 +157,30 @@ export function validateWorkflowStep(step: unknown): WorkflowStep {
     // Transform returns to match WorkflowStep type
     const transformedReturns: Record<string, { type: string; description: string }> = {};
     if (Object.keys(workflowData.returns).length > 0) {
-      Object.entries(workflowData.returns).forEach(([key, value]) => {
-        const typedValue = value as { type?: string | string[]; description?: string };
-        transformedReturns[key] = {
-          type: Array.isArray(typedValue.type)
-            ? typedValue.type[0]
-            : (typedValue.type as string) || 'any',
-          description: typedValue.description || `Return value ${key}`,
-        };
-      });
+      if (Array.isArray(workflowData.returns)) {
+        // Handle array format
+        workflowData.returns.forEach((ret: any, index: number) => {
+          const key = `return${index}`;
+          transformedReturns[key] = {
+            type: typeof ret === 'object' && ret.type ? ret.type : 'any',
+            description:
+              typeof ret === 'object' && ret.description
+                ? ret.description
+                : `Return value ${index}`,
+          };
+        });
+      } else {
+        // Handle object format
+        Object.entries(workflowData.returns).forEach(([key, value]) => {
+          const typedValue = value as { type?: string | string[]; description?: string };
+          transformedReturns[key] = {
+            type: Array.isArray(typedValue.type)
+              ? typedValue.type[0]
+              : (typedValue.type as string) || 'any',
+            description: typedValue.description || `Return value ${key}`,
+          };
+        });
+      }
     } else {
       // Add a default return if none provided
       transformedReturns['output'] = {

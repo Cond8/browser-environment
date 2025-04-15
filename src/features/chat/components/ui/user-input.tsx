@@ -1,4 +1,5 @@
 // src/features/chat/components/ui/user-input.tsx
+import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/features/chat/store/chat-store';
 import { WorkflowValidationError } from '@/features/ollama-api/streaming/api/workflow-chain';
@@ -42,10 +43,14 @@ const EXAMPLE_REQUESTS = [
 export function UserInput() {
   const [message, setMessage] = useState('');
 
+  const getRandomExample = () => {
+    const randomIndex = Math.floor(Math.random() * EXAMPLE_REQUESTS.length);
+    return EXAMPLE_REQUESTS[randomIndex];
+  };
+
   useEffect(() => {
     // Set a random example request when component mounts
-    const randomIndex = Math.floor(Math.random() * EXAMPLE_REQUESTS.length);
-    setMessage(EXAMPLE_REQUESTS[randomIndex]);
+    setMessage(getRandomExample());
   }, []);
 
   const addUserMessage = useChatStore(state => state.addUserMessage);
@@ -134,6 +139,15 @@ export function UserInput() {
       <div className="flex items-center justify-between">
         <SelectedModel />
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMessage(getRandomExample())}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            title="Get random example"
+          >
+            replace
+          </Button>
           <ShortcutsDisplay
             command="Stop"
             shortcut="Shift+Enter"

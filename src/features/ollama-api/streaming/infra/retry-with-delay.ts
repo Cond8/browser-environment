@@ -2,7 +2,7 @@
 import { WorkflowChainError } from '../api/workflow-chain';
 import { WorkflowPhase } from '../phases/types';
 
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 1;
 const RETRY_DELAY_MS = 1000;
 
 export async function* retryWithDelay<TReturn>(

@@ -31,6 +31,8 @@ export const createChat = (ollamaUrl: string, model: string, userOptions: Partia
 
     useAbortEventBusStore.getState().unregisterAbortCallback(abortEvent);
 
+    console.log('[createChat] Response:', response);
+
     return response;
   };
 };
