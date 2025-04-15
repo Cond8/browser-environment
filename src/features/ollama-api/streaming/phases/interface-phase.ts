@@ -12,11 +12,52 @@ Think of this as defining a single black box that processes inputs into outputs:
 - returns: What comes OUT of the entire workflow when done
 
 The interface must be a single JSON object with this exact structure:
+
+\`\`\`json
 {
   "interface": {
-    ...
+    "name": "SingleWordWorkflow",
+    "module": "One of single-worded modules below",
+    "function": "DoubleWordedFunction",
+    "goal": "One-sentence summary of the workflow goal",
+    "params": {
+      "data": {
+        "type": "string | number | boolean | array",
+        "description": "Concise description of the input parameter"
+      },
+      "config": {
+        "type": "object",
+        "description": "Configuration options for the workflow"
+      }
+      // ... more params
+    },
+    "returns": {
+      "result": {
+        "type": "object",
+        "description": "The processed output data"
+      },
+      "status": {
+        "type": "string",
+        "description": "The completion status of the workflow"
+      }
+      // ... more returns
+    }
   }
 }
+\`\`\`
+
+Available modules:
+- extract, parse, validate, transform, logic, calculate, format, io, storage, integrate, understand, generate
+
+Rules:
+- "name" must be a single word in PascalCase
+- "function" must be a single word in camelCase
+- All field names must be single words in camelCase
+- Use only types: string, number, boolean, array, object
+- Keep names concise and avoid multi-worded names
+- This interface represents the ENTIRE workflow contract - think of it as a single function that takes inputs and produces outputs
+- Define params and returns with meaningful names that describe their specific purpose
+- Each param and return should represent a distinct piece of data or configuration
 
 User request: ${userRequest}
 

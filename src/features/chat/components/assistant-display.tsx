@@ -1,6 +1,8 @@
 // src/features/chat/components/assistant-display.tsx
 import { SLMOutput } from '@/features/editor/transpilers-json-source/extract-text-parse';
 import { cn } from '@/lib/utils';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { WorkflowStepDisplay } from './workflow-step-components';
 
 type MessageDisplayProps = {
@@ -20,7 +22,11 @@ export const AssistantDisplay = ({ content }: MessageDisplayProps) => {
 
   // Handle string content
   if (typeof content === 'string') {
-    return <div className={cn('p-4', 'bg-muted/30')}>{content}</div>;
+    return (
+      <div className={cn('p-4', 'bg-muted/30', 'prose prose-sm dark:prose-invert max-w-none')}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+      </div>
+    );
   }
 
   // Handle SLMOutput
@@ -31,7 +37,11 @@ export const AssistantDisplay = ({ content }: MessageDisplayProps) => {
           if (!chunk) return null;
 
           if (chunk.type === 'text') {
-            return <div key={index}>{chunk.content}</div>;
+            return (
+              <div key={index} className="prose prose-sm dark:prose-invert max-w-none">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{chunk.content}</ReactMarkdown>
+              </div>
+            );
           } else if (chunk.type === 'json') {
             // Check if the content is a workflow step
             if (isWorkflowStep(chunk.content)) {
