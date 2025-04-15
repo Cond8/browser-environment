@@ -13,17 +13,15 @@ function parseJsonWithErrorHandling(jsonStr: string): WorkflowStep {
 }
 
 function processJsonChunk(chunk: SLMChunk): SLMChunk {
-  if (chunk.type !== 'json') {
-    return chunk;
-  }
-
-  const jsonStr = JSON.stringify(chunk.content);
+  // Try to process all chunks as potential JSON
+  const content = typeof chunk.content === 'string' ? chunk.content : JSON.stringify(chunk.content);
 
   // Tier 1: Direct parse
   try {
+    const parsed = parseJsonWithErrorHandling(content);
     return {
       type: 'json',
-      content: parseJsonWithErrorHandling(jsonStr),
+      content: parsed,
     };
   } catch (error) {
     console.log('Tier 1 parse failed, trying tier 2...');
@@ -31,10 +29,11 @@ function processJsonChunk(chunk: SLMChunk): SLMChunk {
 
   // Tier 2: Library fix then parse
   try {
-    const repairedJson = jsonrepair(jsonStr);
+    const repairedJson = jsonrepair(content);
+    const parsed = parseJsonWithErrorHandling(repairedJson);
     return {
       type: 'json',
-      content: parseJsonWithErrorHandling(repairedJson),
+      content: parsed,
     };
   } catch (error) {
     console.log('Tier 2 parse failed, trying tier 3...');
@@ -42,22 +41,23 @@ function processJsonChunk(chunk: SLMChunk): SLMChunk {
 
   // Tier 3: Transform to interface structure
   try {
-    const transformed = transformToInterface(jsonStr);
+    const transformed = transformToInterface(content);
+    const parsed = parseJsonWithErrorHandling(transformed);
     return {
       type: 'json',
-      content: parseJsonWithErrorHandling(transformed),
+      content: parsed,
     };
   } catch (error) {
-    console.error('All JSON fixing tiers failed');
-    // Fallback to text chunk with original content
+    console.log('All JSON fixing tiers failed, keeping as text');
+    // If all parsing attempts fail, keep as text
     return {
       type: 'text',
-      content: jsonStr,
+      content: content,
     };
   }
 }
 
-export function myJsonParse(input: string): SLMOutput {
+export function myJsonParser(input: string): SLMOutput {
   if (!input || typeof input !== 'string') {
     throw new Error('Input must be a non-empty string');
   }

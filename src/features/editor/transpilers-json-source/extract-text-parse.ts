@@ -16,6 +16,7 @@ export class TextExtractionError extends Error {
 }
 
 export function extractTextParts(input: string): SLMOutput {
+
   if (typeof input !== 'string') {
     throw new TextExtractionError('Input must be a string', { input });
   }
@@ -27,7 +28,7 @@ export function extractTextParts(input: string): SLMOutput {
   const chunks: SLMOutput = [];
   let currentIndex = 0;
 
-  // First handle code fence blocks to avoid confusing example JSON with actual JSON
+  // Handle code fence blocks
   const codeFenceRegex = /```(?:json)?\s*\n?([\s\S]*?)\n?```/g;
   let codeFenceMatch;
   const processedRanges: Array<[number, number]> = [];
@@ -43,74 +44,22 @@ export function extractTextParts(input: string): SLMOutput {
       chunks.push({ type: 'text', content: textBefore });
     }
 
-    // Try to parse the code fence content as JSON
-    try {
-      const jsonContent = codeFenceMatch[1].trim();
-      const parsedJson = JSON.parse(jsonContent);
-
-      // Only process if it's a valid object and doesn't look like an example
-      if (
-        typeof parsedJson === 'object' &&
-        parsedJson !== null &&
-        !jsonContent.includes('// ... more') &&
-        !jsonContent.includes('// Example')
-      ) {
-        if ('interface' in parsedJson || 'type' in parsedJson) {
-          chunks.push({ type: 'json', content: parsedJson });
-        } else {
-          chunks.push({ type: 'text', content: codeFenceMatch[0] });
-        }
-      } else {
-        chunks.push({ type: 'text', content: codeFenceMatch[0] });
-      }
-    } catch (error) {
-      chunks.push({ type: 'text', content: codeFenceMatch[0] });
-    }
+    // Add the code fence content as a chunk
+    const codeFenceContent = codeFenceMatch[1].trim();
+    chunks.push({ type: 'text', content: codeFenceContent });
 
     currentIndex = matchEnd;
   }
 
-  // Then look for JSON objects in the remaining unprocessed text
+  // Add any remaining text after the last code fence
   const remainingRanges = getUnprocessedRanges(input.length, processedRanges);
+
   for (const [start, end] of remainingRanges) {
-    const text = input.substring(start, end);
-    const jsonRegex = /\{(?:[^{}]|(?:\{[^{}]*\}))*\}/g;
-    let match;
-    let lastIndex = 0;
-
-    while ((match = jsonRegex.exec(text)) !== null) {
-      // Add text before the JSON if it exists
-      const textBefore = text.substring(lastIndex, match.index).trim();
-      if (textBefore) {
-        chunks.push({ type: 'text', content: textBefore });
-      }
-
-      try {
-        const jsonStr = match[0];
-        const parsedJson = JSON.parse(jsonStr);
-
-        if (typeof parsedJson === 'object' && parsedJson !== null) {
-          if ('interface' in parsedJson || 'type' in parsedJson) {
-            chunks.push({ type: 'json', content: parsedJson });
-          } else {
-            chunks.push({ type: 'text', content: jsonStr });
-          }
-        }
-      } catch (error) {
-        // If JSON parsing fails, treat as text
-        chunks.push({ type: 'text', content: match[0] });
-      }
-
-      lastIndex = match.index + match[0].length;
-    }
-
-    // Add remaining text
-    const remainingText = text.substring(lastIndex).trim();
-    if (remainingText) {
-      chunks.push({ type: 'text', content: remainingText });
+    const text = input.substring(start, end).trim();
+    if (text) {
+      chunks.push({ type: 'text', content: text });
     }
   }
-
   return chunks;
 }
 

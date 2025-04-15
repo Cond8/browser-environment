@@ -45,7 +45,7 @@ export const ChatContent = () => {
               {message.role === 'assistant' && message.error ? (
                 <ErrorDisplay error={message.error} />
               ) : message.role === 'assistant' ? (
-                <AssistantDisplay content={message.content} type={message.type} />
+                <AssistantDisplay content={message.content} />
               ) : (
                 <UserDisplay content={message.content} />
               )}
@@ -54,7 +54,7 @@ export const ChatContent = () => {
         })}
         {isStreaming && streamMessage && (
           <div className="w-full border-b bg-background">
-            <AssistantDisplay content={streamMessage} type="alignment" />
+            <AssistantDisplay content={streamMessage} />
           </div>
         )}
         <div ref={messagesEndRef} />

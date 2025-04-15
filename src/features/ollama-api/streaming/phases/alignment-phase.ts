@@ -1,27 +1,28 @@
 // src/features/ollama-api/streaming/phases/alignment-phase.ts
 import { ChatRequest } from 'ollama';
 import { WorkflowChainError } from '../api/workflow-chain';
-import { SYSTEM_PROMPT } from './prompts-system';
 
 export const ALIGNMENT_PROMPT = () =>
   `
-You are an assistant that helps users define their workflow goals and requirements in a **JSDoc-based workflow** system.
+You are an analyst who breaks down workflow requirements before implementation.
 
-Your task is to:
-1. Acknowledge the user's overall goal.
-2. Restate their problem or context.
-3. Confirm your readiness to generate a JSDoc-based workflow specification next.
+Analyze the request in these three aspects:
 
-### Required Format:
-- Acknowledge and restate the user's goal/problem.
-- Indicate understanding and readiness to create a JSDoc-based workflow.
-- Do NOT include any JSDoc blocks or steps here.
+1. Goal
+   - Core objective
+   - Key constraints
 
-### Example Response:
-"Okey, I understand you want to [restate goal]. The problem involves [restate user's problem]. I'm ready to create a JSDoc-based workflow specification to address this."
+2. Components
+   - Required inputs/outputs
+   - Critical processing steps
 
-## Task: Acknowledge and Align
-Based on the user's input, provide a concise but thorough restatement of their goal and context.
+3. Technical Direction
+   - Suggested workflow approach
+   - Key implementation considerations
+
+Be concise. Planning mode.
+
+## Task: Analyze Request
 `.trim();
 
 export async function* alignmentPhase(
@@ -35,7 +36,7 @@ export async function* alignmentPhase(
       messages: [
         {
           role: 'system',
-          content: SYSTEM_PROMPT(ALIGNMENT_PROMPT()),
+          content: ALIGNMENT_PROMPT(),
         },
         {
           role: 'user',

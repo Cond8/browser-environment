@@ -2,10 +2,19 @@
 import { cn } from '@/lib/utils';
 import { Code, FileText, FunctionSquare, Goal, ListChecks, Type } from 'lucide-react';
 
+// Utility function to convert PascalCase/camelCase to Space Case
+const toSpaceCase = (str: string | undefined | null): string => {
+  if (!str) return '';
+  return str
+    .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+    .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+    .trim(); // Remove any leading/trailing spaces
+};
+
 interface WorkflowInterface {
   name: string;
-  service: string;
-  method: string;
+  module: string;
+  function: string;
   goal: string;
   params: Record<string, { type: string; description: string }>;
   returns: Record<string, { type: string; description: string }>;
@@ -24,7 +33,7 @@ export const WorkflowStepDisplay = ({ step, className }: WorkflowStepDisplayProp
       {/* Header Section */}
       <div className="flex items-center gap-2">
         <Code className="h-5 w-5 text-primary" />
-        <h3 className="text-lg font-semibold">{workflow.name}</h3>
+        <h3 className="text-lg font-semibold">{toSpaceCase(workflow.name)}</h3>
       </div>
 
       {/* Goal Section */}
@@ -33,20 +42,20 @@ export const WorkflowStepDisplay = ({ step, className }: WorkflowStepDisplayProp
         <p className="text-sm text-muted-foreground">{workflow.goal}</p>
       </div>
 
-      {/* Service and Method Section */}
+      {/* Module and Function Section */}
       <div className="grid grid-cols-2 gap-4">
         <div className="flex items-center gap-2">
           <FileText className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">{workflow.service}</span>
+          <span className="text-sm font-medium">{toSpaceCase(workflow.module)}</span>
         </div>
         <div className="flex items-center gap-2">
           <FunctionSquare className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">{workflow.method}</span>
+          <span className="text-sm font-medium">{toSpaceCase(workflow.function)}</span>
         </div>
       </div>
 
       {/* Parameters Section */}
-      {Object.entries(workflow.params).length > 0 && (
+      {workflow.params && Object.entries(workflow.params).length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <ListChecks className="h-4 w-4 text-muted-foreground" />
@@ -58,8 +67,8 @@ export const WorkflowStepDisplay = ({ step, className }: WorkflowStepDisplayProp
                 <Type className="h-4 w-4 text-muted-foreground mt-0.5" />
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{name}</span>
-                    <span className="text-xs text-muted-foreground">({type})</span>
+                    <span className="text-sm font-medium">{toSpaceCase(name)}</span>
+                    <span className="text-xs text-muted-foreground">({toSpaceCase(type)})</span>
                   </div>
                   <p className="text-xs text-muted-foreground">{description}</p>
                 </div>
@@ -70,7 +79,7 @@ export const WorkflowStepDisplay = ({ step, className }: WorkflowStepDisplayProp
       )}
 
       {/* Returns Section */}
-      {Object.entries(workflow.returns).length > 0 && (
+      {workflow.returns && Object.entries(workflow.returns).length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <ListChecks className="h-4 w-4 text-muted-foreground" />
@@ -82,8 +91,8 @@ export const WorkflowStepDisplay = ({ step, className }: WorkflowStepDisplayProp
                 <Type className="h-4 w-4 text-muted-foreground mt-0.5" />
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{name}</span>
-                    <span className="text-xs text-muted-foreground">({type})</span>
+                    <span className="text-sm font-medium">{toSpaceCase(name)}</span>
+                    <span className="text-xs text-muted-foreground">({toSpaceCase(type)})</span>
                   </div>
                   <p className="text-xs text-muted-foreground">{description}</p>
                 </div>

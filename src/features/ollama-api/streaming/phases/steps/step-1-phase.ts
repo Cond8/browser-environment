@@ -24,8 +24,8 @@ Each step must follow this format:
  * <Goal of this specific step>
  *
  * @name <StepName>              // PascalCase, unique
- * @service <service>            // One of the validation-related services below
- * @method <snake_case_method>   // Describes the action
+ * @module <module>              // One of the validation-related modules below
+ * @function <snake_case_function> // Describes the action
  * @param {<type>} <param_name> - <Short description>
  * @returns {<type>} <result_name> - <Short description>
  */
@@ -37,9 +37,9 @@ Each step must follow this format:
 - Do NOT output anything other than the next valid JSDoc block.
 
 ---
-## AVAILABLE SERVICES (Validation-Oriented)
+## AVAILABLE MODULES (Validation-Oriented)
 
-Use one of these for the \`@service\` tag in each step:
+Use one of these for the \`@module\` tag in each step:
 
 - validate
 - sanitize
@@ -64,7 +64,7 @@ ${alignmentResponse}
 ---
 ## TASK
 
-You must now generate the **first validation step**, using \`@service validate\`. Focus on checking required fields and structure.
+You must now generate the **first validation step**, using \`@module validate\`. Focus on checking required fields and structure.
 `.trim();
 
 export async function* firstStepPhase(

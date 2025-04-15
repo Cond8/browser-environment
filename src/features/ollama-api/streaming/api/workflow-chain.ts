@@ -1,5 +1,5 @@
 // src/features/ollama-api/streaming/api/workflow-chain.ts
-import { myJsonParse } from '@/features/editor/transpilers-json-source/my-json-parse';
+import { myJsonParser } from '@/features/editor/transpilers-json-source/my-json-parser';
 import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
 import { useAssistantConfigStore } from '../../../chat/store/assistant-config-store';
 import { useChatStore } from '../../../chat/store/chat-store';
@@ -89,7 +89,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
         ),
       response => {
         console.log('response', response);
-        return myJsonParse(response);
+        return myJsonParser(response);
       },
       'interface',
       messages[0].content,

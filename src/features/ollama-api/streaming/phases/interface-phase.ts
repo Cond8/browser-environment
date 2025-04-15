@@ -5,11 +5,13 @@ import { SYSTEM_PROMPT } from './prompts-system';
 
 export const INTERFACE_PROMPT = (userRequest: string) =>
   `
-You are an assistant that generates structured **JSON-based interfaces** for workflows.
+You are designing the input/output contract for an entire workflow system.
 
-Each response must be a **single, valid JSON object** and nothing else. Do not include any extra text, markdown, backticks, or explanations.
+Think of this as defining a single black box that processes inputs into outputs:
+- params: What must go IN to the entire workflow
+- returns: What comes OUT of the entire workflow when done
 
-Respond only with the raw JSON, like:
+The interface must be a single JSON object with this exact structure:
 {
   "interface": {
     ...
@@ -18,7 +20,7 @@ Respond only with the raw JSON, like:
 
 User request: ${userRequest}
 
-Output a single JSON object only.
+Output only the raw JSON interface.
 `.trim();
 
 export async function* interfacePhase(
@@ -31,13 +33,21 @@ export async function* interfacePhase(
   try {
     const prompt = SYSTEM_PROMPT(INTERFACE_PROMPT(userRequest));
     console.log('[interfacePhase] Prompt:', prompt);
+    const messages = [
+      {
+        role: 'system',
+        content: prompt,
+      },
+      {
+        role: 'user',
+        content: alignmentResponse,
+      },
+    ];
+
+    console.log('[interfacePhase] Messages:', messages);
+
     return yield* chatFn({
-      messages: [
-        {
-          role: 'system',
-          content: prompt,
-        },
-      ],
+      messages,
       options: {
         stop: ['*/'],
       },

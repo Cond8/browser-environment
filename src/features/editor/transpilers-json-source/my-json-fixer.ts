@@ -23,8 +23,8 @@ export function transformToInterface(input: string): string {
     const transformed = {
       interface: {
         name: parsed.name || parsed.interface?.name || 'UnnamedWorkflow',
-        service: parsed.service || parsed.interface?.service || 'extract',
-        method: parsed.method || parsed.interface?.method || 'process',
+        module: parsed.module || parsed.interface?.module || 'extract',
+        function: parsed.function || parsed.interface?.function || 'process',
         goal: parsed.goal || parsed.interface?.goal || 'Process workflow',
         params: parsed.params || parsed.interface?.params || {},
         returns: parsed.returns || parsed.interface?.returns || {},
@@ -41,18 +41,20 @@ export function transformToInterface(input: string): string {
       throw new Error(`Failed to format name to PascalCase: ${(nameError as Error).message}`);
     }
 
-    // Ensure snake_case for method
+    // Ensure snake_case for function
     try {
-      transformed.interface.method = transformed.interface.method
+      transformed.interface.function = transformed.interface.function
         .split(/\s+/)
         .join('_')
         .toLowerCase();
-    } catch (methodError) {
-      throw new Error(`Failed to format method to snake_case: ${(methodError as Error).message}`);
+    } catch (functionError) {
+      throw new Error(
+        `Failed to format function to snake_case: ${(functionError as Error).message}`,
+      );
     }
 
-    // Ensure valid service
-    const validServices = [
+    // Ensure valid module
+    const validModules = [
       'extract',
       'parse',
       'validate',
@@ -66,9 +68,9 @@ export function transformToInterface(input: string): string {
       'understand',
       'generate',
     ];
-    if (!validServices.includes(transformed.interface.service)) {
+    if (!validModules.includes(transformed.interface.module)) {
       throw new Error(
-        `Invalid service: ${transformed.interface.service}. Must be one of: ${validServices.join(', ')}`,
+        `Invalid module: ${transformed.interface.module}. Must be one of: ${validModules.join(', ')}`,
       );
     }
 
@@ -110,8 +112,8 @@ export function transformToInterface(input: string): string {
     return JSON.stringify({
       interface: {
         name: 'DefaultWorkflow',
-        service: 'extract',
-        method: 'process',
+        module: 'extract',
+        function: 'process',
         goal: 'Process workflow',
         params: {},
         returns: {},
