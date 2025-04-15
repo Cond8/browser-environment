@@ -1,5 +1,6 @@
 // src/features/ollama-api/streaming/api/workflow-chain.ts
 import { myJsonParser } from '@/features/editor/transpilers-json-source/my-json-parser';
+import { validateWorkflowStep } from '@/features/editor/transpilers-json-source/workflow-step-validator';
 import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
 import { useAssistantConfigStore } from '../../../chat/store/assistant-config-store';
 import { useChatStore } from '../../../chat/store/chat-store';
@@ -68,6 +69,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
           chatFn,
         ),
       response => response,
+      () => void 0,
       'alignment',
       messages[0].content,
     );
@@ -90,6 +92,14 @@ export async function* executeWorkflowChain(): AsyncGenerator<
       response => {
         console.log('response', response);
         return myJsonParser(response);
+      },
+      parsed => {
+        // Validate each parsed workflow step
+        parsed.forEach(step => {
+          if (step.type === 'json') {
+            validateWorkflowStep(step.content);
+          }
+        });
       },
       'interface',
       messages[0].content,

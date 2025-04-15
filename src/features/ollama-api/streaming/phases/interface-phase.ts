@@ -17,8 +17,8 @@ The interface must be a single JSON object with this exact structure:
 {
   "interface": {
     "name": "SingleWordWorkflow",
-    "module": "One of single-worded modules below",
-    "function": "DoubleWordedFunction",
+    "module": "Choose one",
+    "function": "DoubleWorded function",
     "goal": "md summary of the workflow goal",
     "params": {
       // ... params - json schema

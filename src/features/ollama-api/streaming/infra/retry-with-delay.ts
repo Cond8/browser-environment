@@ -8,6 +8,7 @@ const RETRY_DELAY_MS = 1000;
 export async function* retryWithDelay<T, TReturn>(
   asyncGeneratorFn: () => AsyncGenerator<T, string, unknown>,
   parserFn: (response: string) => TReturn,
+  validatorFn: (response: TReturn) => void,
   phase: WorkflowPhase,
   ...metadata: unknown[]
 ): AsyncGenerator<T, TReturn, unknown> {
@@ -33,8 +34,9 @@ export async function* retryWithDelay<T, TReturn>(
     }
 
     if (response) {
+      let parsed: TReturn;
       try {
-        return parserFn(response);
+        parsed = parserFn(response);
       } catch (error) {
         console.log('response', response);
         lastError = error as Error;
@@ -43,6 +45,22 @@ export async function* retryWithDelay<T, TReturn>(
           console.log(`[WorkflowChain] Retrying ${phase} phase parser in ${RETRY_DELAY_MS}ms...`);
           await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
         }
+        continue;
+      }
+
+      try {
+        validatorFn(parsed);
+        return parsed;
+      } catch (error) {
+        lastError = error as Error;
+        console.warn(`[WorkflowChain] ${phase} phase validator failed:`, error);
+        if (attempt < MAX_RETRIES) {
+          console.log(
+            `[WorkflowChain] Retrying ${phase} phase validator in ${RETRY_DELAY_MS}ms...`,
+          );
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+        }
+        continue;
       }
     }
   }
