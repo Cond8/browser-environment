@@ -1,11 +1,11 @@
 // src/features/ollama-api/streaming/phases/interface-phase.ts
 import { dslToJson } from '@/features/editor/transpilers/dsl-to-json';
-import { Options } from 'ollama/browser';
+import { ChatRequest } from 'ollama';
 import { SYSTEM_PROMPT } from '../../prompts/prompts-system';
 import { WorkflowChainError } from '../api/workflow-chain';
 import { WorkflowStep } from '../api/workflow-step';
 
-export const INTERFACE_PROMPT = (userRequest: string, alignmentResponse: string) =>
+export const INTERFACE_PROMPT = (userRequest: string) =>
   `
 You are an assistant that defines structured **JSDoc-based** workflows.
 
@@ -13,8 +13,6 @@ Your task is to generate the **interface** section as a single JSDoc block.
 
 ---
 ## REQUIRED JSDOC FORMAT
-
-\`\`\`ts
 /**
  * <High-level description of this workflow's purpose>
  *
@@ -24,9 +22,24 @@ Your task is to generate the **interface** section as a single JSDoc block.
  * @param {string|number|boolean|object|array} param_name - Concise description
  * @returns {string|number|boolean|object|array} return_name - Concise description
  */
-\`\`\`
 
-### Rules
+---
+## EXAMPLE
+
+/**
+ * Processes raw user data and transforms it into a standardized format.
+ *
+ * @name ProcessUserData
+ * @service transform
+ * @method transform_user_data
+ * @param {string} raw_data - The unprocessed user data
+ * @param {string} format_type - The target format specification
+ * @returns {string} processed_data - The standardized user data
+ */
+
+---
+## Rules
+
 1. **@name** must be in **PascalCase**.
 2. **@service** must be **one** of the predefined services (see below).
 3. **@method** must be **snake_case**.
@@ -50,63 +63,46 @@ Your task is to generate the **interface** section as a single JSDoc block.
 - generate
 
 ---
-## EXAMPLE
-
-\`\`\`ts
-/**
- * Processes raw user data and transforms it into a standardized format.
- *
- * @name ProcessUserData
- * @service transform
- * @method transform_user_data
- * @param {string} raw_data - The unprocessed user data
- * @param {string} format_type - The target format specification
- * @returns {string} processed_data - The standardized user data
- */
-\`\`\`
-
----
 ## USER REQUEST
-\`\`\`
 ${userRequest}
-\`\`\`
-
-## APPROVED ALIGNMENT RESPONSE
-\`\`\`
-${alignmentResponse}
-\`\`\`
 
 ---
 ## TASK: Generate the **Interface JSDoc** block
 Only output a single JSDoc block that meets the above requirements.
 End your response with \`*/\` (this is the stopping point).
 
----
-## IMPORTANT
+### IMPORTANT
 
 This interface will be used to generate **exactly 6 JSDoc-formatted steps** that form a linear workflow. Please ensure:
 - The goal is clear and actionable
 - The inputs and outputs are sufficient to divide into 6 atomic operations
 
-/**
- *
 `.trim();
 
 export async function* interfacePhase(
   userRequest: string,
   alignmentResponse: string,
-  completionFn: (
-    prompt: string,
-    options?: Partial<Options>,
+  chatFn: (
+    request: Omit<ChatRequest, 'model' | 'stream'>,
   ) => AsyncGenerator<string, string, unknown>,
 ): AsyncGenerator<string, WorkflowStep, unknown> {
   let response;
   try {
-    const prompt = SYSTEM_PROMPT(INTERFACE_PROMPT(userRequest, alignmentResponse));
+    const prompt = SYSTEM_PROMPT(INTERFACE_PROMPT(userRequest));
     console.log('[interfacePhase] Prompt:', prompt);
-    response = yield* completionFn(prompt, {
-      stop: ['*/'],
-    });
+    response = yield* chatFn(
+      {
+        messages: [
+          {
+            role: 'system',
+            content: prompt,
+          },
+        ],
+        options: {
+          stop: ['*/'],
+        },
+      },
+    );
 
     return dslToJson(response);
   } catch (err) {

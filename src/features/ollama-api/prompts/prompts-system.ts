@@ -49,7 +49,6 @@ Each workflow consists of two main sections: interface and steps. Here's an exam
     }
   ]
 }
-\`\`\`
 ## AVAILABLE SERVICES
 
 You must use one of these predefined services for each step:

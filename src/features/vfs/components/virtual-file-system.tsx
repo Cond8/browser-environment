@@ -21,7 +21,7 @@ const VirtualFileSystem: React.FC = () => {
     return (
       <button
         className="w-full bg-card text-card-foreground rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer"
-        onClick={() => setActiveEditor('workflow', workflow.id)}
+        onClick={() => setActiveEditor(workflow.id)}
       >
         <div className="w-full p-3 flex items-center">
           <span className="text-2xl mr-3">📋</span>
@@ -42,7 +42,7 @@ const VirtualFileSystem: React.FC = () => {
     return (
       <button
         className="w-full bg-card text-card-foreground rounded-lg shadow hover:shadow-md transition-shadow"
-        onClick={() => setActiveEditor('service', service.id)}
+        onClick={() => setActiveEditor(service.id)}
       >
         <div className="flex items-center p-3">
           <span className="text-2xl mr-3">📜</span>

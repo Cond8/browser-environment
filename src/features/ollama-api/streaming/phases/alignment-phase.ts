@@ -1,9 +1,9 @@
 // src/features/ollama-api/streaming/phases/alignment-phase.ts
-import { Options } from 'ollama';
+import { ChatRequest } from 'ollama';
 import { SYSTEM_PROMPT } from '../../prompts/prompts-system';
 import { WorkflowChainError } from '../api/workflow-chain';
 
-export const ALIGNMENT_PROMPT = (userRequest: string) =>
+export const ALIGNMENT_PROMPT = () =>
   `
 You are an assistant that helps users define their workflow goals and requirements in a **JSDoc-based workflow** system.
 
@@ -22,29 +22,27 @@ Your task is to:
 
 ## Task: Acknowledge and Align
 Based on the user's input, provide a concise but thorough restatement of their goal and context.
-
-USER INPUT:
-\`\`\`
-${userRequest}
-\`\`\`
-
-## Response:
-
-Okay, I understand
 `.trim();
 
 export async function* alignmentPhase(
   userRequest: string,
-  completionFn: (
-    prompt: string,
-    options?: Partial<Options>,
+  chatFn: (
+    request: Omit<ChatRequest, 'model' | 'stream'>,
   ) => AsyncGenerator<string, string, unknown>,
 ): AsyncGenerator<string, string, unknown> {
-  const prompt = SYSTEM_PROMPT(ALIGNMENT_PROMPT(userRequest));
-
-  let response;
   try {
-    response = yield* completionFn(prompt, {});
+    return yield* chatFn({
+      messages: [
+        {
+          role: 'system',
+          content: SYSTEM_PROMPT(ALIGNMENT_PROMPT()),
+        },
+        {
+          role: 'user',
+          content: userRequest,
+        },
+      ],
+    });
   } catch (err) {
     throw new WorkflowChainError(
       'Alignment phase failed',
@@ -53,6 +51,4 @@ export async function* alignmentPhase(
       userRequest,
     );
   }
-
-  return response;
 }

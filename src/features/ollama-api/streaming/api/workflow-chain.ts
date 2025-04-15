@@ -4,7 +4,7 @@ import { useAssistantConfigStore } from '../../../chat/store/assistant-config-st
 import { useChatStore } from '../../../chat/store/chat-store';
 import { useEditorStore } from '../../../editor/stores/editor-store';
 import { useWorkflowStore } from '../../../vfs/store/workflow-store';
-import { createCompletion } from '../infra/create-completion';
+import { createChat } from '../infra/create-chat';
 import { retryWithDelay } from '../infra/retry-with-delay';
 import { alignmentPhase } from '../phases/alignment-phase';
 import { interfacePhase } from '../phases/interface-phase';
@@ -54,14 +54,14 @@ export async function* executeWorkflowChain(): AsyncGenerator<
     });
   }
 
-  const completionFn = createCompletion(ollamaUrl, selectedModel, parameters);
+  const chatFn = createChat(ollamaUrl, selectedModel, parameters);
 
   try {
     /* ===========================
      * ===== ALIGNMENT PHASE =====
      * ===========================*/
     const alignmentResult = yield* retryWithDelay(
-      () => alignmentPhase(messages[0].content, completionFn),
+      () => alignmentPhase(messages[0].content, chatFn),
       'alignment',
       messages[0].content,
     );
@@ -71,7 +71,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * ===== INTERFACE PHASE =====
      * ===========================*/
     const parsedInterfaceResult = yield* retryWithDelay(
-      () => interfacePhase(messages[0].content, alignmentResult, completionFn),
+      () => interfacePhase(messages[0].content, alignmentResult, chatFn),
       'interface',
       messages[0].content,
       alignmentResult,
@@ -80,12 +80,11 @@ export async function* executeWorkflowChain(): AsyncGenerator<
     const workflowPath = useWorkflowStore.getState().createWorkflow(parsedInterfaceResult);
     useEditorStore.getState().setFilePath(workflowPath);
 
-    /* =======================
-     * ===== STEPS PHASE =====
-     * =======================*/
+    /* ======================
+     * ===== FIRST STEP =====
+     * ======================*/
     const parsedStepsResult = yield* retryWithDelay(
-      () =>
-        firstStepPhase(messages[0].content, alignmentResult, parsedInterfaceResult, completionFn),
+      () => firstStepPhase(messages[0].content, alignmentResult, parsedInterfaceResult, chatFn),
       'step',
       messages[0].content,
       alignmentResult,

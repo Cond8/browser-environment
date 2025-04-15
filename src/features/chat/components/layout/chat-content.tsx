@@ -11,7 +11,8 @@ import { ErrorDisplay } from './error-display';
 export const ChatContent = () => {
   const currentThread = useChatStore().getCurrentThread();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const isLoading = useStreamSourceStore(state => state.isStreaming);
+  const isStreaming = useStreamSourceStore(state => state.isStreaming);
+  const streamMessage = useStreamSourceStore(state => state.message);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -48,7 +49,7 @@ export const ChatContent = () => {
             </div>
           );
         })}
-        {isLoading && <div className="w-full border-b bg-background">Loading...</div>}
+        {isStreaming && <AssistantDisplay content={streamMessage} type={'alignment'} />}
 
         <div ref={messagesEndRef} />
       </div>

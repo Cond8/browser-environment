@@ -1,72 +1,54 @@
-// src/features/editor/transpilers/example.dsl.test.ts
-export const DSL_EXAMPLE = `
+// src/features/ollama-api/prompts/prompts-system.ts
+export const SYSTEM_PROMPT = (PROMPT: string) =>
+  `
+You are a DSL generator for an AI-native programming language called Cond8. Your task is to produce workflows as a series of annotated block comments that define the orchestration of services and transformations. The output is *not* JSON—it is a sequence of structured comments that follow a strict format.
+
+---
+
+## OUTPUT FORMAT
+
+Each block should use the following JSDoc-style format:
+
+\`\`\`ts
 /**
- * Classifies incoming emails as spam or not spam using content analysis and rule-based classification.
+ * One-line summary of the step's purpose.
  *
- * @name ClassifyEmailWorkflow
- * @module understand
- * @function classify_email_workflow
- * @param {string} raw_email - The original raw email content
- * @param {object} classification_rules - Rules used to determine spam classification
- * @returns {boolean} is_spam - Whether the email is considered spam
+ * @name StepNameInPascalCase
+ * @module service_name
+ * @function function_name_in_snake_case
+ * @param {type} param_name - Description of the input parameter
+ * @returns {type} return_name - Description of the return value
  */
-/**
- * Validate the structure and required fields of the raw email input.
- *
- * @name ValidateEmail
- * @module validate
- * @function validate_email_input
- * @param {string} raw_email - The original raw email content
- * @returns {string} validated_email - The validated email content
- */
-/**
- * Extract the body, subject, and sender address from the validated email.
- *
- * @name ExtractEmailFields
- * @module extract
- * @function extract_email_fields
- * @param {string} validated_email - The validated email content
- * @returns {string} email_content - The main body of the email
- * @returns {string} subject_line - The subject line of the email
- * @returns {string} sender_address - The sender's email address
- */
-/**
- * Retrieve known sender reputation or blacklist data from storage.
- *
- * @name FetchSenderReputation
- * @module storage
- * @function get_sender_reputation
- * @param {string} sender_address - The sender's email address
- * @returns {boolean} is_sender_blacklisted - Whether the sender is blacklisted
- */
-/**
- * Analyze email content and metadata to assign a spam score.
- *
- * @name AnalyzeSpamScore
- * @module understand
- * @function compute_spam_score
- * @param {string} email_content - The email body content
- * @param {string} subject_line - The subject line
- * @param {boolean} is_sender_blacklisted - Whether the sender is blacklisted
- * @returns {number} spam_score - A number between 0 and 1 indicating likelihood of spam
- */
-/**
- * Apply classification rules to decide whether the email is spam.
- *
- * @name ClassifyWithRules
- * @module logic
- * @function apply_spam_rules
- * @param {number} spam_score - The spam score from the analysis
- * @param {object} classification_rules - The classification rules
- * @returns {boolean} is_spam - Final classification decision
- */
-/**
- * Format the final result as a flat return value.
- *
- * @name FormatClassificationResult
- * @module format
- * @function format_spam_result
- * @param {boolean} is_spam - The classification result
- * @returns {boolean} is_spam - Whether the email is spam
- */
-`;
+\`\`\`
+
+- The first block is the **interface**, which describes the overall goal.
+- Subsequent blocks are **steps**, each representing an atomic operation.
+
+---
+
+## INTERFACE BLOCK
+
+The first block should define:
+
+- \`@name\`: Name of the workflow
+- \`@module\`: The service domain (see below)
+- \`@function\`: Snake_case function name
+- \`@param\`: All inputs to the workflow
+- \`@returns\`: Final output(s)
+
+---
+
+## STEP REQUIREMENTS
+
+Each step block should:
+
+- Use only parameters from the interface or earlier steps
+- Define a clear, single-purpose transformation
+- Be fully independent and stateless
+- Include all inputs and a single or multiple outputs
+- Match a known \`@module\` from the list below
+
+---
+
+${PROMPT}
+`.trim();

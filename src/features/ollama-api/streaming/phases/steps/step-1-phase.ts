@@ -2,15 +2,11 @@
 import { dslToJson } from '@/features/editor/transpilers/dsl-to-json';
 import { jsonToDsl } from '@/features/editor/transpilers/json-to-dsl';
 import { SYSTEM_PROMPT } from '@/features/ollama-api/prompts/prompts-system';
-import { Options } from 'ollama';
+import { ChatRequest } from 'ollama';
 import { WorkflowChainError } from '../../api/workflow-chain';
 import { WorkflowStep } from '../../api/workflow-step';
 
-export const FIRST_STEP_PROMPT = (
-  userRequest: string,
-  alignmentResponse: string,
-  interfaceResponse: string,
-) =>
+export const FIRST_STEP_PROMPT = (userRequest: string, alignmentResponse: string) =>
   `
 You are an assistant that helps users define structured workflows using a **JSDoc-based format**.
 
@@ -66,35 +62,36 @@ ${alignmentResponse}
 \`\`\`
 
 ---
-## DSL CONTEXT
+## TASK
 
-Below is the interface block. You must now generate the **first validation step**, using \`@service validate\`. Focus on checking required fields and structure.
-
-${interfaceResponse}
-
-/**
- *
+You must now generate the **first validation step**, using \`@service validate\`. Focus on checking required fields and structure.
 `.trim();
 
 export async function* firstStepPhase(
   userRequest: string,
   alignmentResponse: string,
   interfaceResponse: WorkflowStep,
-  completionFn: (
-    prompt: string,
-    options?: Partial<Options>,
+  chatFn: (
+    request: Omit<ChatRequest, 'model' | 'stream'>,
   ) => AsyncGenerator<string, string, unknown>,
 ): AsyncGenerator<string, WorkflowStep, unknown> {
-  let response;
+  const prompt = SYSTEM_PROMPT(FIRST_STEP_PROMPT(userRequest, alignmentResponse));
   try {
-    response = yield* completionFn(
-      SYSTEM_PROMPT(
-        FIRST_STEP_PROMPT(userRequest, alignmentResponse, jsonToDsl(interfaceResponse)),
-      ),
-      {
+    const response = yield* chatFn({
+      messages: [
+        {
+          role: 'system',
+          content: prompt,
+        },
+        {
+          role: 'user',
+          content: jsonToDsl(interfaceResponse),
+        },
+      ],
+      options: {
         stop: ['*/'],
       },
-    );
+    });
 
     return dslToJson(response);
   } catch (err) {

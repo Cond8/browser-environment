@@ -1,4 +1,5 @@
 // src/features/chat/store/abort-eventbus-store.ts
+import { useStreamSourceStore } from '@/features/ollama-api/streaming/infra/stream-source-store';
 import { create } from 'zustand';
 
 type AbortCallback = () => void;
@@ -32,5 +33,6 @@ export const useAbortEventBusStore = create<AbortEventBusStore>()((set, get) => 
   triggerAbort: () => {
     const { abortCallbacks } = get();
     abortCallbacks.forEach(callback => callback());
+    useStreamSourceStore.getState().setIsStreaming(false);
   },
 }));
