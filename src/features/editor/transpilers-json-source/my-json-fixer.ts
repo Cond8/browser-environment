@@ -1,3 +1,4 @@
+// src/features/editor/transpilers-json-source/my-json-fixer.ts
 export function transformToInterface(input: string): string {
   try {
     // First try to parse whatever we have

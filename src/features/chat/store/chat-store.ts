@@ -6,9 +6,16 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-export interface ThreadMessage {
+export interface UserThreadMessage {
   id: number;
-  role: 'user' | 'assistant';
+  role: 'user';
+  content: string;
+  type: 'alignment';
+}
+
+export interface AssistantThreadMessage {
+  id: number;
+  role: 'assistant';
   content: string | SLMOutput;
   type: 'alignment' | 'interface' | 'step';
   error?: {
@@ -21,6 +28,8 @@ export interface ThreadMessage {
     };
   };
 }
+
+export type ThreadMessage = UserThreadMessage | AssistantThreadMessage;
 
 export interface Thread {
   id: number;
@@ -43,7 +52,7 @@ export interface ChatStore {
   addInterfaceMessage: (chunks: SLMOutput) => void;
   addStepMessage: (message: WorkflowStep) => void;
 
-  setMessageError: (id: number, error: ThreadMessage['error']) => void;
+  setMessageError: (id: number, error: AssistantThreadMessage['error']) => void;
 
   getAllMessages: () => ThreadMessage[];
   getMessagesUntil: (id: number) => ThreadMessage[];
@@ -79,7 +88,7 @@ export const useChatStore = create<ChatStore>()(
 
       addUserMessage: (message: string): void => {
         const id = parseInt(nanoid(10), 36);
-        const userMessage: ThreadMessage = {
+        const userMessage: UserThreadMessage = {
           id,
           role: 'user',
           content: message,
@@ -105,7 +114,7 @@ export const useChatStore = create<ChatStore>()(
       },
 
       addAlignmentMessage: (message: string) => {
-        const alignmentMessage: ThreadMessage = {
+        const alignmentMessage: AssistantThreadMessage = {
           id: parseInt(nanoid(10), 36),
           role: 'assistant',
           content: message,
@@ -124,7 +133,7 @@ export const useChatStore = create<ChatStore>()(
           const currentId = state.currentThreadId;
           if (!currentId) return;
 
-          const interfaceMessage: ThreadMessage = {
+          const interfaceMessage: AssistantThreadMessage = {
             id: parseInt(nanoid(10), 36),
             role: 'assistant',
             content: chunks,
@@ -136,7 +145,7 @@ export const useChatStore = create<ChatStore>()(
       },
 
       addStepMessage: (message: WorkflowStep) => {
-        const stepsMessage: ThreadMessage = {
+        const stepsMessage: AssistantThreadMessage = {
           id: parseInt(nanoid(10), 36),
           role: 'assistant',
           content: JSON.stringify(message, null, 2),
@@ -150,16 +159,18 @@ export const useChatStore = create<ChatStore>()(
         });
       },
 
-      setMessageError: (id: number, error: ThreadMessage['error']) => {
+      setMessageError: (id: number, error: AssistantThreadMessage['error']) => {
         set(state => {
           const currentId = state.currentThreadId;
           if (currentId) {
             const thread = state.threads[currentId];
             const message = thread.messages.find(m => m.id === id);
-            if (message) {
+            if (message && message.role === 'assistant') {
               message.error = error;
             } else {
-              console.warn(`Message with id ${id} not found to set error.`);
+              console.warn(
+                `Message with id ${id} not found or not an assistant message to set error.`,
+              );
             }
           }
         });

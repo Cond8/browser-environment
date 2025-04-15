@@ -60,7 +60,13 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * ===== ALIGNMENT PHASE =====
      * ===========================*/
     const alignmentResult = yield* retryWithDelay(
-      () => alignmentPhase(messages[0].content, chatFn),
+      () =>
+        alignmentPhase(
+          typeof messages[0].content === 'string'
+            ? messages[0].content
+            : JSON.stringify(messages[0].content),
+          chatFn,
+        ),
       response => response,
       'alignment',
       messages[0].content,
@@ -73,7 +79,14 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * ===== INTERFACE PHASE =====
      * ===========================*/
     const parsedInterfaceResult = yield* retryWithDelay(
-      () => interfacePhase(messages[0].content, alignmentResult, chatFn),
+      () =>
+        interfacePhase(
+          typeof messages[0].content === 'string'
+            ? messages[0].content
+            : JSON.stringify(messages[0].content),
+          alignmentResult,
+          chatFn,
+        ),
       response => {
         console.log('response', response);
         return myJsonParse(response);

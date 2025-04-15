@@ -1,3 +1,4 @@
+// src/features/chat/components/workflow-step-components.tsx
 import { cn } from '@/lib/utils';
 import { Code, FileText, FunctionSquare, Goal, ListChecks, Type } from 'lucide-react';
 
