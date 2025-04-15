@@ -1,6 +1,7 @@
 // src/features/chat/components/workflow-step-components.tsx
 import { cn } from '@/lib/utils';
-import { Code, FileText, FunctionSquare, Goal, ListChecks, Type } from 'lucide-react';
+import { Code, FileText, FunctionSquare, Goal } from 'lucide-react';
+import { JsonSchemaRenderer } from './json-schema-renderer';
 
 // Utility function to convert PascalCase/camelCase to Space Case
 const toSpaceCase = (str: string | undefined | null): string => {
@@ -31,47 +32,6 @@ interface WorkflowStepDisplayProps {
   className?: string;
 }
 
-const PropertyDisplay = ({
-  name,
-  property,
-  level = 0,
-}: {
-  name: string;
-  property: PropertyDefinition;
-  level?: number;
-}) => {
-  const hasNestedProperties = property.properties && Object.keys(property.properties).length > 0;
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-start gap-2">
-        <Type className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium truncate">{toSpaceCase(name)}</span>
-            <span className="text-xs text-muted-foreground shrink-0">
-              ({toSpaceCase(property.type)})
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground">{property.description}</p>
-        </div>
-      </div>
-      {hasNestedProperties && (
-        <div className="pl-6 space-y-2">
-          {Object.entries(property.properties!).map(([nestedName, nestedProperty]) => (
-            <PropertyDisplay
-              key={nestedName}
-              name={nestedName}
-              property={nestedProperty}
-              level={level + 1}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
 export const WorkflowStepDisplay = ({ step, className }: WorkflowStepDisplayProps) => {
   const { interface: workflow } = step;
 
@@ -101,35 +61,9 @@ export const WorkflowStepDisplay = ({ step, className }: WorkflowStepDisplayProp
         </div>
       </div>
 
-      {/* Parameters Section */}
-      {workflow.params && Object.entries(workflow.params).length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <ListChecks className="h-4 w-4 text-muted-foreground shrink-0" />
-            <h4 className="text-sm font-medium">Parameters</h4>
-          </div>
-          <div className="grid gap-2 pl-6">
-            {Object.entries(workflow.params).map(([name, property]) => (
-              <PropertyDisplay key={name} name={name} property={property} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Returns Section */}
-      {workflow.returns && Object.entries(workflow.returns).length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <ListChecks className="h-4 w-4 text-muted-foreground shrink-0" />
-            <h4 className="text-sm font-medium">Returns</h4>
-          </div>
-          <div className="grid gap-2 pl-6">
-            {Object.entries(workflow.returns).map(([name, property]) => (
-              <PropertyDisplay key={name} name={name} property={property} />
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Parameters and Returns Sections */}
+      <JsonSchemaRenderer schema={workflow.params} title="Parameters" />
+      <JsonSchemaRenderer schema={workflow.returns} title="Returns" />
     </div>
   );
 };
