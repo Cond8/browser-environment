@@ -3,6 +3,7 @@ import { SLMOutput } from '@/features/editor/transpilers-json-source/extract-tex
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { markdownComponents } from './markdown-components';
 import { WorkflowStepDisplay } from './workflow-step-components';
 
 type MessageDisplayProps = {
@@ -24,7 +25,9 @@ export const AssistantDisplay = ({ content }: MessageDisplayProps) => {
   if (typeof content === 'string') {
     return (
       <div className={cn('p-4', 'bg-muted/30', 'prose prose-sm dark:prose-invert max-w-none')}>
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+          {content}
+        </ReactMarkdown>
       </div>
     );
   }
@@ -39,7 +42,9 @@ export const AssistantDisplay = ({ content }: MessageDisplayProps) => {
           if (chunk.type === 'text') {
             return (
               <div key={index} className="prose prose-sm dark:prose-invert max-w-none">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{chunk.content}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                  {chunk.content}
+                </ReactMarkdown>
               </div>
             );
           } else if (chunk.type === 'json') {
@@ -51,11 +56,18 @@ export const AssistantDisplay = ({ content }: MessageDisplayProps) => {
                 </div>
               );
             }
-            // Fallback to JSON display for other JSON content
+            // Format JSON content
+            const formattedJson =
+              typeof chunk.content === 'string'
+                ? chunk.content
+                : '```json\n' + JSON.stringify(chunk.content, null, 2) + '\n```';
+
             return (
-              <pre key={index} className="mt-2 p-2 bg-muted rounded">
-                {JSON.stringify(chunk.content, null, 2)}
-              </pre>
+              <div key={index} className="prose prose-sm dark:prose-invert max-w-none">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                  {formattedJson}
+                </ReactMarkdown>
+              </div>
             );
           }
           return null;
