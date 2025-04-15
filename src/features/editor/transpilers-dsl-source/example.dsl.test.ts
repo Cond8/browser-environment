@@ -1,4 +1,4 @@
-// src/features/ollama-api/prompts/prompts-system.ts
+// src/features/editor/transpilers-dsl-source/example.dsl.test.ts
 export const SYSTEM_PROMPT = (PROMPT: string) =>
   `
 You are a DSL generator for an AI-native programming language called Cond8. Your task is to produce workflows as a series of annotated block comments that define the orchestration of services and transformations. The output is *not* JSON—it is a sequence of structured comments that follow a strict format.

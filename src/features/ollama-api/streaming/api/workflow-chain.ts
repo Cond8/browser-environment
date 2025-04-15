@@ -1,15 +1,14 @@
 // src/features/ollama-api/streaming/api/workflow-chain.ts
+import { myJsonParse } from '@/features/editor/transpilers-json-source/my-json-parse';
 import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
 import { useAssistantConfigStore } from '../../../chat/store/assistant-config-store';
 import { useChatStore } from '../../../chat/store/chat-store';
-import { useEditorStore } from '../../../editor/stores/editor-store';
-import { useWorkflowStore } from '../../../vfs/store/workflow-store';
 import { createChat } from '../infra/create-chat';
 import { retryWithDelay } from '../infra/retry-with-delay';
 import { alignmentPhase } from '../phases/alignment-phase';
 import { interfacePhase } from '../phases/interface-phase';
-import { firstStepPhase } from '../phases/steps/step-1-phase';
 import { WorkflowPhase } from '../phases/types';
+
 export class WorkflowChainError extends Error {
   public metadata: unknown[];
   constructor(
@@ -62,9 +61,11 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * ===========================*/
     const alignmentResult = yield* retryWithDelay(
       () => alignmentPhase(messages[0].content, chatFn),
+      response => response,
       'alignment',
       messages[0].content,
     );
+
     chatStore.addAlignmentMessage(alignmentResult);
     yield '[BREAK]';
 
@@ -73,30 +74,31 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * ===========================*/
     const parsedInterfaceResult = yield* retryWithDelay(
       () => interfacePhase(messages[0].content, alignmentResult, chatFn),
+      response => myJsonParse(response),
       'interface',
       messages[0].content,
       alignmentResult,
     );
     chatStore.addInterfaceMessage(parsedInterfaceResult);
-    const workflowPath = useWorkflowStore.getState().createWorkflow(parsedInterfaceResult);
-    useEditorStore.getState().setFilePath(workflowPath);
+    // const workflowPath = useWorkflowStore.getState().createWorkflow(parsedInterfaceResult);
+    // useEditorStore.getState().setFilePath(workflowPath);
     yield '[BREAK]';
 
     /* ======================
      * ===== FIRST STEP =====
      * ======================*/
-    const parsedStepsResult = yield* retryWithDelay(
-      () => firstStepPhase(messages[0].content, alignmentResult, parsedInterfaceResult, chatFn),
-      'step',
-      messages[0].content,
-      alignmentResult,
-      parsedInterfaceResult,
-    );
+    // const parsedStepsResult = yield* retryWithDelay(
+    //   () => firstStepPhase(messages[0].content, alignmentResult, parsedInterfaceResult, chatFn),
+    //   'step',
+    //   messages[0].content,
+    //   alignmentResult,
+    //   parsedInterfaceResult,
+    // );
     // chatStore.addStepsMessage(parsedStepsResult);
     // useWorkflowStore.getState().addStepsToWorkflow(workflowPath, parsedStepsResult);
     // useVfsStore.getState().upsertServices(stepsResult.steps);
 
-    return { workflow: [parsedInterfaceResult, parsedStepsResult] };
+    return { workflow: [parsedInterfaceResult.json] };
   } catch (error) {
     const err =
       error instanceof WorkflowChainError

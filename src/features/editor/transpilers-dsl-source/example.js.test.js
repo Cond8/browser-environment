@@ -1,4 +1,4 @@
-// src/features/editor/transpilers/example.js.test.js
+// src/features/editor/transpilers-dsl-source/example.js.test.js
 export { CoreRedprint, StrictKVStoreService, createDirector, createRole } from '@cond8/core';
 
 /**

@@ -1,5 +1,7 @@
+// src/features/editor/transpilers-json-source/my-json-parse.ts
 import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
 import { jsonrepair } from 'jsonrepair';
+import { extractTextParts } from './extract-text-parse';
 
 function transformToInterface(input: string): string {
   try {
@@ -85,26 +87,52 @@ function transformToInterface(input: string): string {
   }
 }
 
-export function fixJson(input: string): WorkflowStep {
+function parseJsonWithErrorHandling(jsonStr: string): WorkflowStep {
+  try {
+    return JSON.parse(jsonStr) as WorkflowStep;
+  } catch (error) {
+    throw new Error(`Failed to parse JSON: ${(error as Error).message}`);
+  }
+}
+
+export function myJsonParse(input: string): JsonParseResult {
+  if (!input || typeof input !== 'string') {
+    throw new Error('Input must be a non-empty string');
+  }
+
+  const { textBefore, jsonContent, textAfter } = extractTextParts(input);
+
   // Tier 1: Direct parse
   try {
-    return JSON.parse(input) as WorkflowStep;
+    return {
+      textBefore,
+      json: parseJsonWithErrorHandling(jsonContent),
+      textAfter,
+    };
   } catch (error) {
     console.log('Tier 1 parse failed, trying tier 2...');
   }
 
   // Tier 2: Library fix then parse
   try {
-    const repairedJson = jsonrepair(input);
-    return JSON.parse(repairedJson) as WorkflowStep;
+    const repairedJson = jsonrepair(jsonContent);
+    return {
+      textBefore,
+      json: parseJsonWithErrorHandling(repairedJson),
+      textAfter,
+    };
   } catch (error) {
     console.log('Tier 2 parse failed, trying tier 3...');
   }
 
   // Tier 3: Transform to interface structure
   try {
-    const transformed = transformToInterface(input);
-    return JSON.parse(transformed) as WorkflowStep;
+    const transformed = transformToInterface(jsonContent);
+    return {
+      textBefore,
+      json: parseJsonWithErrorHandling(transformed),
+      textAfter,
+    };
   } catch (error) {
     console.error('All JSON fixing tiers failed');
     throw new Error('Failed to fix JSON after all attempts: ' + (error as Error).message);

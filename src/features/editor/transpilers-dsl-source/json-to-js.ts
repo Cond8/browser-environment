@@ -1,4 +1,4 @@
-// src/features/editor/transpilers/json-to-js.ts
+// src/features/editor/transpilers-dsl-source/json-to-js.ts
 import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
 import { jsonToDsl } from './json-to-dsl';
 

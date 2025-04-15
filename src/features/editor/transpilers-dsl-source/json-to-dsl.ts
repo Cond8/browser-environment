@@ -1,4 +1,4 @@
-// src/features/editor/transpilers/json-to-dsl.ts
+// src/features/editor/transpilers-dsl-source/json-to-dsl.ts
 import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
 
 export const jsonToDsl = (json: WorkflowStep) => {

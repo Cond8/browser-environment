@@ -1,4 +1,5 @@
 // src/features/chat/store/chat-store.ts
+import { JsonParseResult } from '@/features/editor/transpilers-json-source/my-json-parse';
 import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
 import { nanoid } from 'nanoid';
 import { Message } from 'ollama';
@@ -38,7 +39,7 @@ export interface ChatStore {
   addUserMessage: (message: string) => void;
 
   addAlignmentMessage: (message: string) => void;
-  addInterfaceMessage: (message: WorkflowStep) => void;
+  addInterfaceMessage: (message: JsonParseResult) => void;
   addStepMessage: (message: WorkflowStep) => void;
 
   setMessageError: (id: number, error: ThreadMessage['error']) => void;
@@ -117,17 +118,35 @@ export const useChatStore = create<ChatStore>()(
         });
       },
 
-      addInterfaceMessage: (message: WorkflowStep) => {
-        const interfaceMessage: ThreadMessage = {
+      addInterfaceMessage: (message: JsonParseResult) => {
+        const interfaceTextBefore: ThreadMessage = {
           id: parseInt(nanoid(10), 36),
           role: 'assistant',
-          content: JSON.stringify(message, null, 2),
+          content: message.textBefore,
+          type: 'alignment',
+        };
+        const interfaceJson: ThreadMessage = {
+          id: parseInt(nanoid(10), 36),
+          role: 'assistant',
+          content: JSON.stringify(message.json, null, 2),
           type: 'interface',
+        };
+        const interfaceTextAfter: ThreadMessage = {
+          id: parseInt(nanoid(10), 36),
+          role: 'assistant',
+          content: message.textAfter,
+          type: 'alignment',
         };
         set(state => {
           const currentId = state.currentThreadId;
           if (currentId) {
-            state.threads[currentId].messages.push(interfaceMessage);
+            if (message.textBefore) {
+              state.threads[currentId].messages.push(interfaceTextBefore);
+            }
+            state.threads[currentId].messages.push(interfaceJson);
+            if (message.textAfter) {
+              state.threads[currentId].messages.push(interfaceTextAfter);
+            }
           }
         });
       },

@@ -1,4 +1,4 @@
-// src/features/editor/transpilers/example.json.example.ts
+// src/features/editor/transpilers-dsl-source/example.json.example.ts
 export const JSON_EXAMPLE = {
   blocks: [
     {

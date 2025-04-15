@@ -36,6 +36,7 @@ export async function* retryWithDelay<T, TReturn>(
       try {
         return parserFn(response);
       } catch (error) {
+        console.log('response', response);
         lastError = error as Error;
         console.warn(`[WorkflowChain] ${phase} phase parser failed:`, error);
         if (attempt < MAX_RETRIES) {
