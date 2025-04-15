@@ -19,28 +19,12 @@ The interface must be a single JSON object with this exact structure:
     "name": "SingleWordWorkflow",
     "module": "One of single-worded modules below",
     "function": "DoubleWordedFunction",
-    "goal": "One-sentence summary of the workflow goal",
+    "goal": "md summary of the workflow goal",
     "params": {
-      "data": {
-        "type": "string | number | boolean | array",
-        "description": "Concise description of the input parameter"
-      },
-      "config": {
-        "type": "object",
-        "description": "Configuration options for the workflow"
-      }
-      // ... more params
+      // ... params - in type and description
     },
     "returns": {
-      "result": {
-        "type": "object",
-        "description": "The processed output data"
-      },
-      "status": {
-        "type": "string",
-        "description": "The completion status of the workflow"
-      }
-      // ... more returns
+      // ... returns - in type and description
     }
   }
 }
