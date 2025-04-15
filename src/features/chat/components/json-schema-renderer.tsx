@@ -2,21 +2,30 @@ import { cn } from '@/lib/utils';
 import { ListChecks, Type } from 'lucide-react';
 
 // Utility function to convert PascalCase/camelCase to Space Case
-const toSpaceCase = (str: string | undefined | null): string => {
-  if (!str) return '';
-  return str
+const toSpaceCase = (input: unknown): string => {
+  if (!input) return '';
+
+  if (Array.isArray(input)) {
+    return input.map(item => toSpaceCase(item)).join(' | ');
+  }
+
+  if (typeof input !== 'string') {
+    return String(input);
+  }
+
+  return input
     .replace(/([A-Z])/g, ' $1') // Add space before capital letters
     .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
     .trim(); // Remove any leading/trailing spaces
 };
 
 interface PropertyDefinition {
-  type: string;
+  type: string | string[] | unknown;
   description: string;
   optional?: boolean;
   enum?: string[];
   items?: {
-    type: string;
+    type: string | string[] | unknown;
     description: string;
   };
   properties?: Record<string, PropertyDefinition>;
@@ -38,7 +47,9 @@ const PropertyDisplay = ({
   level?: number;
 }) => {
   const hasNestedProperties = property.properties && Object.keys(property.properties).length > 0;
-  const isArray = property.type === 'array';
+  const isArray = Array.isArray(property.type)
+    ? property.type.includes('array')
+    : property.type === 'array';
   const hasEnum = property.enum && property.enum.length > 0;
 
   return (

@@ -21,10 +21,10 @@ The interface must be a single JSON object with this exact structure:
     "function": "DoubleWordedFunction",
     "goal": "md summary of the workflow goal",
     "params": {
-      // ... params - in type and description
+      // ... params - json schema
     },
     "returns": {
-      // ... returns - in type and description
+      // ... returns - json schema
     }
   }
 }
