@@ -15,7 +15,7 @@ export abstract class CoreRedprint<T extends object = object> {
     this.utils = new ConduitUtils(this);
   }
 
-  get var(): VarUtilsType {
+  get var(): VarUtilsType<this> {
     return this.utils.var;
   }
 }

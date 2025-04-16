@@ -2,7 +2,6 @@
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/features/chat/store/chat-store';
-import { WorkflowValidationError } from '@/features/ollama-api/streaming/api/workflow-chain';
 import { useStreamSourceStore } from '@/features/ollama-api/streaming/infra/stream-source-store';
 import { Send, StopCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -71,7 +70,6 @@ export function UserInput() {
     try {
       const result = await startWorkflowChain();
       addAssistantMessage(result);
-
     } catch (error) {
       console.error('Unexpected error during workflow chain:', error);
     } finally {

@@ -1,7 +1,7 @@
 // src/features/ollama-api/streaming/infra/create-chat.ts
 import { useAbortEventBusStore } from '@/features/chat/store/abort-eventbus-store';
 import { useAssistantConfigStore } from '@/features/chat/store/assistant-config-store';
-import { ChatRequest, Ollama } from 'ollama';
+import { ChatRequest, Ollama } from 'ollama/browser';
 
 export async function* chatFn(
   request: Omit<ChatRequest, 'model' | 'stream'>,
@@ -33,4 +33,4 @@ export async function* chatFn(
   useAbortEventBusStore.getState().unregisterAbortCallback(abortEvent);
 
   return response;
-};
+}

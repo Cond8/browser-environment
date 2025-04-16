@@ -11,7 +11,7 @@ import { ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { fetchModels } from '../../../ollama-api/fetch-models';
 import { useAssistantConfigStore } from '../../store/assistant-config-store';
-import { ModelResponse } from 'ollama';
+import { ModelResponse } from 'ollama/browser';
 
 export function SelectedModel() {
   const { selectedModel, setSelectedModel, ollamaUrl } = useAssistantConfigStore();

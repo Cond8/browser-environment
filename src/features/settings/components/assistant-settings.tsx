@@ -39,7 +39,7 @@ export function AssistantSettings() {
                 min={0}
                 max={2}
                 step={0.1}
-                value={[parameters.temperature]}
+                value={[parameters.temperature ?? 0.8]}
                 onValueChange={([value]) => setParameters({ temperature: value })}
               />
               <p className="text-xs text-muted-foreground">
@@ -52,15 +52,15 @@ export function AssistantSettings() {
                 <label htmlFor="topP" className="text-sm font-medium">
                   Top P
                 </label>
-                <span className="text-sm text-muted-foreground">{parameters.topP}</span>
+                <span className="text-sm text-muted-foreground">{parameters.top_p}</span>
               </div>
               <Slider
                 id="topP"
                 min={0}
                 max={1}
                 step={0.1}
-                value={[parameters.topP]}
-                onValueChange={([value]) => setParameters({ topP: value })}
+                value={[parameters.top_p ?? 0.8]}
+                onValueChange={([value]) => setParameters({ top_p: value })}
               />
               <p className="text-xs text-muted-foreground">
                 Controls diversity via nucleus sampling. Lower values make the output more focused.
@@ -72,15 +72,15 @@ export function AssistantSettings() {
                 <label htmlFor="topK" className="text-sm font-medium">
                   Top K
                 </label>
-                <span className="text-sm text-muted-foreground">{parameters.topK}</span>
+                <span className="text-sm text-muted-foreground">{parameters.top_k}</span>
               </div>
               <Slider
                 id="topK"
                 min={0}
                 max={100}
                 step={1}
-                value={[parameters.topK]}
-                onValueChange={([value]) => setParameters({ topK: value })}
+                value={[parameters.top_k ?? 0]}
+                onValueChange={([value]) => setParameters({ top_k: value })}
               />
               <p className="text-xs text-muted-foreground">
                 Controls diversity by limiting the number of tokens considered at each step.
@@ -92,15 +92,15 @@ export function AssistantSettings() {
                 <label htmlFor="numPredict" className="text-sm font-medium">
                   Max Tokens
                 </label>
-                <span className="text-sm text-muted-foreground">{parameters.numPredict}</span>
+                <span className="text-sm text-muted-foreground">{parameters.num_predict}</span>
               </div>
               <Slider
                 id="numPredict"
                 min={1}
                 max={4096}
                 step={1}
-                value={[parameters.numPredict]}
-                onValueChange={([value]) => setParameters({ numPredict: value })}
+                value={[parameters.num_predict ?? 0]}
+                onValueChange={([value]) => setParameters({ num_predict: value })}
               />
               <p className="text-xs text-muted-foreground">
                 Maximum number of tokens to generate in the response.
@@ -114,15 +114,15 @@ export function AssistantSettings() {
                 <label htmlFor="repeatPenalty" className="text-sm font-medium">
                   Repeat Penalty
                 </label>
-                <span className="text-sm text-muted-foreground">{parameters.repeatPenalty}</span>
+                <span className="text-sm text-muted-foreground">{parameters.repeat_penalty}</span>
               </div>
               <Slider
                 id="repeatPenalty"
                 min={0.9}
                 max={2.0}
                 step={0.1}
-                value={[parameters.repeatPenalty]}
-                onValueChange={([value]) => setParameters({ repeatPenalty: value })}
+                value={[parameters.repeat_penalty ?? 0]}
+                onValueChange={([value]) => setParameters({ repeat_penalty: value })}
               />
               <p className="text-xs text-muted-foreground">
                 Controls how strongly to penalize repetitions. Higher values penalize more strongly.
@@ -134,15 +134,15 @@ export function AssistantSettings() {
                 <label htmlFor="repeatLastN" className="text-sm font-medium">
                   Repeat Last N
                 </label>
-                <span className="text-sm text-muted-foreground">{parameters.repeatLastN}</span>
+                <span className="text-sm text-muted-foreground">{parameters.repeat_last_n}</span>
               </div>
               <Slider
                 id="repeatLastN"
                 min={0}
                 max={128}
                 step={1}
-                value={[parameters.repeatLastN]}
-                onValueChange={([value]) => setParameters({ repeatLastN: value })}
+                value={[parameters.repeat_last_n ?? 0]}
+                onValueChange={([value]) => setParameters({ repeat_last_n: value })}
               />
               <p className="text-xs text-muted-foreground">
                 How far back to look for preventing repetition. 0 = disabled.
@@ -154,15 +154,15 @@ export function AssistantSettings() {
                 <label htmlFor="tfsZ" className="text-sm font-medium">
                   TFS Z
                 </label>
-                <span className="text-sm text-muted-foreground">{parameters.tfsZ}</span>
+                <span className="text-sm text-muted-foreground">{parameters.tfs_z}</span>
               </div>
               <Slider
                 id="tfsZ"
                 min={1.0}
                 max={2.0}
                 step={0.1}
-                value={[parameters.tfsZ]}
-                onValueChange={([value]) => setParameters({ tfsZ: value })}
+                value={[parameters.tfs_z ?? 0]}
+                onValueChange={([value]) => setParameters({ tfs_z: value })}
               />
               <p className="text-xs text-muted-foreground">
                 Tail free sampling parameter. Higher values reduce impact of less probable tokens.
@@ -174,14 +174,14 @@ export function AssistantSettings() {
                 <label htmlFor="mirostat" className="text-sm font-medium">
                   Mirostat
                 </label>
-                <span className="text-sm text-muted-foreground">{parameters.mirostat}</span>
+                <span className="text-sm text-muted-foreground">{parameters.mirostat ?? 0}</span>
               </div>
               <Slider
                 id="mirostat"
                 min={0}
                 max={2}
                 step={1}
-                value={[parameters.mirostat]}
+                value={[parameters.mirostat ?? 0]}
                 onValueChange={([value]) => setParameters({ mirostat: value })}
               />
               <p className="text-xs text-muted-foreground">
@@ -194,15 +194,17 @@ export function AssistantSettings() {
                 <label htmlFor="mirostatEta" className="text-sm font-medium">
                   Mirostat Eta
                 </label>
-                <span className="text-sm text-muted-foreground">{parameters.mirostatEta}</span>
+                <span className="text-sm text-muted-foreground">
+                  {parameters.mirostat_eta ?? 0}
+                </span>
               </div>
               <Slider
                 id="mirostatEta"
                 min={0.01}
                 max={1.0}
                 step={0.01}
-                value={[parameters.mirostatEta]}
-                onValueChange={([value]) => setParameters({ mirostatEta: value })}
+                value={[parameters.mirostat_eta ?? 0]}
+                onValueChange={([value]) => setParameters({ mirostat_eta: value })}
               />
               <p className="text-xs text-muted-foreground">
                 Learning rate for Mirostat. Lower values make adjustments slower.
@@ -214,15 +216,17 @@ export function AssistantSettings() {
                 <label htmlFor="mirostatTau" className="text-sm font-medium">
                   Mirostat Tau
                 </label>
-                <span className="text-sm text-muted-foreground">{parameters.mirostatTau}</span>
+                <span className="text-sm text-muted-foreground">
+                  {parameters.mirostat_tau ?? 0}
+                </span>
               </div>
               <Slider
                 id="mirostatTau"
                 min={0}
                 max={10}
                 step={0.1}
-                value={[parameters.mirostatTau]}
-                onValueChange={([value]) => setParameters({ mirostatTau: value })}
+                value={[parameters.mirostat_tau ?? 0]}
+                onValueChange={([value]) => setParameters({ mirostat_tau: value })}
               />
               <p className="text-xs text-muted-foreground">
                 Controls balance between coherence and diversity in Mirostat.
@@ -234,15 +238,15 @@ export function AssistantSettings() {
                 <label htmlFor="numCtx" className="text-sm font-medium">
                   Context Window
                 </label>
-                <span className="text-sm text-muted-foreground">{parameters.numCtx}</span>
+                <span className="text-sm text-muted-foreground">{parameters.num_ctx}</span>
               </div>
               <Slider
                 id="numCtx"
                 min={512}
                 max={8192}
                 step={512}
-                value={[parameters.numCtx]}
-                onValueChange={([value]) => setParameters({ numCtx: value })}
+                value={[parameters.num_ctx ?? 0]}
+                onValueChange={([value]) => setParameters({ num_ctx: value })}
               />
               <p className="text-xs text-muted-foreground">
                 Size of the context window used to generate the next token.

@@ -1,6 +1,5 @@
 // src/features/editor/stores/editor-store.ts
-import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
-import { useWorkflowStore } from '@/features/vfs/store/workflow-store';
+import { WorkflowStep } from '@/features/chat/models/assistant-message';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -38,7 +37,7 @@ export const useEditorStore = create<EditorState>()(
           } else {
             state.filePath = filepath;
             state.isLocalOnly = false;
-            state.content = useWorkflowStore.getState().getWorkflow(filepath)?.content ?? [];
+            state.content = []; // TODO: should load from the Virtual File System
           }
         });
       },

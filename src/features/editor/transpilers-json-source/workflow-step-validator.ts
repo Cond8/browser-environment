@@ -113,15 +113,18 @@ export function validateWorkflowStep(step: unknown): WorkflowStep {
     validated.module = normalizeModuleName(validated.module);
 
     // Transform params and returns if needed
-    const transformed: WorkflowStep = {
-      ...validated,
+    const transformed = {
+      name: validated.name,
+      module: validated.module,
+      functionName: validated.functionName,
+      goal: validated.goal,
       params:
         'properties' in validated.params ? (validated.params.properties as any) : validated.params,
       returns:
         'properties' in validated.returns
           ? (validated.returns.properties as any)
           : validated.returns,
-    };
+    } as WorkflowStep;
 
     // Ensure params and returns have at least one entry
     if (Object.keys(transformed.params).length === 0) {

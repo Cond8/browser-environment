@@ -1,23 +1,14 @@
-// src/hooks/use-platform.ts
 import { useEffect, useState } from 'react';
 
-export type Platform = 'mac' | 'windows' | 'linux' | 'unknown';
+export type Platform = 'mac' | 'windows';
 
 export function usePlatform(): Platform {
-  const [platform, setPlatform] = useState<Platform>('unknown');
+  const [platform, setPlatform] = useState<Platform>('windows');
 
   useEffect(() => {
-    const userAgent = window.navigator.userAgent.toLowerCase();
-
-    if (userAgent.includes('mac')) {
-      setPlatform('mac');
-    } else if (userAgent.includes('win')) {
-      setPlatform('windows');
-    } else if (userAgent.includes('linux')) {
-      setPlatform('linux');
-    } else {
-      setPlatform('unknown');
-    }
+    // Check if the platform is Mac
+    const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+    setPlatform(isMac ? 'mac' : 'windows');
   }, []);
 
   return platform;

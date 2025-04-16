@@ -1,8 +1,8 @@
 // src/features/editor/components/js-editor.tsx
-import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
 import Editor from '@monaco-editor/react';
 import { useEffect, useRef } from 'react';
 import { jsonToJs } from '../transpilers-dsl-source/json-to-js';
+import { WorkflowStep } from '@/features/chat/models/assistant-message';
 
 export interface JsEditorProps {
   jsonContent: WorkflowStep[];

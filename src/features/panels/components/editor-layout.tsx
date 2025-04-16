@@ -2,7 +2,6 @@
 import { Card } from '@/components/ui/card';
 import { AssistantPanel } from '@/features/chat';
 import { EditorWrapper } from '@/features/editor/components/editor-wrapper';
-import VirtualFileSystem from '@/features/vfs/components/virtual-file-system';
 import React from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
@@ -11,9 +10,7 @@ export const EditorLayout: React.FC = () => {
     <PanelGroup direction="horizontal" className="h-full">
       {/* Left Panel - File System */}
       <Panel defaultSize={20} minSize={15}>
-        <Card className="h-full rounded-none border-r py-0 bg-background">
-          <VirtualFileSystem />
-        </Card>
+        <Card className="h-full rounded-none border-r py-0 bg-background">Coming soon</Card>
       </Panel>
 
       <PanelResizeHandle className="w-1 bg-border hover:bg-primary/20 transition-colors" />

@@ -1,5 +1,5 @@
 // src/features/chat/store/assistant-config-store.ts
-import { Options } from 'ollama';
+import { Options } from 'ollama/browser';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';

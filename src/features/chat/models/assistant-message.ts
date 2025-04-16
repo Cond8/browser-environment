@@ -1,6 +1,6 @@
 // src/features/chat/models/assistant-message.ts
 import { nanoid } from 'nanoid';
-import { Message, ToolCall } from 'ollama';
+import { Message, ToolCall } from 'ollama/browser';
 
 export interface AssistantTextChunk {
   type: 'text';
@@ -26,6 +26,8 @@ export interface WorkflowStep {
 // Assistant message implementation
 export class AssistantMessage implements Message {
   private _cachedSteps: WorkflowStep[] = [];
+
+  readonly timestamp: number = Date.now();
 
   id: number;
   role: 'assistant' = 'assistant';
@@ -106,15 +108,6 @@ export class AssistantMessage implements Message {
 
   setError(error: Error) {
     this.error = error;
-  }
-
-  private isJson(chunk: string): boolean {
-    try {
-      JSON.parse(chunk);
-
-      return true;
-    } catch (e) {}
-    return false;
   }
 
   private isParsableJson(chunk: string): boolean {

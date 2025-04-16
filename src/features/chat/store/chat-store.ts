@@ -1,6 +1,6 @@
 // src/features/chat/store/chat-store.ts
 import { nanoid } from 'nanoid';
-import { Message } from 'ollama';
+import { Message } from 'ollama/browser';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';

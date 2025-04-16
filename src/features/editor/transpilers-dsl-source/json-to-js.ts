@@ -1,5 +1,5 @@
 // src/features/editor/transpilers-dsl-source/json-to-js.ts
-import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
+import { WorkflowStep } from '@/features/chat/models/assistant-message';
 import { jsonToDsl } from './json-to-dsl';
 
 export const jsonToJs = (json: WorkflowStep[]): string => {
@@ -62,7 +62,7 @@ export const jsonToJs = (json: WorkflowStep[]): string => {
     }
 
     // Add service method call
-    if (step.module && step.function) {
+    if (step.module && step.functionName) {
       output += `\n    const { `;
 
       // Add return properties
@@ -70,7 +70,7 @@ export const jsonToJs = (json: WorkflowStep[]): string => {
         output += Object.keys(step.returns).join(', ');
       }
 
-      output += ` } =\n      c8.${step.module}.${step.function}(`;
+      output += ` } =\n      c8.${step.module}.${step.functionName}(`;
 
       // Add parameters to method call
       if (step.params) {
@@ -144,8 +144,8 @@ export const jsonToJs = (json: WorkflowStep[]): string => {
 
     methodsForService.forEach(step => {
       // Skip if we've already defined this method for this service
-      if (uniqueMethods.has(step.function)) return;
-      uniqueMethods.set(step.function, true);
+      if (uniqueMethods.has(step.functionName)) return;
+      uniqueMethods.set(step.functionName, true);
 
       // Add JSDoc for the method using jsonToDsl with proper indentation
       const jsDoc = jsonToDsl(step)
@@ -155,7 +155,7 @@ export const jsonToJs = (json: WorkflowStep[]): string => {
       output += `${jsDoc}\n`;
 
       // Add method definition
-      output += `  ${step.function}(`;
+      output += `  ${step.functionName}(`;
 
       // Add parameters
       if (step.params) {

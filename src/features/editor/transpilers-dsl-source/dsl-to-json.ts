@@ -1,5 +1,5 @@
 // src/features/editor/transpilers-dsl-source/dsl-to-json.ts
-import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
+import { WorkflowStep } from '@/features/chat/models/assistant-message';
 import { parse } from 'comment-parser';
 
 export function dslToJson(dsl: string): WorkflowStep {
@@ -9,7 +9,7 @@ export function dslToJson(dsl: string): WorkflowStep {
     name: '',
     goal: parsed.description.trim(),
     module: '',
-    function: '',
+    functionName: '',
     params: {},
     returns: {},
   };
@@ -23,7 +23,7 @@ export function dslToJson(dsl: string): WorkflowStep {
         workflow.module = tag.name;
         break;
       case 'function':
-        workflow.function = tag.name;
+        workflow.functionName = tag.name;
         break;
       case 'param':
         workflow.params![tag.name] = {

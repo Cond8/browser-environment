@@ -1,9 +1,10 @@
 // src/features/chat/components/empty/recent-threads.tsx
 import { ShortcutsDisplay } from '@/features/chat/components/ui/shortcuts-display';
 import { Clock, Hash, MessageCircle, Trash2 } from 'lucide-react';
-import React from 'react';
 import { useChatStore } from '../../store/chat-store';
-export const RecentThreads: React.FC = () => {
+import { AssistantMessage } from '../../models/assistant-message';
+
+export const RecentThreads = () => {
   const { getRecentThreads, getTimeAgo, getAssistantMessageCount, clearThreads } = useChatStore();
   const recentThreads = getRecentThreads(5);
 
@@ -46,7 +47,7 @@ export const RecentThreads: React.FC = () => {
               <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  <span>{getTimeAgo(thread.messages[thread.messages.length - 1].id)}</span>
+                  <span>{getTimeAgo((thread.messages[thread.messages.length - 1] as AssistantMessage).timestamp)}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <MessageCircle className="h-3 w-3" />
