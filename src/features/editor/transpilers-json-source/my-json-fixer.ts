@@ -53,27 +53,6 @@ export function transformToInterface(input: string): string {
       );
     }
 
-    // Ensure valid module
-    const validModules = [
-      'extract',
-      'parse',
-      'validate',
-      'transform',
-      'logic',
-      'calculate',
-      'format',
-      'io',
-      'storage',
-      'integrate',
-      'understand',
-      'generate',
-    ];
-    if (!validModules.includes(transformed.interface.module)) {
-      throw new Error(
-        `Invalid module: ${transformed.interface.module}. Must be one of: ${validModules.join(', ')}`,
-      );
-    }
-
     // Ensure params and returns have correct structure
     const ensureParamStructure = (obj: any, paramType: 'params' | 'returns') => {
       try {

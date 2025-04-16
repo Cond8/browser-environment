@@ -54,6 +54,7 @@ export function UserInput() {
   }, []);
 
   const addUserMessage = useChatStore(state => state.addUserMessage);
+  const addAssistantMessage = useChatStore(state => state.addAssistantMessage);
   const triggerAbort = useAbortEventBusStore(state => state.triggerAbort);
   const isLoading = useStreamSourceStore(state => state.isStreaming);
   const setIsLoading = useStreamSourceStore(state => state.setIsStreaming);
@@ -69,31 +70,8 @@ export function UserInput() {
     setMessage('');
     try {
       const result = await startWorkflowChain();
+      addAssistantMessage(result);
 
-      // Check if there was an error returned
-      if (result.error) {
-        console.error('Workflow chain error:', result.error);
-
-        // Get the current message ID to attach the error to
-        const currentThread = useChatStore.getState().getCurrentThread();
-        if (currentThread && currentThread.messages.length > 0) {
-          const lastMessageId = currentThread.messages[currentThread.messages.length - 1].id;
-
-          // Set error on the message
-          useChatStore.getState().setMessageError(lastMessageId, {
-            message: result.error.message,
-            type: result.error.name || 'WorkflowChainError',
-            details: {
-              phase: result.error.phase,
-              metadata: result.error.metadata,
-              validationErrors:
-                result.error instanceof WorkflowValidationError
-                  ? result.error.validationErrors
-                  : undefined,
-            },
-          });
-        }
-      }
     } catch (error) {
       console.error('Unexpected error during workflow chain:', error);
     } finally {

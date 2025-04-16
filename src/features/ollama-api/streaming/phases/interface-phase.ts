@@ -43,7 +43,6 @@ Available modules:
 
 User request: ${userRequest}
 
-### Response:
 `.trim();
 
 export async function* interfacePhase(

@@ -115,25 +115,32 @@ export class AssistantMessage implements Message {
   private isJson(chunk: string): boolean {
     try {
       JSON.parse(chunk);
+
       return true;
     } catch (e) {}
     return false;
   }
 
   private isParsableJson(chunk: string): boolean {
+    console.log('isParsableJson', chunk);
     try {
       JSON.parse(chunk);
+      console.log('chunk can be parsed immediately');
       return true;
-    } catch (e) {}
+    } catch (e) {
+      console.log('chunk cannot be parsed immediately');
+    }
 
     if (this.hasParsableJson(chunk)) {
       return true;
     }
 
+    console.log('no parsable json found');
     return false;
   }
 
   private hasParsableJson(chunk: string): boolean {
-    return !!chunk.match(/```json\n(.*)\n```/);
+    console.log('hasParsableJson', chunk, !!chunk.match(/```json\n(.*)\n```/));
+    return !!chunk.includes('```json');
   }
 }

@@ -1,8 +1,6 @@
 // src/features/ollama-api/streaming/api/workflow-chain.ts
 import { AssistantMessage } from '@/features/chat/models/assistant-message';
-import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
 import { useChatStore } from '../../../chat/store/chat-store';
-import { retryWithDelay } from '../infra/retry-with-delay';
 import { alignmentPhase } from '../phases/alignment-phase';
 import { interfacePhase } from '../phases/interface-phase';
 import { firstStepPhase } from '../phases/steps/step-1-phase';
@@ -35,13 +33,7 @@ export class WorkflowValidationError extends WorkflowChainError {
   }
 }
 
-export async function* executeWorkflowChain(): AsyncGenerator<
-  string,
-  {
-    workflow?: WorkflowStep[];
-    error?: WorkflowChainError;
-  }
-> {
+export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantMessage, unknown> {
   const chatStore = useChatStore.getState();
   const messages = chatStore.getAllMessages();
 
@@ -64,64 +56,43 @@ export async function* executeWorkflowChain(): AsyncGenerator<
     /* ===========================
      * ===== ALIGNMENT PHASE =====
      * ===========================*/
-    const alignmentResult = yield* retryWithDelay(
-      async function* () {
-        const alignmentResult = yield* alignmentPhase(userReq);
-        assistantMessage.addAlignmentResponse(alignmentResult);
-        return alignmentResult;
-      },
-      'alignment',
-      userRequest,
-    );
-
+    console.log('alignmentPhase');
+    const alignmentResult = yield* alignmentPhase(userReq);
+    assistantMessage.addAlignmentResponse(alignmentResult);
     userReq.alignmentResponse = alignmentResult;
+
     /* ===========================
      * ===== INTERFACE PHASE =====
      * ===========================*/
-    yield* retryWithDelay(
-      async function* () {
-        const interfaceResult = yield* interfacePhase(userReq);
-        assistantMessage.addInterfaceResponse(interfaceResult);
-        return interfaceResult;
-      },
-      'interface',
-      userRequest,
-      assistantMessage,
-    );
+    try {
+      console.log('interfacePhase');
+      const interfaceResult = yield* interfacePhase(userReq);
+      assistantMessage.addInterfaceResponse(interfaceResult);
+    } catch (error) {
+      console.error('Error in interfacePhase:', error);
+      throw new WorkflowChainError('Error in interfacePhase', 'interface', error as Error);
+    }
 
     /* =============================
      * ===== FIRST STEP PHASES =====
      * =============================*/
-    yield* retryWithDelay(
-      async function* () {
-        const interfaceResult = yield* firstStepPhase(userReq, assistantMessage);
-        assistantMessage.addStepResponse(interfaceResult);
-        return interfaceResult;
-      },
-      'step',
-      userRequest,
-      assistantMessage,
-    );
+    console.log('firstStepPhase');
+    const firstStepResult = yield* firstStepPhase(userReq, assistantMessage);
+    assistantMessage.addStepResponse(firstStepResult);
 
     /* ================================
      * ===== SECOND TO SIXTH STEP =====
      * ================================*/
-    for (let i = 2; i < 6; i++) {
-      yield* retryWithDelay(
-        async function* () {
-          const parsedSecondToSixthStepResult = yield* secondToSixthStepPhase(userReq, assistantMessage);
-          assistantMessage.addStepResponse(parsedSecondToSixthStepResult);
-          return parsedSecondToSixthStepResult;
-        },
-        'step',
-        userRequest,
+    for (let i = 2; i < 7; i++) {
+      console.log(`secondToSixthStepPhase ${i}`);
+      const parsedSecondToSixthStepResult = yield* secondToSixthStepPhase(
+        userReq,
         assistantMessage,
       );
+      assistantMessage.addStepResponse(parsedSecondToSixthStepResult);
     }
 
-    return {
-      workflow: assistantMessage.workflow,
-    };
+    return assistantMessage;
   } catch (error) {
     const err =
       error instanceof WorkflowChainError
@@ -129,6 +100,6 @@ export async function* executeWorkflowChain(): AsyncGenerator<
         : new WorkflowChainError('Unexpected error in workflow chain', 'stream', error as Error);
 
     assistantMessage.setError(err);
-    return { error: err };
+    throw err;
   }
 }

@@ -1,5 +1,5 @@
 // src/features/ollama-api/streaming/phases/steps/step-1-phase.ts
-import { AssistantMessage, WorkFlowStep } from '@/features/chat/models/assistant-message';
+import { AssistantMessage } from '@/features/chat/models/assistant-message';
 import { chatFn } from '../../infra/create-chat';
 import { UserRequest } from '../types';
 

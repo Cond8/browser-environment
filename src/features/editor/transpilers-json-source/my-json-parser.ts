@@ -1,7 +1,5 @@
 // src/features/editor/transpilers-json-source/my-json-parser.ts
-import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
 import { jsonrepair } from 'jsonrepair';
-import { extractTextParts, SLMChunk, SLMOutput } from './extract-text-parse';
 import { transformToInterface } from './my-json-fixer';
 
 function parseJsonWithErrorHandling(jsonStr: string): WorkflowStep | null {

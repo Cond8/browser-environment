@@ -1,24 +1,19 @@
 // src/features/ollama-api/streaming/infra/stream-source-store.ts
+import { AssistantMessage } from '@/features/chat/models/assistant-message';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-import { executeWorkflowChain, WorkflowChainError } from '../api/workflow-chain';
-import { WorkflowStep } from '../api/workflow-step';
+import { executeWorkflowChain } from '../api/workflow-chain';
 
 export interface StreamSourceState {
   isStreaming: boolean;
   setIsStreaming: (isLoading: boolean) => void;
-  workflows: WorkflowStep[];
   message: string;
-  startWorkflowChain: () => Promise<{
-    message?: string;
-    error?: WorkflowChainError;
-  }>;
+  startWorkflowChain: () => Promise<AssistantMessage>;
 }
 
 export const useStreamSourceStore = create<StreamSourceState>()(
   immer(set => ({
     isStreaming: false,
-    workflows: [],
     message: '',
     setIsStreaming: (isLoading: boolean) => set({ isStreaming: isLoading }),
 
@@ -26,23 +21,34 @@ export const useStreamSourceStore = create<StreamSourceState>()(
       set({ isStreaming: true });
       console.log('startWorkflowChain');
 
-      let message = '';
+      let finalAssistantMessage: AssistantMessage | undefined = undefined;
+
       try {
-        for await (const token of executeWorkflowChain()) {
-          message += token;
+        const generator = executeWorkflowChain();
+
+        while (true) {
+          const { value, done } = await generator.next();
+          if (done) {
+            finalAssistantMessage = value; // This is the return value of the async generator
+            break;
+          }
           set(state => {
-            state.message = message;
+            state.message += value;
           });
         }
-      } catch (error) {
-        console.error('Error in workflow chain:', error);
-        return { error: error as WorkflowChainError };
-      } finally {
-        set(state => {
-          state.isStreaming = false;
-        });
+
+        // set(state => {
+        //   state.isStreaming = false;
+        // });
+
+        return finalAssistantMessage;
+      } catch (error: any) {
+        console.error('Error in workflow chain:', error.message);
+        // set(state => {
+        //   state.isStreaming = false;
+        // });
+        throw error;
       }
-      return { message };
     },
   })),
 );

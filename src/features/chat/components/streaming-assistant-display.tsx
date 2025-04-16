@@ -8,7 +8,7 @@ interface StreamingAssistantDisplayProps {
 
 export const StreamingAssistantDisplay = ({ assistantMessage }: StreamingAssistantDisplayProps) => {
   return (
-    <div className="prose dark:prose-invert max-w-none">
+    <div className="prose dark:prose-invert max-w-none p-4">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
         {assistantMessage}
       </ReactMarkdown>
