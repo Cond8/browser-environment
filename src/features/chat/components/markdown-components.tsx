@@ -43,10 +43,10 @@ export const markdownComponents = {
     <blockquote className={cn('mt-3 border-l-2 pl-3 italic', className)} {...props} />
   ),
   ul: ({ className, ...props }: ComponentPropsWithoutRef<'ul'>) => (
-    <ul className={cn('my-3 ml-4 list-disc [&>li]:mt-1', className)} {...props} />
+    <ul className={cn('ml-4 list-disc [&>li]:mt-1', className)} {...props} />
   ),
   ol: ({ className, ...props }: ComponentPropsWithoutRef<'ol'>) => (
-    <ol className={cn('my-3 ml-4 list-decimal [&>li]:mt-1', className)} {...props} />
+    <ol className={cn('ml-4 list-decimal [&>li]:mt-1', className)} {...props} />
   ),
   li: ({ className, ...props }: ComponentPropsWithoutRef<'li'>) => (
     <li className={cn('mt-1', className)} {...props} />

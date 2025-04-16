@@ -94,6 +94,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
       const parsedSecondToSixthStepResult = yield* secondToSixthStepPhase(
         userReq,
         assistantMessage,
+        i,
       );
       assistantMessage.addStepResponse(parsedSecondToSixthStepResult);
 

@@ -1,48 +1,52 @@
 // src/features/ollama-api/streaming/phases/interface-phase.ts
 import { chatFn } from '../infra/create-chat';
 import { UserRequest } from './types';
+
 export const INTERFACE_PROMPT = (userRequest: string) =>
   `
 You are an expert in JSON schema design.
 
-You are designing the input/output contract for an entire workflow system.
+You are designing the input/output contract for a workflow engine. Think of this as defining a single function that:
+- Takes named inputs via \`params\`
+- Produces named outputs via \`returns\`
 
-Think of this as defining a single black box that processes inputs into outputs:
-- params: What must go IN to the entire workflow
-- returns: What comes OUT of the entire workflow when done
-
-The interface must be a single JSON object with this exact structure:
-
-Rules:
-- "name" must be a in PascalCase
-- "function" must be a doubleWorded in camelCase
-- All field names must be in camelCase
-- Use only types: string, number, boolean, array, object
-- Keep names concise and avoid multi-worded names
-- This interface represents the ENTIRE workflow contract - think of it as a single function that takes inputs and produces outputs
-- Define params and returns with meaningful names that describe their specific purpose
-- Each param and return should represent a distinct piece of data or configuration
+You must output a single JSON object matching this structure exactly:
 
 \`\`\`json
 {
-  "name": "SingleWordWorkflow",
-  "module": "Choose one",
-  "functionName": "DoubleWorded function",
-  "goal": "md summary of the workflow goal",
+  "name": "PascalCaseWorkflowName",
+  "module": "one of [extract, parse, validate, transform, logic, calculate, format, io, storage, integrate, understand, generate]",
+  "functionName": "doubleWordedCamelCaseName",
+  "goal": "A markdown-formatted summary of the workflow's purpose.",
   "params": {
-    // json schema
+    "inputName": {
+      "type": "string",
+      "description": "What this input means."
+    }
   },
   "returns": {
-    // json schema
+    "outputName": {
+      "type": "string",
+      "description": "What this output means."
+    }
   }
 }
 \`\`\`
 
-Available modules:
-- extract, parse, validate, transform, logic, calculate, format, io, storage, integrate, understand, generate
+Rules:
+- Output only a single valid JSON object and nothing else.
+- The \`name\` field must be in PascalCase.
+- The \`functionName\` must be in camelCase and contain exactly two words.
+- Field names inside \`params\` and \`returns\` must be in camelCase.
+- Only use types: \`string\`, \`number\`, \`boolean\`, \`object\`, \`array\`.
+- Each field must include both \`type\` and \`description\`.
+- Do not use: \`required\`, \`properties\`, \`items\`, \`enum\`, \`default\`, or any explanation.
+- Do not include arrays of objects or nested schemas.
+- Do not wrap the output in triple backticks.
 
 User request: ${userRequest}
 
+Respond with a single JSON object only.
 `.trim();
 
 export async function* interfacePhase(

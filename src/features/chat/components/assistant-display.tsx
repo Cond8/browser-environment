@@ -1,5 +1,6 @@
 // src/features/chat/components/assistant-display.tsx
 import { processJsonChunk } from '@/features/editor/transpilers-json-source/my-json-parser';
+import { cn } from '@/lib/utils';
 import { memo, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -12,9 +13,11 @@ interface AssistantDisplayProps {
 }
 
 const MarkdownRenderer = memo(({ content }: { content: string }) => (
-  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-    {content}
-  </ReactMarkdown>
+  <div className={cn('prose dark:prose-invert max-w-none p-4')}>
+    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+      {content}
+    </ReactMarkdown>
+  </div>
 ));
 
 export const AssistantDisplay = ({ assistantMessage }: AssistantDisplayProps) => {
@@ -45,13 +48,19 @@ export const AssistantDisplay = ({ assistantMessage }: AssistantDisplayProps) =>
     return chunks;
   }, [content]);
 
+  let interfaceShown = true;
+
   return (
     <div>
       {jsonChunks.map((chunk, index) => {
         if (typeof chunk === 'string') {
           return <MarkdownRenderer key={index} content={chunk} />;
         }
-        return <WorkflowStepDisplay key={index} step={chunk} />;
+        const In = <WorkflowStepDisplay key={index} step={chunk} isInterface={interfaceShown} />;
+        if (interfaceShown) {
+          interfaceShown = false;
+        }
+        return In;
       })}
     </div>
   );

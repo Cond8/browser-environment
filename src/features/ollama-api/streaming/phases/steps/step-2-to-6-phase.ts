@@ -11,22 +11,24 @@ import { SIXTH_STEP_MESSAGES } from './step-6';
 export async function* secondToSixthStepPhase(
   userReq: UserRequest,
   assistantMessage: AssistantMessage,
+  stepNumber: number,
 ): AsyncGenerator<string, string, unknown> {
   let messages = [
     ...FIRST_STEP_MESSAGES(userReq, assistantMessage),
     ...SECOND_STEP_MESSAGES(assistantMessage),
   ];
-  if (assistantMessage.steps.length > 2) {
+  if (stepNumber > 2) {
     messages.push(...THIRD_STEP_MESSAGES(assistantMessage));
   }
-  if (assistantMessage.steps.length > 3) {
+  if (stepNumber > 3) {
     messages.push(...FOURTH_STEP_MESSAGES(assistantMessage));
   }
-  if (assistantMessage.steps.length > 4) {
+  if (stepNumber > 4) {
     messages.push(...FIFTH_STEP_MESSAGES(assistantMessage));
   }
-  if (assistantMessage.steps.length > 5) {
+  if (stepNumber > 5) {
     messages.push(...SIXTH_STEP_MESSAGES(assistantMessage));
   }
+  console.log('[secondToSixthStepPhase] messages', stepNumber, messages);
   return yield* chatFn({ messages });
 }

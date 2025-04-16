@@ -13,17 +13,39 @@ Each workflow is a sequence of exactly **7 JSON objects**:
 
 The first step must be a JSON object with this exact structure:
 
-\`\`\`json
+\`\`\`json-schema
 {
-  "name": "SingleWordStep",
-  "module": "Choose one",
-  "function": "DoubleWorded function",
-  "goal": "md summary of the step goal",
+  "name": "ValidateForm",
+  "module": "input_validation",
+  "functionName": "validate form inputs",
+  "goal": "This workflow verifies that incoming user-submitted form fields meet expected formats, types, and required presence, returning detailed validation results per field.",
   "params": {
-    // ... params - json schema
+    "formData": {
+      "type": "object",
+      "description": "The object representing raw form input submitted by the user."
+    },
+    "schema": {
+      "type": "object",
+      "description": "A validation schema object defining required fields, types, and rules."
+    },
+    "context": {
+      "type": "string",
+      "description": "An optional tag describing the form’s usage context (e.g., 'signup', 'profile_update')."
+    }
   },
   "returns": {
-    // ... returns - json schema
+    "isValid": {
+      "type": "boolean",
+      "description": "Whether all validations passed successfully."
+    },
+    "errors": {
+      "type": "array",
+      "description": "An array of validation error messages for each failed field."
+    },
+    "validatedData": {
+      "type": "object",
+      "description": "A sanitized and type-safe version of the form data."
+    }
   }
 }
 \`\`\`

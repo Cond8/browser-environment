@@ -1,4 +1,6 @@
 // src/features/chat/models/assistant-message.ts
+import { processJsonChunk } from '@/features/editor/transpilers-json-source/my-json-parser';
+import { jsonrepair } from 'jsonrepair';
 import { nanoid } from 'nanoid';
 import { Message, ToolCall } from 'ollama/browser';
 
@@ -25,6 +27,7 @@ export interface WorkflowStep {
 
 // Assistant message implementation
 export class AssistantMessage implements Message {
+  private _cachedRawChucksLength = 0;
   private _cachedSteps: WorkflowStep[] = [];
 
   readonly timestamp: number = Date.now();
@@ -72,17 +75,27 @@ export class AssistantMessage implements Message {
   }
 
   get workflow(): WorkflowStep[] {
-    if (this._cachedSteps.length === this.rawChunks.length) {
+    if (this._cachedRawChucksLength === this.rawChunks.length) {
       return this._cachedSteps;
     }
     const foundSteps = [] as WorkflowStep[];
     for (const chunk of this.rawChunks) {
-      const foundStep = chunk.match(/```json\n(.*)\n```/);
-      if (foundStep) {
-        foundSteps.push(JSON.parse(foundStep[1]));
+      if (this.isParsableJson(chunk)) {
+        const jsonMatch = chunk.match(/```json\n([\s\S]*?)\n```/);
+        if (jsonMatch) {
+          try {
+            const step = processJsonChunk(jsonMatch[1]);
+            if (step) {
+              foundSteps.push(step);
+            }
+          } catch (e) {
+            console.error('Failed to process JSON chunk:', e);
+          }
+        }
       }
     }
     this._cachedSteps = foundSteps;
+    this._cachedRawChucksLength = this.rawChunks.length;
     return this._cachedSteps;
   }
 
@@ -112,24 +125,31 @@ export class AssistantMessage implements Message {
 
   private isParsableJson(chunk: string): boolean {
     console.log('isParsableJson', chunk);
+
+    // Check if the chunk contains a JSON code fence
+    const hasJsonFence = chunk.includes('```json');
+    if (!hasJsonFence) {
+      console.log('no JSON code fence found');
+      return false;
+    }
+
+    // Extract content between code fences
+    const jsonMatch = chunk.match(/```json\n([\s\S]*?)\n```/);
+    if (!jsonMatch) {
+      console.log('could not extract JSON from code fence');
+      return false;
+    }
+
     try {
-      JSON.parse(chunk);
-      console.log('chunk can be parsed immediately');
+      // Use jsonrepair to handle malformed JSON
+      const repairedJson = jsonrepair(jsonMatch[1]);
+      // Try parsing to validate
+      JSON.parse(repairedJson);
+      console.log('found valid JSON in code fence');
       return true;
     } catch (e) {
-      console.log('chunk cannot be parsed immediately');
+      console.log('JSON is invalid after repair:', e);
+      return false;
     }
-
-    if (this.hasParsableJson(chunk)) {
-      return true;
-    }
-
-    console.log('no parsable json found');
-    return false;
-  }
-
-  private hasParsableJson(chunk: string): boolean {
-    console.log('hasParsableJson', chunk, !!chunk.match(/```json\n(.*)\n```/));
-    return !!chunk.includes('```json');
   }
 }
