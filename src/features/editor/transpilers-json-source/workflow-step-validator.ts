@@ -1,5 +1,5 @@
 // src/features/editor/transpilers-json-source/workflow-step-validator.ts
-import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
+import { WorkflowStep, WorkflowStepInput } from '@/features/ollama-api/streaming/api/workflow-step';
 import { z } from 'zod';
 
 export class WorkflowStepValidationError extends Error {
@@ -19,27 +19,52 @@ const DEFAULT_FUNCTION = 'processData';
 const DEFAULT_GOAL = 'Process inputs and produce outputs';
 
 // Schema for workflow step properties
+const propertySchema = z.object({
+  type: z.string().default('string'),
+  description: z.string().default('Parameter description'),
+});
+
+const propertiesSchema = z.record(propertySchema);
+
+const paramsSchema = z
+  .union([
+    propertiesSchema,
+    z.object({
+      type: z.string().default('object'),
+      properties: propertiesSchema,
+      required: z.array(z.string()).optional(),
+    }),
+  ])
+  .transform(val => {
+    if (val && typeof val === 'object' && 'properties' in val) {
+      return val.properties;
+    }
+    return val as Record<string, { type: string; description: string }>;
+  });
+
+const returnsSchema = z
+  .union([
+    propertiesSchema,
+    z.object({
+      type: z.string().default('object'),
+      properties: propertiesSchema,
+      required: z.array(z.string()).optional(),
+    }),
+  ])
+  .transform(val => {
+    if (val && typeof val === 'object' && 'properties' in val) {
+      return val.properties;
+    }
+    return val as Record<string, { type: string; description: string }>;
+  });
+
 const workflowStepSchema = z.object({
   name: z.string().min(1).default(DEFAULT_NAME),
   module: z.string().min(1).default(DEFAULT_MODULE),
   functionName: z.string().min(1).default(DEFAULT_FUNCTION),
   goal: z.string().min(1).default(DEFAULT_GOAL),
-  params: z
-    .record(
-      z.object({
-        type: z.string().default('string'),
-        description: z.string().default('Parameter description'),
-      }),
-    )
-    .default({}),
-  returns: z
-    .record(
-      z.object({
-        type: z.string().default('string'),
-        description: z.string().default('Return value description'),
-      }),
-    )
-    .default({}),
+  params: paramsSchema.default({}),
+  returns: returnsSchema.default({}),
 });
 
 /**
@@ -83,25 +108,36 @@ export function validateWorkflowStep(step: unknown): WorkflowStep {
     const dataToValidate = withInterface.interface || step;
 
     // Apply schema validation with defaults
-    const validated = workflowStepSchema.parse(dataToValidate);
+    const validated = workflowStepSchema.parse(dataToValidate) as WorkflowStepInput;
 
     // Normalize module name
     validated.module = normalizeModuleName(validated.module);
 
+    // Transform params and returns if needed
+    const transformed: WorkflowStep = {
+      ...validated,
+      params:
+        'properties' in validated.params ? (validated.params.properties as any) : validated.params,
+      returns:
+        'properties' in validated.returns
+          ? (validated.returns.properties as any)
+          : validated.returns,
+    };
+
     // Ensure params and returns have at least one entry
-    if (Object.keys(validated.params).length === 0) {
-      validated.params = {
+    if (Object.keys(transformed.params).length === 0) {
+      transformed.params = {
         input: { type: 'string', description: 'Input data for the workflow' },
       };
     }
 
-    if (Object.keys(validated.returns).length === 0) {
-      validated.returns = {
+    if (Object.keys(transformed.returns).length === 0) {
+      transformed.returns = {
         output: { type: 'string', description: 'Output data from the workflow' },
       };
     }
 
-    return validated;
+    return transformed;
   } catch (error) {
     console.error('Validation failed:', error);
 

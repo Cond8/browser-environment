@@ -2,29 +2,55 @@
 import { WorkflowMultiStep } from '@/features/editor/transpilers-json-source/extract-text-parse';
 import { chatFn } from '../../infra/create-chat';
 import { UserRequest } from '../types';
-import { FIRST_STEP_MESSAGES } from './step-1-phase';
-import { SECOND_STEP_MESSAGES } from './step-2-phase';
-import { THIRD_STEP_MESSAGES } from './step-3-phase';
-import { FOURTH_STEP_MESSAGES } from './step-4-phase';
-import { FIFTH_STEP_MESSAGES } from './step-5-phase';
 
-export const SIXTH_STEP_PROMPT = () =>
-  `
-## TASK
+export const SIXTH_STEP_PROMPT =
+  () => `Create a final step to format the summary into bullet points. The step should:
+1. Take the final concerns list and a template configuration
+2. Format each concern into a bullet point using the template
+3. Return a formatted string with all bullet points
 
-Generate the sixth and final formatting step based on the previous steps provided. The format should match the structure of the previous steps.
-Output only the JSON for the step.
-
-### Response:
-`.trim();
+The step should be in this format:
+{
+  "name": "FormatSummary",
+  "module": "format",
+  "functionName": "CreateBulletPointsListFromConcerns",
+  "goal": "Convert ranked concerns into a bullet-point summary format ready to be presented.",
+  "params": {
+    "finalConcernsList": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "concernPhrase": {
+            "type": "string"
+          },
+          "occurrencesCount": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "templateConfig": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "type": "string",
+          "description": "Template string for formatting each bullet point"
+        }
+      }
+    }
+  },
+  "returns": {
+    "summaryBulletPoints": {
+      "type": "string",
+      "description": "Formatted string containing all bullet points"
+    }
+  }
+}`;
 
 export const SIXTH_STEP_MESSAGES = (steps: WorkflowMultiStep) => [
   {
-    role: 'assistant',
-    content: steps[5].toStepString,
-  },
-  {
-    role: 'user',
+    role: 'system',
     content: SIXTH_STEP_PROMPT(),
   },
 ];
@@ -34,13 +60,6 @@ export async function* sixthStepPhase(
   steps: WorkflowMultiStep,
 ): AsyncGenerator<string, string, unknown> {
   return yield* chatFn({
-    messages: [
-      ...FIRST_STEP_MESSAGES(userReq, steps),
-      ...SECOND_STEP_MESSAGES(steps),
-      ...THIRD_STEP_MESSAGES(steps),
-      ...FOURTH_STEP_MESSAGES(steps),
-      ...FIFTH_STEP_MESSAGES(steps),
-      ...SIXTH_STEP_MESSAGES(steps),
-    ],
+    messages: [...SIXTH_STEP_MESSAGES(steps)],
   });
 }

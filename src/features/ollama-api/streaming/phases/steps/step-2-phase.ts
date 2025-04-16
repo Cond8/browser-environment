@@ -2,7 +2,8 @@
 import { WorkflowMultiStep } from '@/features/editor/transpilers-json-source/extract-text-parse';
 import { chatFn } from '../../infra/create-chat';
 import { UserRequest } from '../types';
-import { FIRST_STEP_MESSAGES, SYSTEM_PROMPT } from './step-1-phase';
+import { FIRST_STEP_MESSAGES } from './step-1-phase';
+
 export const SECOND_STEP_PROMPT = () =>
   `
 ## TASK
@@ -29,9 +30,6 @@ export async function* secondStepPhase(
   steps: WorkflowMultiStep,
 ): AsyncGenerator<string, string, unknown> {
   return yield* chatFn({
-    messages: [
-      ...FIRST_STEP_MESSAGES(userReq, steps),
-      ...SECOND_STEP_MESSAGES(steps),
-    ],
+    messages: [...FIRST_STEP_MESSAGES(userReq, steps), ...SECOND_STEP_MESSAGES(steps)],
   });
 }

@@ -1,5 +1,9 @@
 // src/features/ollama-api/streaming/api/workflow-chain.ts
-import { WorkflowMultiStep } from '@/features/editor/transpilers-json-source/extract-text-parse';
+import { AssistantMessage } from '@/features/chat/models/thread-message';
+import {
+  SLMOutput,
+  WorkflowMultiStep,
+} from '@/features/editor/transpilers-json-source/extract-text-parse';
 import { myJsonParser } from '@/features/editor/transpilers-json-source/my-json-parser';
 import { validateWorkflowStep } from '@/features/editor/transpilers-json-source/workflow-step-validator';
 import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
@@ -57,15 +61,14 @@ export async function* executeWorkflowChain(): AsyncGenerator<
     });
   }
 
-  const userRequest =
-    typeof messages[0].content === 'string'
-      ? messages[0].content
-      : JSON.stringify(messages[0].content);
-
+  const userRequest = await messages[0].getContent();
   const userReq: UserRequest = {
-    userRequest,
+    userRequest: typeof userRequest === 'string' ? userRequest : JSON.stringify(userRequest),
     alignmentResponse: '',
   };
+
+  // Create a single assistant message at the start
+  const assistantMessage = AssistantMessage.create(chatStore);
 
   try {
     /* ===========================
@@ -73,16 +76,17 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * ===========================*/
     const alignmentResult = yield* retryWithDelay(
       () => alignmentPhase(userReq),
-      response => response,
+      response => {
+        console.log('alignment response', response);
+        return response;
+      },
       () => void 0,
       'alignment',
       userRequest,
     );
 
     userReq.alignmentResponse = alignmentResult;
-
-    chatStore.addAlignmentMessage(alignmentResult);
-    // TODO: add other store side-effects
+    assistantMessage.appendContent(alignmentResult, 'alignment');
     yield '[BREAK]';
 
     /* ===========================
@@ -90,53 +94,44 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * ===========================*/
     const parsedInterfaceResult = yield* retryWithDelay(
       () => interfacePhase(userReq),
-      response => myJsonParser(response),
+      response => {
+        console.log('interface response', response);
+        return myJsonParser(response);
+      },
       parsed => {
-        // Validate each parsed workflow step
-        parsed.Chunks.forEach(chunk => {
-          if (chunk.type === 'json') {
-            validateWorkflowStep(chunk.content);
-          }
-        });
+        if (parsed instanceof SLMOutput) {
+          assistantMessage.appendContent(parsed.toReponseString, 'interface');
+          assistantMessage.setParsedContent(parsed);
+        }
+        return parsed;
       },
       'interface',
       userRequest,
-      alignmentResult,
     );
 
     const steps: WorkflowMultiStep = [parsedInterfaceResult];
 
-    chatStore.addInterfaceMessage(parsedInterfaceResult);
-    // const workflowPath = useWorkflowStore.getState().createWorkflow(parsedInterfaceResult);
-    // useEditorStore.getState().setFilePath(workflowPath);
-    // TODO: add other store side-effects
-    yield '[BREAK]';
-
-    /* ======================
-     * ===== FIRST STEP =====
-     * ======================*/
-    const parsedFirstStepResult = yield* retryWithDelay(
+    /* ===========================
+     * ===== STEP PHASES =====
+     * ===========================*/
+    const stepResults = yield* retryWithDelay(
       () => firstStepPhase(userReq, steps),
       response => {
-        console.log('response', response);
+        console.log('step response', response);
         return myJsonParser(response);
       },
       parsed => {
-        // Validate each parsed workflow step
-        parsed.Chunks.forEach(step => {
-          if (step.type === 'json') {
-            validateWorkflowStep(step.content);
-          }
-        });
+        if (parsed instanceof SLMOutput) {
+          assistantMessage.appendContent(parsed.toReponseString, 'step');
+          assistantMessage.setParsedContent(parsed);
+        }
+        return parsed;
       },
       'step',
       userRequest,
-      alignmentResult,
-      parsedInterfaceResult,
     );
-    steps.push(parsedFirstStepResult);
-    chatStore.addStepMessage(parsedFirstStepResult);
-    yield '[BREAK]';
+
+    steps.push(stepResults);
 
     /* =======================
      * ===== SECOND STEP =====
@@ -157,11 +152,9 @@ export async function* executeWorkflowChain(): AsyncGenerator<
       },
       'step',
       userRequest,
-      parsedFirstStepResult,
+      stepResults,
     );
     steps.push(parsedSecondStepResult);
-    chatStore.addStepMessage(parsedSecondStepResult);
-    yield '[BREAK]';
 
     /* =======================
      * ===== THIRD STEP ======
@@ -185,8 +178,6 @@ export async function* executeWorkflowChain(): AsyncGenerator<
       parsedSecondStepResult,
     );
     steps.push(parsedThirdStepResult);
-    chatStore.addStepMessage(parsedThirdStepResult);
-    yield '[BREAK]';
 
     /* ========================
      * ===== FOURTH STEP ======
@@ -210,8 +201,6 @@ export async function* executeWorkflowChain(): AsyncGenerator<
       parsedThirdStepResult,
     );
     steps.push(parsedFourthStepResult);
-    chatStore.addStepMessage(parsedFourthStepResult);
-    yield '[BREAK]';
 
     /* =======================
      * ===== FIFTH STEP ======
@@ -235,8 +224,6 @@ export async function* executeWorkflowChain(): AsyncGenerator<
       parsedFourthStepResult,
     );
     steps.push(parsedFifthStepResult);
-    chatStore.addStepMessage(parsedFifthStepResult);
-    yield '[BREAK]';
 
     /* =======================
      * ===== SIXTH STEP ======
@@ -260,8 +247,6 @@ export async function* executeWorkflowChain(): AsyncGenerator<
       parsedFifthStepResult,
     );
     steps.push(parsedSixthStepResult);
-    chatStore.addStepMessage(parsedSixthStepResult);
-    yield '[BREAK]';
 
     return {
       workflow: steps
@@ -274,17 +259,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
         ? error
         : new WorkflowChainError('Unexpected error in workflow chain', 'stream', error as Error);
 
-    const errorContent = JSON.stringify(
-      {
-        error: err.message,
-        phase: err.phase,
-        validationErrors: err instanceof WorkflowValidationError ? err.validationErrors : undefined,
-      },
-      null,
-      2,
-    );
-    console.error('[WorkflowChain] Error content:', errorContent);
-
+    assistantMessage.setError(err);
     return { error: err };
   }
 }

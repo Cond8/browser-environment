@@ -29,10 +29,10 @@ export const useStreamSourceStore = create<StreamSourceState>()(
       let message = '';
       try {
         for await (const token of executeWorkflowChain()) {
-          if (token === '[BREAK]') {
-            message = '';
-            continue;
-          }
+          // if (token === '[BREAK]') {
+          //   message = '';
+          //   continue;
+          // }
           message += token;
           set(state => {
             state.message = message;

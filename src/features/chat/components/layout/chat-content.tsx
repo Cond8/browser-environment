@@ -3,6 +3,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useStreamSourceStore } from '@/features/ollama-api/streaming/infra/stream-source-store';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
+import { getMessageContent, getMessageError } from '../../models/thread-message-utils';
 import { ThreadMessage, useChatStore } from '../../store/chat-store';
 import { AssistantDisplay } from '../assistant-display';
 import { EmptyChatState } from '../empty/empty-chat-state';
@@ -34,6 +35,9 @@ export const ChatContent = () => {
     <ScrollArea className="flex-1">
       <div className="flex flex-col">
         {currentThread.messages.map((message: ThreadMessage) => {
+          // Determine message error
+          const error = getMessageError(message);
+
           return (
             <div
               key={message.id}
@@ -42,12 +46,15 @@ export const ChatContent = () => {
                 message.role === 'user' ? 'bg-card' : 'bg-background',
               )}
             >
-              {message.role === 'assistant' && message.error ? (
-                <ErrorDisplay error={message.error} />
-              ) : message.role === 'assistant' ? (
-                <AssistantDisplay content={message.content} />
+              {message.role === 'assistant' ? (
+                error ? (
+                  <ErrorDisplay error={error} />
+                ) : (
+                  <AssistantDisplay content={message} />
+                )
               ) : (
-                <UserDisplay content={message.content} />
+                // User message
+                <UserDisplay content={getMessageContent(message)} />
               )}
             </div>
           );

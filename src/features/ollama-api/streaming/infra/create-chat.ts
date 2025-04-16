@@ -32,7 +32,5 @@ export async function* chatFn(
 
   useAbortEventBusStore.getState().unregisterAbortCallback(abortEvent);
 
-  console.log('[createChat] Response:', response);
-
   return response;
 };

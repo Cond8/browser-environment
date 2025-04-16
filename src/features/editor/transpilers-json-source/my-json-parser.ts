@@ -46,6 +46,15 @@ export function processJsonChunk(chunk: SLMChunk): SLMChunk {
     }
   }
 
+  // If we successfully parsed JSON content, return it as a JSON chunk
+  if (parsedContent) {
+    return {
+      type: 'json',
+      content: parsedContent,
+    };
+  }
+
+  // Otherwise return as text chunk
   return {
     type: 'text',
     content: content,

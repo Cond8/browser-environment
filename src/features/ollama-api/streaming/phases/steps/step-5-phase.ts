@@ -2,10 +2,10 @@
 import { WorkflowMultiStep } from '@/features/editor/transpilers-json-source/extract-text-parse';
 import { chatFn } from '../../infra/create-chat';
 import { UserRequest } from '../types';
-import { FIRST_STEP_MESSAGES, SYSTEM_PROMPT } from './step-1-phase';
-import { SECOND_STEP_MESSAGES, SECOND_STEP_PROMPT } from './step-2-phase';
-import { THIRD_STEP_MESSAGES, THIRD_STEP_PROMPT } from './step-3-phase';
-import { FOURTH_STEP_MESSAGES, FOURTH_STEP_PROMPT } from './step-4-phase';
+import { FIRST_STEP_MESSAGES } from './step-1-phase';
+import { SECOND_STEP_MESSAGES } from './step-2-phase';
+import { THIRD_STEP_MESSAGES } from './step-3-phase';
+import { FOURTH_STEP_MESSAGES } from './step-4-phase';
 
 export const FIFTH_STEP_PROMPT = () =>
   `

@@ -1,35 +1,15 @@
 // src/features/chat/store/chat-store.ts
-import { SLMOutput } from '@/features/editor/transpilers-json-source/extract-text-parse';
-import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
-import { nanoid } from 'nanoid';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import {
+  AssistantMessage,
+  BaseThreadMessage,
+  MessageError,
+  UserMessage,
+} from '../models/thread-message';
 
-export interface UserThreadMessage {
-  id: number;
-  role: 'user';
-  content: string;
-  type: 'alignment';
-}
-
-export interface AssistantThreadMessage {
-  id: number;
-  role: 'assistant';
-  content: string | SLMOutput;
-  type: 'alignment' | 'interface' | 'step';
-  error?: {
-    message: string;
-    type: string;
-    details?: {
-      phase?: 'interface' | 'step' | 'stream' | 'alignment';
-      validationErrors?: string[];
-      metadata?: unknown[];
-    };
-  };
-}
-
-export type ThreadMessage = UserThreadMessage | AssistantThreadMessage;
+export type ThreadMessage = BaseThreadMessage;
 
 export interface Thread {
   id: number;
@@ -46,13 +26,11 @@ export interface ChatStore {
   setCurrentThread: (threadId: Thread['id'] | null) => void;
   resetThread: () => void;
 
+  // Message management
+  addMessage: (message: UserMessage | AssistantMessage) => void;
   addUserMessage: (message: string) => void;
-
-  addAlignmentMessage: (message: string) => void;
-  addInterfaceMessage: (chunks: SLMOutput) => void;
-  addStepMessage: (message: SLMOutput) => void;
-
-  setMessageError: (id: number, error: AssistantThreadMessage['error']) => void;
+  addAssistantMessage: (message: AssistantMessage) => void;
+  setMessageError: (id: number, error: MessageError) => void;
 
   getAllMessages: () => ThreadMessage[];
   getMessagesUntil: (id: number) => ThreadMessage[];
@@ -62,6 +40,10 @@ export interface ChatStore {
   getAssistantMessageCount: (threadId: Thread['id']) => number;
   clearThreads: () => void;
 }
+
+export const isAssistantMessageInstance = (message: ThreadMessage): message is AssistantMessage => {
+  return message.role === 'assistant';
+};
 
 export const useChatStore = create<ChatStore>()(
   persist(
@@ -86,86 +68,53 @@ export const useChatStore = create<ChatStore>()(
         });
       },
 
-      addUserMessage: (message: string): void => {
-        const id = parseInt(nanoid(10), 36);
-        const userMessage: UserThreadMessage = {
-          id,
-          role: 'user',
-          content: message,
-          type: 'alignment',
-        };
+      // Message management methods
+      addMessage: (message: UserMessage | AssistantMessage) => {
         set(state => {
-          if (!state.currentThreadId) {
-            state.currentThreadId = id;
-            state.threads[id] = {
-              id,
-              title: message.substring(0, 30) + (message.length > 30 ? '...' : ''),
-              messages: [userMessage],
+          if (!state.currentThreadId && message.role === 'user') {
+            // Create a new thread if this is the first message
+            state.currentThreadId = message.id;
+            const userMessage = message as UserMessage;
+            state.threads[message.id] = {
+              id: message.id,
+              title:
+                userMessage.getRawContent().substring(0, 30) +
+                (userMessage.getRawContent().length > 30 ? '...' : ''),
+              messages: [message],
               error: null,
             };
-          } else {
+          } else if (state.currentThreadId) {
+            // Add to existing thread
             const thread = state.threads[state.currentThreadId];
-            thread.messages.push(userMessage);
-            if (thread.messages.length === 2 && thread.title === 'New Thread') {
-              thread.title = message.substring(0, 30) + (message.length > 30 ? '...' : '');
-            }
+            thread.messages.push(message);
           }
         });
       },
 
-      addAlignmentMessage: (message: string) => {
-        const alignmentMessage: AssistantThreadMessage = {
-          id: parseInt(nanoid(10), 36),
-          role: 'assistant',
-          content: message,
-          type: 'alignment',
-        };
-        set(state => {
-          const currentId = state.currentThreadId;
-          if (currentId) {
-            state.threads[currentId].messages.push(alignmentMessage);
-          }
-        });
+      // Legacy methods with backward compatibility
+      addUserMessage: (message: string): void => {
+        const userMessage = new UserMessage(message);
+        get().addMessage(userMessage);
       },
 
-      addInterfaceMessage: (chunks: SLMOutput) => {
-        const interfaceMessage: AssistantThreadMessage = {
-          id: parseInt(nanoid(10), 36),
-          role: 'assistant',
-          content: chunks,
-          type: 'interface',
-        };
-        set(state => {
-          const currentId = state.currentThreadId;
-          if (!currentId) return;
-
-          state.threads[currentId].messages.push(interfaceMessage);
-        });
+      addAssistantMessage: (message: AssistantMessage): void => {
+        get().addMessage(message);
       },
 
-      addStepMessage: (chunks: SLMOutput) => {
-        const stepsMessage: AssistantThreadMessage = {
-          id: parseInt(nanoid(10), 36),
-          role: 'assistant',
-          content: chunks,
-          type: 'step',
-        };
-        set(state => {
-          const currentId = state.currentThreadId;
-          if (currentId) {
-            state.threads[currentId].messages.push(stepsMessage);
-          }
-        });
-      },
-
-      setMessageError: (id: number, error: AssistantThreadMessage['error']) => {
+      setMessageError: (id: number, error: MessageError) => {
         set(state => {
           const currentId = state.currentThreadId;
           if (currentId) {
             const thread = state.threads[currentId];
             const message = thread.messages.find(m => m.id === id);
-            if (message && message.role === 'assistant') {
-              message.error = error;
+            if (message) {
+              if (isAssistantMessageInstance(message)) {
+                // New message class
+                message.setError(error);
+              } else if (message.role === 'assistant') {
+                // Legacy message
+                (message as AssistantMessage).error = error;
+              }
             } else {
               console.warn(
                 `Message with id ${id} not found or not an assistant message to set error.`,

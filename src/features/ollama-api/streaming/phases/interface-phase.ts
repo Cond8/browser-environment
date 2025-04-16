@@ -41,10 +41,7 @@ Rules:
 Available modules:
 - extract, parse, validate, transform, logic, calculate, format, io, storage, integrate, understand, generate
 
-
 User request: ${userRequest}
-
-Output only the raw JSON interface.
 
 ### Response:
 `.trim();
