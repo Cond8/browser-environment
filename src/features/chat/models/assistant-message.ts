@@ -1,0 +1,113 @@
+import { nanoid } from 'nanoid';
+import { Message, ToolCall } from 'ollama';
+
+export interface AssistantTextChunk {
+  type: 'text';
+  content: string;
+}
+
+export interface AssistantJsonChunk {
+  type: 'json';
+  content: string;
+}
+
+export type AssistantChunk = AssistantTextChunk | AssistantJsonChunk;
+
+export interface WorkFlowStep {
+  name: string;
+  module: string;
+  functionName: string;
+  goal: string;
+  params: any;
+  returns: any;
+}
+
+// Assistant message implementation
+export class AssistantMessage implements Message {
+  private _cachedSteps: WorkFlowStep[] = [];
+
+  id: number;
+  role: 'assistant' = 'assistant';
+
+  rawChunks: string[] = [];
+
+  tool_calls?: ToolCall[];
+  images?: Uint8Array[] | string[];
+
+  error?: Error;
+
+  get content(): string {
+    return this.rawChunks.join('\n\n');
+  }
+
+  constructor() {
+    this.id = parseInt(nanoid(10), 36);
+  }
+
+  addAlignmentResponse(response: string) {
+    this.rawChunks.push(response);
+  }
+
+  addInterfaceResponse(response: string) {
+    try {
+      JSON.parse(response);
+    } catch (e) {
+      const foundStep = response.match(/```json\n(.*)\n```/);
+      if (!foundStep) {
+        throw new Error('Interface response not found');
+      }
+    }
+    this.rawChunks.push(response);
+  }
+
+  addStepResponse(response: string) {
+    try {
+      JSON.parse(response);
+    } catch (e) {
+      const foundStep = response.match(/```json\n(.*)\n```/);
+      if (!foundStep) {
+        throw new Error('Interface response not found');
+      }
+    }
+    this.rawChunks.push(response);
+  }
+
+  get workflow(): WorkFlowStep[] {
+    if (this._cachedSteps.length === this.rawChunks.length) {
+      return this._cachedSteps;
+    }
+    const foundSteps = [] as WorkFlowStep[];
+    for (const chunk of this.rawChunks) {
+      const foundStep = chunk.match(/```json\n(.*)\n```/);
+      if (foundStep) {
+        foundSteps.push(JSON.parse(foundStep[1]));
+      }
+    }
+    this._cachedSteps = foundSteps;
+    return this._cachedSteps;
+  }
+
+  get interface(): WorkFlowStep {
+    return this.workflow[0];
+  }
+
+  get interfaceString(): string {
+    return JSON.stringify(this.interface, null, 2);
+  }
+
+  getStep(num: number): WorkFlowStep {
+    return this.workflow[num];
+  }
+
+  getStepString(num: number): string {
+    return JSON.stringify(this.getStep(num), null, 2);
+  }
+
+  get steps(): WorkFlowStep[] {
+    return this.workflow.slice(1);
+  }
+
+  setError(error: Error) {
+    this.error = error;
+  }
+}

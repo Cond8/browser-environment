@@ -1,21 +1,19 @@
 // src/features/chat/store/chat-store.ts
+import { nanoid } from 'nanoid';
+import { Message } from 'ollama';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import {
-  AssistantMessage,
-  BaseThreadMessage,
-  MessageError,
-  UserMessage,
-} from '../models/thread-message';
+import { AssistantMessage } from '../models/assistant-message';
 
-export type ThreadMessage = BaseThreadMessage;
+export type ThreadMessage = Message | AssistantMessage;
 
 export interface Thread {
-  id: number;
+  id: string;
   title: string;
   messages: ThreadMessage[];
   error: Error | null;
+  timestamp: number;
 }
 
 export interface ChatStore {
@@ -24,13 +22,13 @@ export interface ChatStore {
 
   getCurrentThread: () => Thread | null;
   setCurrentThread: (threadId: Thread['id'] | null) => void;
+  createThread: (userMessage: Message, id: string) => void;
   resetThread: () => void;
 
   // Message management
-  addMessage: (message: UserMessage | AssistantMessage) => void;
+  addThreadMessage: (message: ThreadMessage) => void;
   addUserMessage: (message: string) => void;
   addAssistantMessage: (message: AssistantMessage) => void;
-  setMessageError: (id: number, error: MessageError) => void;
 
   getAllMessages: () => ThreadMessage[];
   getMessagesUntil: (id: number) => ThreadMessage[];
@@ -40,10 +38,6 @@ export interface ChatStore {
   getAssistantMessageCount: (threadId: Thread['id']) => number;
   clearThreads: () => void;
 }
-
-export const isAssistantMessageInstance = (message: ThreadMessage): message is AssistantMessage => {
-  return message.role === 'assistant';
-};
 
 export const useChatStore = create<ChatStore>()(
   persist(
@@ -62,76 +56,53 @@ export const useChatStore = create<ChatStore>()(
         return currentId ? get().threads[currentId] : null;
       },
 
+      createThread: (userMessage: Message, id: string) => {
+        set(state => {
+          state.threads[id] = {
+            id: id,
+            title: userMessage.content,
+            messages: [userMessage],
+            error: null,
+            timestamp: Date.now(),
+          };
+        });
+      },
+
       resetThread: () => {
         set(state => {
           state.currentThreadId = null;
         });
       },
 
-      // Message management methods
-      addMessage: (message: UserMessage | AssistantMessage) => {
+      addThreadMessage: (message: ThreadMessage): void => {
         set(state => {
-          if (!state.currentThreadId && message.role === 'user') {
-            // Create a new thread if this is the first message
-            state.currentThreadId = message.id;
-            const userMessage = message as UserMessage;
-            state.threads[message.id] = {
-              id: message.id,
-              title:
-                userMessage.getRawContent().substring(0, 30) +
-                (userMessage.getRawContent().length > 30 ? '...' : ''),
-              messages: [message],
-              error: null,
-            };
-          } else if (state.currentThreadId) {
-            // Add to existing thread
-            const thread = state.threads[state.currentThreadId];
-            thread.messages.push(message);
-          }
+          state.threads[state.currentThreadId!].messages.push(message);
         });
       },
 
       // Legacy methods with backward compatibility
       addUserMessage: (message: string): void => {
-        const userMessage = new UserMessage(message);
-        get().addMessage(userMessage);
+        const userMessage: Message = {
+          role: 'user',
+          content: message,
+        };
+
+        if (!get().currentThreadId) {
+          const id = nanoid();
+          get().createThread(userMessage, id);
+          get().setCurrentThread(id);
+        }
+        get().addThreadMessage(userMessage);
       },
 
       addAssistantMessage: (message: AssistantMessage): void => {
-        get().addMessage(message);
-      },
-
-      setMessageError: (id: number, error: MessageError) => {
-        set(state => {
-          const currentId = state.currentThreadId;
-          if (currentId) {
-            const thread = state.threads[currentId];
-            const message = thread.messages.find(m => m.id === id);
-            if (message) {
-              if (isAssistantMessageInstance(message)) {
-                // New message class
-                message.setError(error);
-              } else if (message.role === 'assistant') {
-                // Legacy message
-                (message as AssistantMessage).error = error;
-              }
-            } else {
-              console.warn(
-                `Message with id ${id} not found or not an assistant message to set error.`,
-              );
-            }
-          }
-        });
+        get().addThreadMessage(message);
       },
 
       getRecentThreads: (limit = 5): Thread[] => {
         const threads = Object.values(get().threads);
         return threads
-          .sort((a, b) => {
-            const lastMsgA = a.messages[a.messages.length - 1]?.id || a.id;
-            const lastMsgB = b.messages[b.messages.length - 1]?.id || b.id;
-            return lastMsgB - lastMsgA;
-          })
+          .sort((a, b) => b.timestamp - a.timestamp)
           .slice(0, limit);
       },
 
@@ -166,12 +137,8 @@ export const useChatStore = create<ChatStore>()(
         return thread.messages;
       },
 
-      getMessagesUntil: (id: number): ThreadMessage[] => {
+      getMessagesUntil: (message: ThreadMessage): ThreadMessage[] => {
         const thread = get().getCurrentThread();
-        if (!thread) return [];
-        const messageIndex = thread.messages.findIndex(m => m.id === id);
-        if (messageIndex === -1) return thread.messages;
-        return thread.messages.slice(0, messageIndex);
       },
     })),
     {

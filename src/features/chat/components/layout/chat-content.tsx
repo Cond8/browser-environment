@@ -3,7 +3,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useStreamSourceStore } from '@/features/ollama-api/streaming/infra/stream-source-store';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
-import { getMessageContent, getMessageError } from '../../models/thread-message-utils';
 import { ThreadMessage, useChatStore } from '../../store/chat-store';
 import { AssistantDisplay } from '../assistant-display';
 import { EmptyChatState } from '../empty/empty-chat-state';

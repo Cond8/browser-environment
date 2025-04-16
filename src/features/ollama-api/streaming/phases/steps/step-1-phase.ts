@@ -1,5 +1,5 @@
 // src/features/ollama-api/streaming/phases/steps/step-1-phase.ts
-import { WorkflowMultiStep } from '@/features/editor/transpilers-json-source/extract-text-parse';
+import { AssistantMessage, WorkFlowStep } from '@/features/chat/models/assistant-message';
 import { chatFn } from '../../infra/create-chat';
 import { UserRequest } from '../types';
 
@@ -69,10 +69,10 @@ Output only the JSON for the step.
 ### Response:
 `.trim();
 
-export const FIRST_STEP_MESSAGES = (userReq: UserRequest, steps: WorkflowMultiStep) => [
+export const FIRST_STEP_MESSAGES = (userReq: UserRequest, assistantMessage: AssistantMessage) => [
   {
     role: 'system',
-    content: SYSTEM_PROMPT(userReq.userRequest, steps[0].toStepString),
+    content: SYSTEM_PROMPT(userReq.userRequest, assistantMessage.interfaceString),
   },
   {
     role: 'user',
@@ -82,7 +82,7 @@ export const FIRST_STEP_MESSAGES = (userReq: UserRequest, steps: WorkflowMultiSt
 
 export async function* firstStepPhase(
   userReq: UserRequest,
-  steps: WorkflowMultiStep,
+  assistantMessage: AssistantMessage,
 ): AsyncGenerator<string, string, unknown> {
-  return yield* chatFn({ messages: FIRST_STEP_MESSAGES(userReq, steps) });
+  return yield* chatFn({ messages: FIRST_STEP_MESSAGES(userReq, assistantMessage) });
 }

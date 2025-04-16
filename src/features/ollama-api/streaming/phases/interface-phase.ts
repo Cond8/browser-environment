@@ -60,8 +60,5 @@ export async function* interfacePhase(
         content: userReq.alignmentResponse,
       },
     ],
-    options: {
-      stop: ['*/'],
-    },
   });
 }

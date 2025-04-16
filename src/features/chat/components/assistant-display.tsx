@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { BaseThreadMessage } from '../models/thread-message';
+import { BaseThreadMessage } from '../models/assistant-message';
 import { isBaseThreadMessage, isSLMOutputInstance } from '../models/thread-message-utils';
 import { markdownComponents } from './markdown-components';
 import { WorkflowStepDisplay } from './workflow-step-components';
@@ -18,11 +18,6 @@ type StreamingMessageDisplayProps = {
   content: SLMOutput | undefined | null;
   isStreaming: boolean;
 };
-
-// Helper function to check if an object is a workflow step
-function isWorkflowStep(obj: any): obj is { interface: any; type: string } {
-  return obj && typeof obj === 'object';
-}
 
 export const AssistantDisplay = ({ content }: MessageDisplayProps) => {
   const [displayContent, setDisplayContent] = useState<string | SLMOutput | null>(null);
@@ -124,7 +119,7 @@ export const StreamingAssistantDisplay = ({
           );
         } else if (chunk.type === 'json') {
           // Check if the content is a workflow step
-          if (isWorkflowStep(chunk.content)) {
+          if (isBaseThreadMessage(chunk.content)) {
             // Validate the workflow step
             const validatedStep = validateWorkflowStep(chunk.content);
             return (
