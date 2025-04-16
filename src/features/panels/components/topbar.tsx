@@ -14,7 +14,8 @@ export const TopBar: React.FC = () => {
         <div className="flex items-baseline gap-2">
           <h1 className="text-lg font-semibold tracking-tight">Cond8 Webview</h1>
           <h2 className="text-sm text-muted-foreground">
-            v0.0.1 - restricted to <b>Browser environment</b>
+            v0.0.1 - restricted to <b>Browser environment</b> only - <b>Download</b> the{' '}
+            <i>Next.js app</i> to gain <b>broader environment</b> support
           </h2>
         </div>
         <Button variant="ghost" size="icon" onClick={() => setOpen(true)}>

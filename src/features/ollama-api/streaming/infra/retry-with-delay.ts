@@ -2,7 +2,7 @@
 import { WorkflowChainError } from '../api/workflow-chain';
 import { WorkflowPhase } from '../phases/types';
 
-const MAX_RETRIES = 1;
+const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
 export async function* retryWithDelay<TReturn>(
@@ -17,21 +17,24 @@ export async function* retryWithDelay<TReturn>(
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     let response = '';
 
+    /** ============================================================
+     * STEP 1: CONNECTION
+     * ============================================================ */
     try {
       const generator = asyncGeneratorFn();
       for await (const chunk of generator) {
         response += chunk;
         yield chunk;
       }
-    } catch (error) {
+    } catch (error: any) {
       lastError = error as Error;
       console.warn(
-        `[WorkflowChain] ${phase} phase connection attempt ${attempt}/${MAX_RETRIES} failed:`,
-        error,
+        `[WorkflowChain] ${phase} phase CONNECTION attempt ${attempt}/${MAX_RETRIES} failed:`,
+        error.message,
       );
 
       if (attempt < MAX_RETRIES) {
-        console.log(`[WorkflowChain] Retrying ${phase} phase connection in ${RETRY_DELAY_MS}ms...`);
+        console.log(`[WorkflowChain] Retrying ${phase} phase CONNECTION in ${RETRY_DELAY_MS}ms...`);
         await new Promise((resolve: (value: unknown) => void) =>
           setTimeout(resolve, RETRY_DELAY_MS),
         );
@@ -40,16 +43,19 @@ export async function* retryWithDelay<TReturn>(
       continue;
     }
 
+    /** ============================================================
+     * STEP 2: PARSER
+     * ============================================================ */
     if (response) {
       let parsed: TReturn;
       try {
         parsed = parserFn(response);
-      } catch (error) {
+      } catch (error: any) {
         console.log('response', response);
         lastError = error as Error;
-        console.warn(`[WorkflowChain] ${phase} phase parser failed:`, error);
+        console.warn(`[WorkflowChain] ${phase} phase PARSER failed:`, error.message);
         if (attempt < MAX_RETRIES) {
-          console.log(`[WorkflowChain] Retrying ${phase} phase parser in ${RETRY_DELAY_MS}ms...`);
+          console.log(`[WorkflowChain] Retrying ${phase} phase PARSER in ${RETRY_DELAY_MS}ms...`);
           await new Promise((resolve: (value: unknown) => void) =>
             setTimeout(resolve, RETRY_DELAY_MS),
           );
@@ -58,15 +64,18 @@ export async function* retryWithDelay<TReturn>(
         continue;
       }
 
+      /** ============================================================
+       * STEP 3: VALIDATOR
+       * ============================================================ */
       try {
         validatorFn(parsed);
         return parsed;
-      } catch (error) {
+      } catch (error: any) {
         lastError = error as Error;
-        console.warn(`[WorkflowChain] ${phase} phase validator failed:`, error);
+        console.warn(`[WorkflowChain] ${phase} phase VALIDATOR failed:`, error.message);
         if (attempt < MAX_RETRIES) {
           console.log(
-            `[WorkflowChain] Retrying ${phase} phase validator in ${RETRY_DELAY_MS}ms...`,
+            `[WorkflowChain] Retrying ${phase} phase VALIDATOR in ${RETRY_DELAY_MS}ms...`,
           );
           await new Promise((resolve: (value: unknown) => void) =>
             setTimeout(resolve, RETRY_DELAY_MS),

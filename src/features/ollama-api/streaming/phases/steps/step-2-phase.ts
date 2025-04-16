@@ -1,9 +1,8 @@
-import { SYSTEM_PROMPT } from '@/features/ollama-api/streaming/phases/prompts-system';
-import { ChatRequest } from 'ollama';
-import { WorkflowStep } from '../../api/workflow-step';
-
-import { FIRST_STEP_PROMPT } from './step-1-phase';
+// src/features/ollama-api/streaming/phases/steps/step-2-phase.ts
+import { WorkflowMultiStep } from '@/features/editor/transpilers-json-source/extract-text-parse';
 import { chatFn } from '../../infra/create-chat';
+import { UserRequest } from '../types';
+import { FIRST_STEP_MESSAGES, SYSTEM_PROMPT } from './step-1-phase';
 export const SECOND_STEP_PROMPT = () =>
   `
 ## TASK
@@ -14,31 +13,25 @@ Output only the JSON for the step.
 ### Response:
 `.trim();
 
+export const SECOND_STEP_MESSAGES = (steps: WorkflowMultiStep) => [
+  {
+    role: 'assistant',
+    content: steps[1].toStepString,
+  },
+  {
+    role: 'user',
+    content: SECOND_STEP_PROMPT(),
+  },
+];
+
 export async function* secondStepPhase(
-  userRequest: string,
-  alignmentResponse: string,
-  interfaceResponse: WorkflowStep,
-  firstStep: WorkflowStep,
+  userReq: UserRequest,
+  steps: WorkflowMultiStep,
 ): AsyncGenerator<string, string, unknown> {
-  console.log('[secondStepPhase] Starting step generation with prompt:', prompt);
   return yield* chatFn({
     messages: [
-      {
-        role: 'system',
-        content: SYSTEM_PROMPT(FIRST_STEP_PROMPT(userRequest, interfaceResponse)),
-      },
-      {
-        role: 'user',
-        content: alignmentResponse,
-      },
-      {
-        role: 'assistant',
-        content: '```json \n' + JSON.stringify(firstStep, null, 2) + '\n```',
-      },
-      {
-        role: 'user',
-        content: SECOND_STEP_PROMPT(),
-      },
+      ...FIRST_STEP_MESSAGES(userReq, steps),
+      ...SECOND_STEP_MESSAGES(steps),
     ],
   });
 }

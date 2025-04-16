@@ -1,3 +1,4 @@
+// src/features/chat/components/json-schema-renderer.tsx
 import { cn } from '@/lib/utils';
 import { ListChecks, Type } from 'lucide-react';
 

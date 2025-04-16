@@ -1,3 +1,4 @@
+// src/features/chat/components/user-display.tsx
 import { cn } from '@/lib/utils';
 
 type UserDisplayProps = {

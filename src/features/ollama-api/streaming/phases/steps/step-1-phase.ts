@@ -1,10 +1,9 @@
 // src/features/ollama-api/streaming/phases/steps/step-1-phase.ts
-import { SYSTEM_PROMPT } from '@/features/ollama-api/streaming/phases/prompts-system';
-import { ChatRequest } from 'ollama';
-import { WorkflowStep } from '../../api/workflow-step';
+import { WorkflowMultiStep } from '@/features/editor/transpilers-json-source/extract-text-parse';
 import { chatFn } from '../../infra/create-chat';
+import { UserRequest } from '../types';
 
-export const FIRST_STEP_PROMPT = (userRequest: string, interfaceResponse: WorkflowStep) =>
+export const SYSTEM_PROMPT = (userRequest: string, interfaceResponse: string) =>
   `
 You are an assistant that helps users define structured workflows using a **JSON-based format**.
 
@@ -58,7 +57,7 @@ ${userRequest}
 
 ## WORKFLOW INTERFACE
 \`\`\`
-${JSON.stringify(interfaceResponse, null, 2)}
+${interfaceResponse}
 \`\`\`
 
 ---
@@ -70,23 +69,20 @@ Output only the JSON for the step.
 ### Response:
 `.trim();
 
+export const FIRST_STEP_MESSAGES = (userReq: UserRequest, steps: WorkflowMultiStep) => [
+  {
+    role: 'system',
+    content: SYSTEM_PROMPT(userReq.userRequest, steps[0].toStepString),
+  },
+  {
+    role: 'user',
+    content: userReq.alignmentResponse,
+  },
+];
+
 export async function* firstStepPhase(
-  userRequest: string,
-  alignmentResponse: string,
-  interfaceResponse: WorkflowStep,
+  userReq: UserRequest,
+  steps: WorkflowMultiStep,
 ): AsyncGenerator<string, string, unknown> {
-  const prompt = SYSTEM_PROMPT(FIRST_STEP_PROMPT(userRequest, interfaceResponse));
-  console.log('[firstStepPhase] Starting step generation with prompt:', prompt);
-  return yield* chatFn({
-    messages: [
-      {
-        role: 'system',
-        content: prompt,
-      },
-      {
-        role: 'user',
-        content: alignmentResponse,
-      },
-    ],
-  });
+  return yield* chatFn({ messages: FIRST_STEP_MESSAGES(userReq, steps) });
 }

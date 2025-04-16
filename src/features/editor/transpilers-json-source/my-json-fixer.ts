@@ -24,7 +24,7 @@ export function transformToInterface(input: string): string {
       interface: {
         name: parsed.name || parsed.interface?.name || 'UnnamedWorkflow',
         module: parsed.module || parsed.interface?.module || 'extract',
-        function: parsed.function || parsed.interface?.function || 'process',
+        functionName: parsed.functionName || parsed.interface?.functionName || 'process',
         goal: parsed.goal || parsed.interface?.goal || 'Process workflow',
         params: parsed.params || parsed.interface?.params || {},
         returns: parsed.returns || parsed.interface?.returns || {},
@@ -43,13 +43,13 @@ export function transformToInterface(input: string): string {
 
     // Ensure snake_case for function
     try {
-      transformed.interface.function = transformed.interface.function
+      transformed.interface.functionName = transformed.interface.functionName
         .split(/\s+/)
         .join('_')
         .toLowerCase();
     } catch (functionError) {
       throw new Error(
-        `Failed to format function to snake_case: ${(functionError as Error).message}`,
+        `Failed to format functionName to snake_case: ${(functionError as Error).message}`,
       );
     }
 
@@ -113,7 +113,7 @@ export function transformToInterface(input: string): string {
       interface: {
         name: 'DefaultWorkflow',
         module: 'extract',
-        function: 'process',
+        functionName: 'process',
         goal: 'Process workflow',
         params: {},
         returns: {},

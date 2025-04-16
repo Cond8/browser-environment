@@ -1,8 +1,8 @@
 // src/features/ollama-api/streaming/api/workflow-chain.ts
+import { WorkflowMultiStep } from '@/features/editor/transpilers-json-source/extract-text-parse';
 import { myJsonParser } from '@/features/editor/transpilers-json-source/my-json-parser';
 import { validateWorkflowStep } from '@/features/editor/transpilers-json-source/workflow-step-validator';
 import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
-import { useAssistantConfigStore } from '../../../chat/store/assistant-config-store';
 import { useChatStore } from '../../../chat/store/chat-store';
 import { retryWithDelay } from '../infra/retry-with-delay';
 import { alignmentPhase } from '../phases/alignment-phase';
@@ -48,8 +48,6 @@ export async function* executeWorkflowChain(): AsyncGenerator<
     error?: WorkflowChainError;
   }
 > {
-  const { selectedModel, parameters, ollamaUrl } = useAssistantConfigStore.getState();
-
   const chatStore = useChatStore.getState();
   const messages = chatStore.getAllMessages();
 
@@ -69,7 +67,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
     alignmentResponse: '',
   };
 
-    try {
+  try {
     /* ===========================
      * ===== ALIGNMENT PHASE =====
      * ===========================*/
@@ -95,9 +93,9 @@ export async function* executeWorkflowChain(): AsyncGenerator<
       response => myJsonParser(response),
       parsed => {
         // Validate each parsed workflow step
-        parsed.forEach(step => {
-          if (step.type === 'json') {
-            validateWorkflowStep(step.content);
+        parsed.Chunks.forEach(chunk => {
+          if (chunk.type === 'json') {
+            validateWorkflowStep(chunk.content);
           }
         });
       },
@@ -106,7 +104,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
       alignmentResult,
     );
 
-    const steps = [parsedInterfaceResult];
+    const steps: WorkflowMultiStep = [parsedInterfaceResult];
 
     chatStore.addInterfaceMessage(parsedInterfaceResult);
     // const workflowPath = useWorkflowStore.getState().createWorkflow(parsedInterfaceResult);
@@ -125,9 +123,9 @@ export async function* executeWorkflowChain(): AsyncGenerator<
       },
       parsed => {
         // Validate each parsed workflow step
-        parsed.forEach(step => {
+        parsed.Chunks.forEach(step => {
           if (step.type === 'json') {
-            // validateWorkflowStep(step.content);
+            validateWorkflowStep(step.content);
           }
         });
       },
@@ -144,17 +142,16 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * ===== SECOND STEP =====
      * =======================*/
     const parsedSecondStepResult = yield* retryWithDelay(
-      () =>
-        secondStepPhase(userReq, steps),
+      () => secondStepPhase(userReq, steps),
       response => {
         console.log('second step response', response);
         return myJsonParser(response);
       },
       parsed => {
         // Validate each parsed workflow step
-        parsed.forEach(step => {
-          if (step.type === 'json') {
-            validateWorkflowStep(step.content);
+        parsed.Chunks.forEach(chunk => {
+          if (chunk.type === 'json') {
+            validateWorkflowStep(chunk.content);
           }
         });
       },
@@ -170,17 +167,16 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * ===== THIRD STEP ======
      * =======================*/
     const parsedThirdStepResult = yield* retryWithDelay(
-      () =>
-        thirdStepPhase(userReq, steps),
+      () => thirdStepPhase(userReq, steps),
       response => {
         console.log('third step response', response);
         return myJsonParser(response);
       },
       parsed => {
         // Validate each parsed workflow step
-        parsed.forEach(step => {
-          if (step.type === 'json') {
-            validateWorkflowStep(step.content);
+        parsed.Chunks.forEach(chunk => {
+          if (chunk.type === 'json') {
+            validateWorkflowStep(chunk.content);
           }
         });
       },
@@ -196,17 +192,16 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * ===== FOURTH STEP ======
      * ========================*/
     const parsedFourthStepResult = yield* retryWithDelay(
-      () =>
-        fourthStepPhase(userReq, steps),
+      () => fourthStepPhase(userReq, steps),
       response => {
         console.log('fourth step response', response);
         return myJsonParser(response);
       },
       parsed => {
         // Validate each parsed workflow step
-        parsed.forEach(step => {
-          if (step.type === 'json') {
-            validateWorkflowStep(step.content);
+        parsed.Chunks.forEach(chunk => {
+          if (chunk.type === 'json') {
+            validateWorkflowStep(chunk.content);
           }
         });
       },
@@ -222,17 +217,16 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * ===== FIFTH STEP ======
      * =======================*/
     const parsedFifthStepResult = yield* retryWithDelay(
-      () =>
-        fifthStepPhase(userReq, steps),
+      () => fifthStepPhase(userReq, steps),
       response => {
         console.log('fifth step response', response);
         return myJsonParser(response);
       },
       parsed => {
         // Validate each parsed workflow step
-        parsed.forEach(step => {
-          if (step.type === 'json') {
-            validateWorkflowStep(step.content);
+        parsed.Chunks.forEach(chunk => {
+          if (chunk.type === 'json') {
+            validateWorkflowStep(chunk.content);
           }
         });
       },
@@ -255,9 +249,9 @@ export async function* executeWorkflowChain(): AsyncGenerator<
       },
       parsed => {
         // Validate each parsed workflow step
-        parsed.forEach(step => {
-          if (step.type === 'json') {
-            validateWorkflowStep(step.content);
+        parsed.Chunks.forEach(chunk => {
+          if (chunk.type === 'json') {
+            validateWorkflowStep(chunk.content);
           }
         });
       },
@@ -270,19 +264,9 @@ export async function* executeWorkflowChain(): AsyncGenerator<
     yield '[BREAK]';
 
     return {
-      workflow: [
-        ...parsedInterfaceResult.filter(chunk => chunk.type === 'json').map(chunk => chunk.content),
-        ...parsedFirstStepResult.filter(chunk => chunk.type === 'json').map(chunk => chunk.content),
-        ...parsedSecondStepResult
-          .filter(chunk => chunk.type === 'json')
-          .map(chunk => chunk.content),
-        ...parsedThirdStepResult.filter(chunk => chunk.type === 'json').map(chunk => chunk.content),
-        ...parsedFourthStepResult
-          .filter(chunk => chunk.type === 'json')
-          .map(chunk => chunk.content),
-        ...parsedFifthStepResult.filter(chunk => chunk.type === 'json').map(chunk => chunk.content),
-        ...parsedSixthStepResult.filter(chunk => chunk.type === 'json').map(chunk => chunk.content),
-      ],
+      workflow: steps
+        .map(step => step.toWorkflowStep)
+        .filter((step): step is WorkflowStep => step !== undefined),
     };
   } catch (error) {
     const err =

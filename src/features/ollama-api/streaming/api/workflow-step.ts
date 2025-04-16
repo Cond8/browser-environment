@@ -2,7 +2,7 @@
 export interface WorkflowStep {
   name: string;
   module: string;
-  function: string;
+  functionName: string;
   goal: string;
   params: Record<string, { type: string; description: string }>;
   returns: Record<string, { type: string; description: string }>;
