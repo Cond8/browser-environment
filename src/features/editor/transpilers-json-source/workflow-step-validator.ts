@@ -1,7 +1,6 @@
 // src/features/editor/transpilers-json-source/workflow-step-validator.ts
-import { WorkflowStep, WorkflowStepInput } from '@/features/ollama-api/streaming/api/workflow-step';
+import { WorkflowStep } from '@/features/chat/models/assistant-message';
 import { z } from 'zod';
-
 export class WorkflowStepValidationError extends Error {
   constructor(
     message: string,
@@ -108,7 +107,7 @@ export function validateWorkflowStep(step: unknown): WorkflowStep {
     const dataToValidate = withInterface.interface || step;
 
     // Apply schema validation with defaults
-    const validated = workflowStepSchema.parse(dataToValidate) as WorkflowStepInput;
+    const validated = workflowStepSchema.parse(dataToValidate);
 
     // Normalize module name
     validated.module = normalizeModuleName(validated.module);

@@ -1,6 +1,5 @@
 // src/features/chat/components/layout/chat-content.tsx
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useStreamSourceStore } from '@/features/ollama-api/streaming/infra/stream-source-store';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 import { AssistantMessage } from '../../models/assistant-message';
@@ -13,8 +12,6 @@ import { UserDisplay } from '../user-display';
 export const ChatContent = () => {
   const currentThread = useChatStore().getCurrentThread();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const isStreaming = useStreamSourceStore(state => state.isStreaming);
-  const streamMessage = useStreamSourceStore(state => state.message);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -33,13 +30,13 @@ export const ChatContent = () => {
 
   return (
     <ScrollArea className="flex-1">
-      <div className="flex flex-col">
-        {currentThread.messages.map((message: ThreadMessage) => {
+      <div className="flex flex-col max-w-2xl mx-auto w-full break-words whitespace-pre-wrap">
+        {currentThread.messages.map((message: ThreadMessage, idx: number) => {
           // Determine message error
 
           return (
             <div
-              key={message.content}
+              key={idx}
               className={cn(
                 'w-full border-b',
                 message.role === 'user' ? 'bg-card' : 'bg-background',
@@ -53,11 +50,7 @@ export const ChatContent = () => {
             </div>
           );
         })}
-        {isStreaming && streamMessage && (
-          <div className="w-full border-b bg-background">
-            <StreamingAssistantDisplay assistantMessage={streamMessage} />
-          </div>
-        )}
+        <StreamingAssistantDisplay />
         <div ref={messagesEndRef} />
       </div>
     </ScrollArea>
@@ -65,5 +58,6 @@ export const ChatContent = () => {
 };
 
 const isAssistantMessage = (message: ThreadMessage): message is AssistantMessage => {
+  console.log('isAssistantMessage', message);
   return message.role === 'assistant';
 };

@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { ChevronDown, ChevronRight, Code, FileText, FunctionSquare, Goal } from 'lucide-react';
 import { useState } from 'react';
 import { JsonSchemaRenderer } from './json-schema-renderer';
+import { WorkflowStep } from '../models/assistant-message';
 
 // Utility function to convert PascalCase/camelCase to Space Case
 const toSpaceCase = (str: string | undefined | null): string => {
@@ -13,30 +14,15 @@ const toSpaceCase = (str: string | undefined | null): string => {
     .trim(); // Remove any leading/trailing spaces
 };
 
-interface PropertyDefinition {
-  type: string;
-  description: string;
-  properties?: Record<string, PropertyDefinition>;
-}
-
-interface WorkflowInterface {
-  name?: string;
-  module?: string;
-  function?: string;
-  goal?: string;
-  params?: Record<string, PropertyDefinition>;
-  returns?: Record<string, PropertyDefinition>;
-}
-
 interface WorkflowStepDisplayProps {
-  step: WorkflowInterface;
+  step: WorkflowStep;
   className?: string;
 }
 
 export const WorkflowStepDisplay = ({ step, className }: WorkflowStepDisplayProps) => {
   const [expanded, setExpanded] = useState(false);
   const hasDetails =
-    Object.keys(step).length > 2 || !!(step.module || step.function || step.params || step.returns);
+    Object.keys(step).length > 2 || !!(step.module || step.functionName || step.params || step.returns);
 
   return (
     <div className={cn('p-4 space-y-4 bg-card rounded-lg border', className)}>
@@ -80,7 +66,7 @@ export const WorkflowStepDisplay = ({ step, className }: WorkflowStepDisplayProp
       {expanded && (
         <>
           {/* Module and Function Section */}
-          {(step.module || step.function) && (
+          {(step.module || step.functionName) && (
             <div className="grid grid-cols-2 gap-4">
               {step.module && (
                 <div className="flex items-center gap-2">
@@ -88,10 +74,10 @@ export const WorkflowStepDisplay = ({ step, className }: WorkflowStepDisplayProp
                   <span className="text-sm font-medium truncate">{toSpaceCase(step.module)}</span>
                 </div>
               )}
-              {step.function && (
+              {step.functionName && (
                 <div className="flex items-center gap-2">
                   <FunctionSquare className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-sm font-medium truncate">{toSpaceCase(step.function)}</span>
+                  <span className="text-sm font-medium truncate">{toSpaceCase(step.functionName)}</span>
                 </div>
               )}
             </div>

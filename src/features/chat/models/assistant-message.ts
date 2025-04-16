@@ -13,7 +13,7 @@ export interface AssistantJsonChunk {
 
 export type AssistantChunk = AssistantTextChunk | AssistantJsonChunk;
 
-export interface WorkFlowStep {
+export interface WorkflowStep {
   name: string;
   module: string;
   functionName: string;
@@ -24,7 +24,7 @@ export interface WorkFlowStep {
 
 // Assistant message implementation
 export class AssistantMessage implements Message {
-  private _cachedSteps: WorkFlowStep[] = [];
+  private _cachedSteps: WorkflowStep[] = [];
 
   id: number;
   role: 'assistant' = 'assistant';
@@ -40,13 +40,8 @@ export class AssistantMessage implements Message {
     // this is going to be a hard one
     // because we need to add the ```json tags whenever a raw chunk is a json
     // we hope that most of the raw chunks have the ```json tags
-    const content = this.rawChunks.map(chunk => {
-      if (this.isJson(chunk)) {
-        return `\n\n\`\`\`json\n${chunk}\n\`\`\`\n\n`;
-      }
-      return chunk;
-    });
-    return content.join('\n\n');
+
+    return this.rawChunks.join('\n\n');
   }
 
   constructor() {
@@ -73,11 +68,11 @@ export class AssistantMessage implements Message {
     }
   }
 
-  get workflow(): WorkFlowStep[] {
+  get workflow(): WorkflowStep[] {
     if (this._cachedSteps.length === this.rawChunks.length) {
       return this._cachedSteps;
     }
-    const foundSteps = [] as WorkFlowStep[];
+    const foundSteps = [] as WorkflowStep[];
     for (const chunk of this.rawChunks) {
       const foundStep = chunk.match(/```json\n(.*)\n```/);
       if (foundStep) {
@@ -88,7 +83,7 @@ export class AssistantMessage implements Message {
     return this._cachedSteps;
   }
 
-  get interface(): WorkFlowStep {
+  get interface(): WorkflowStep {
     return this.workflow[0];
   }
 
@@ -96,7 +91,7 @@ export class AssistantMessage implements Message {
     return JSON.stringify(this.interface, null, 2);
   }
 
-  getStep(num: number): WorkFlowStep {
+  getStep(num: number): WorkflowStep {
     return this.workflow[num];
   }
 
@@ -104,7 +99,7 @@ export class AssistantMessage implements Message {
     return JSON.stringify(this.getStep(num), null, 2);
   }
 
-  get steps(): WorkFlowStep[] {
+  get steps(): WorkflowStep[] {
     return this.workflow.slice(1);
   }
 

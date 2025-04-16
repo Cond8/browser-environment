@@ -61,6 +61,8 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
     assistantMessage.addAlignmentResponse(alignmentResult);
     userReq.alignmentResponse = alignmentResult;
 
+    yield '\n\n';
+
     /* ===========================
      * ===== INTERFACE PHASE =====
      * ===========================*/
@@ -73,12 +75,16 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
       throw new WorkflowChainError('Error in interfacePhase', 'interface', error as Error);
     }
 
+    yield '\n\n';
+
     /* =============================
      * ===== FIRST STEP PHASES =====
      * =============================*/
     console.log('firstStepPhase');
     const firstStepResult = yield* firstStepPhase(userReq, assistantMessage);
     assistantMessage.addStepResponse(firstStepResult);
+
+    yield '\n\n';
 
     /* ================================
      * ===== SECOND TO SIXTH STEP =====
@@ -90,6 +96,8 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
         assistantMessage,
       );
       assistantMessage.addStepResponse(parsedSecondToSixthStepResult);
+
+      yield '\n\n';
     }
 
     return assistantMessage;

@@ -1,4 +1,5 @@
 // src/features/editor/transpilers-json-source/my-json-parser.ts
+import { WorkflowStep } from '@/features/chat/models/assistant-message';
 import { jsonrepair } from 'jsonrepair';
 import { transformToInterface } from './my-json-fixer';
 
@@ -10,59 +11,30 @@ function parseJsonWithErrorHandling(jsonStr: string): WorkflowStep | null {
   }
 }
 
-export function processJsonChunk(chunk: SLMChunk): SLMChunk {
-  // Skip if not a string or already JSON
-  if (chunk.type === 'json') return chunk;
-  if (typeof chunk.content !== 'string') return chunk;
-
-  const content = chunk.content.trim();
-  if (!content) return chunk;
+export function processJsonChunk(chunk: string): WorkflowStep {
 
   // Try a simplified approach combining all tiers
   let parsedContent = null;
 
   // Try direct parse
-  parsedContent = parseJsonWithErrorHandling(content);
+  parsedContent = parseJsonWithErrorHandling(chunk);
 
   // Try with repair if needed
   if (!parsedContent) {
-    try {
-      const repairedJson = jsonrepair(content);
-      parsedContent = parseJsonWithErrorHandling(repairedJson);
-    } catch (error) {
-      // Skip if repair fails
-    }
+    const repairedJson = jsonrepair(chunk);
+    parsedContent = parseJsonWithErrorHandling(repairedJson);
   }
 
   // Try transformation if needed
   if (!parsedContent) {
-    try {
-      const transformed = transformToInterface(content);
-      parsedContent = parseJsonWithErrorHandling(transformed);
-    } catch (error) {
-      // Skip if transformation fails
-    }
+    const transformed = transformToInterface(chunk);
+    parsedContent = parseJsonWithErrorHandling(transformed);
   }
 
   // If we successfully parsed JSON content, return it as a JSON chunk
   if (parsedContent) {
-    return {
-      type: 'json',
-      content: parsedContent,
-    };
+    return parsedContent;
   }
 
-  // Otherwise return as text chunk
-  return {
-    type: 'text',
-    content: content,
-  };
-}
-
-export function myJsonParser(input: string): SLMOutput {
-  if (!input || typeof input !== 'string') {
-    throw new Error('Input must be a non-empty string');
-  }
-
-  return extractTextParts(input);
+  throw new Error('Failed to parse JSON');
 }

@@ -37,16 +37,16 @@ export const useStreamSourceStore = create<StreamSourceState>()(
           });
         }
 
-        // set(state => {
-        //   state.isStreaming = false;
-        // });
+        set(state => {
+          state.isStreaming = false;
+        });
 
         return finalAssistantMessage;
       } catch (error: any) {
         console.error('Error in workflow chain:', error.message);
-        // set(state => {
-        //   state.isStreaming = false;
-        // });
+        set(state => {
+          state.isStreaming = false;
+        });
         throw error;
       }
     },
