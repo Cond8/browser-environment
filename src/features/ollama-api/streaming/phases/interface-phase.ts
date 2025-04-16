@@ -1,6 +1,7 @@
 // src/features/ollama-api/streaming/phases/interface-phase.ts
 import { ChatRequest } from 'ollama';
 import { SYSTEM_PROMPT } from './prompts-system';
+import { chatFn } from '../infra/create-chat';
 
 export const INTERFACE_PROMPT = (userRequest: string) =>
   `
@@ -50,9 +51,6 @@ Output only the raw JSON interface.
 export async function* interfacePhase(
   userRequest: string,
   alignmentResponse: string,
-  chatFn: (
-    request: Omit<ChatRequest, 'model' | 'stream'>,
-  ) => AsyncGenerator<string, string, unknown>,
 ): AsyncGenerator<string, string, unknown> {
   return yield* chatFn({
     messages: [

@@ -1,6 +1,6 @@
 // src/features/ollama-api/streaming/phases/alignment-phase.ts
-import { ChatRequest } from 'ollama';
-import { WorkflowChainError } from '../api/workflow-chain';
+import { chatFn } from '../infra/create-chat';
+import { UserRequest } from './types';
 
 export const ALIGNMENT_PROMPT = () =>
   `
@@ -45,10 +45,7 @@ Be precise. Use markdown formatting. Think before writing.
 `.trim();
 
 export async function* alignmentPhase(
-  userRequest: string,
-  chatFn: (
-    request: Omit<ChatRequest, 'model' | 'stream'>,
-  ) => AsyncGenerator<string, string, unknown>,
+  userReq: UserRequest,
 ): AsyncGenerator<string, string, unknown> {
   return yield* chatFn({
     messages: [
@@ -58,7 +55,7 @@ export async function* alignmentPhase(
       },
       {
         role: 'user',
-        content: userRequest,
+        content: userReq.userRequest,
       },
     ],
   });

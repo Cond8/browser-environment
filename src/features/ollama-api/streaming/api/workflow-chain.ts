@@ -1,9 +1,9 @@
 // src/features/ollama-api/streaming/api/workflow-chain.ts
 import { myJsonParser } from '@/features/editor/transpilers-json-source/my-json-parser';
+import { validateWorkflowStep } from '@/features/editor/transpilers-json-source/workflow-step-validator';
 import { WorkflowStep } from '@/features/ollama-api/streaming/api/workflow-step';
 import { useAssistantConfigStore } from '../../../chat/store/assistant-config-store';
 import { useChatStore } from '../../../chat/store/chat-store';
-import { createChat } from '../infra/create-chat';
 import { retryWithDelay } from '../infra/retry-with-delay';
 import { alignmentPhase } from '../phases/alignment-phase';
 import { interfacePhase } from '../phases/interface-phase';
@@ -13,7 +13,7 @@ import { thirdStepPhase } from '../phases/steps/step-3-phase';
 import { fourthStepPhase } from '../phases/steps/step-4-phase';
 import { fifthStepPhase } from '../phases/steps/step-5-phase';
 import { sixthStepPhase } from '../phases/steps/step-6-phase';
-import { WorkflowPhase } from '../phases/types';
+import { UserRequest, WorkflowPhase } from '../phases/types';
 
 export class WorkflowChainError extends Error {
   public metadata: unknown[];
@@ -59,23 +59,29 @@ export async function* executeWorkflowChain(): AsyncGenerator<
     });
   }
 
-  const chatFn = createChat(ollamaUrl, selectedModel, parameters);
   const userRequest =
     typeof messages[0].content === 'string'
       ? messages[0].content
       : JSON.stringify(messages[0].content);
 
-  try {
+  const userReq: UserRequest = {
+    userRequest,
+    alignmentResponse: '',
+  };
+
+    try {
     /* ===========================
      * ===== ALIGNMENT PHASE =====
      * ===========================*/
     const alignmentResult = yield* retryWithDelay(
-      () => alignmentPhase(userRequest, chatFn),
+      () => alignmentPhase(userReq),
       response => response,
       () => void 0,
       'alignment',
       userRequest,
     );
+
+    userReq.alignmentResponse = alignmentResult;
 
     chatStore.addAlignmentMessage(alignmentResult);
     // TODO: add other store side-effects
@@ -85,13 +91,13 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * ===== INTERFACE PHASE =====
      * ===========================*/
     const parsedInterfaceResult = yield* retryWithDelay(
-      () => interfacePhase(userRequest, alignmentResult, chatFn),
+      () => interfacePhase(userReq),
       response => myJsonParser(response),
       parsed => {
         // Validate each parsed workflow step
         parsed.forEach(step => {
           if (step.type === 'json') {
-            // validateWorkflowStep(step.content);
+            validateWorkflowStep(step.content);
           }
         });
       },
@@ -99,6 +105,9 @@ export async function* executeWorkflowChain(): AsyncGenerator<
       userRequest,
       alignmentResult,
     );
+
+    const steps = [parsedInterfaceResult];
+
     chatStore.addInterfaceMessage(parsedInterfaceResult);
     // const workflowPath = useWorkflowStore.getState().createWorkflow(parsedInterfaceResult);
     // useEditorStore.getState().setFilePath(workflowPath);
@@ -109,13 +118,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * ===== FIRST STEP =====
      * ======================*/
     const parsedFirstStepResult = yield* retryWithDelay(
-      () =>
-        firstStepPhase(
-          userRequest,
-          alignmentResult,
-          parsedInterfaceResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          chatFn,
-        ),
+      () => firstStepPhase(userReq, steps),
       response => {
         console.log('response', response);
         return myJsonParser(response);
@@ -133,6 +136,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
       alignmentResult,
       parsedInterfaceResult,
     );
+    steps.push(parsedFirstStepResult);
     chatStore.addStepMessage(parsedFirstStepResult);
     yield '[BREAK]';
 
@@ -141,13 +145,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * =======================*/
     const parsedSecondStepResult = yield* retryWithDelay(
       () =>
-        secondStepPhase(
-          userRequest,
-          alignmentResult,
-          parsedInterfaceResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          parsedFirstStepResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          chatFn,
-        ),
+        secondStepPhase(userReq, steps),
       response => {
         console.log('second step response', response);
         return myJsonParser(response);
@@ -156,7 +154,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
         // Validate each parsed workflow step
         parsed.forEach(step => {
           if (step.type === 'json') {
-            // validateWorkflowStep(step.content);
+            validateWorkflowStep(step.content);
           }
         });
       },
@@ -164,6 +162,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
       userRequest,
       parsedFirstStepResult,
     );
+    steps.push(parsedSecondStepResult);
     chatStore.addStepMessage(parsedSecondStepResult);
     yield '[BREAK]';
 
@@ -172,14 +171,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * =======================*/
     const parsedThirdStepResult = yield* retryWithDelay(
       () =>
-        thirdStepPhase(
-          userRequest,
-          alignmentResult,
-          parsedInterfaceResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          parsedFirstStepResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          parsedSecondStepResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          chatFn,
-        ),
+        thirdStepPhase(userReq, steps),
       response => {
         console.log('third step response', response);
         return myJsonParser(response);
@@ -188,7 +180,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
         // Validate each parsed workflow step
         parsed.forEach(step => {
           if (step.type === 'json') {
-            // validateWorkflowStep(step.content);
+            validateWorkflowStep(step.content);
           }
         });
       },
@@ -196,6 +188,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
       userRequest,
       parsedSecondStepResult,
     );
+    steps.push(parsedThirdStepResult);
     chatStore.addStepMessage(parsedThirdStepResult);
     yield '[BREAK]';
 
@@ -204,15 +197,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * ========================*/
     const parsedFourthStepResult = yield* retryWithDelay(
       () =>
-        fourthStepPhase(
-          userRequest,
-          alignmentResult,
-          parsedInterfaceResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          parsedFirstStepResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          parsedSecondStepResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          parsedThirdStepResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          chatFn,
-        ),
+        fourthStepPhase(userReq, steps),
       response => {
         console.log('fourth step response', response);
         return myJsonParser(response);
@@ -221,7 +206,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
         // Validate each parsed workflow step
         parsed.forEach(step => {
           if (step.type === 'json') {
-            // validateWorkflowStep(step.content);
+            validateWorkflowStep(step.content);
           }
         });
       },
@@ -229,6 +214,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
       userRequest,
       parsedThirdStepResult,
     );
+    steps.push(parsedFourthStepResult);
     chatStore.addStepMessage(parsedFourthStepResult);
     yield '[BREAK]';
 
@@ -237,16 +223,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * =======================*/
     const parsedFifthStepResult = yield* retryWithDelay(
       () =>
-        fifthStepPhase(
-          userRequest,
-          alignmentResult,
-          parsedInterfaceResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          parsedFirstStepResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          parsedSecondStepResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          parsedThirdStepResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          parsedFourthStepResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          chatFn,
-        ),
+        fifthStepPhase(userReq, steps),
       response => {
         console.log('fifth step response', response);
         return myJsonParser(response);
@@ -255,7 +232,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
         // Validate each parsed workflow step
         parsed.forEach(step => {
           if (step.type === 'json') {
-            // validateWorkflowStep(step.content);
+            validateWorkflowStep(step.content);
           }
         });
       },
@@ -263,6 +240,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
       userRequest,
       parsedFourthStepResult,
     );
+    steps.push(parsedFifthStepResult);
     chatStore.addStepMessage(parsedFifthStepResult);
     yield '[BREAK]';
 
@@ -270,18 +248,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
      * ===== SIXTH STEP ======
      * =======================*/
     const parsedSixthStepResult = yield* retryWithDelay(
-      () =>
-        sixthStepPhase(
-          userRequest,
-          alignmentResult,
-          parsedInterfaceResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          parsedFirstStepResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          parsedSecondStepResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          parsedThirdStepResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          parsedFourthStepResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          parsedFifthStepResult.find(chunk => chunk.type === 'json')?.content as WorkflowStep,
-          chatFn,
-        ),
+      () => sixthStepPhase(userReq, steps),
       response => {
         console.log('sixth step response', response);
         return myJsonParser(response);
@@ -290,7 +257,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
         // Validate each parsed workflow step
         parsed.forEach(step => {
           if (step.type === 'json') {
-            // validateWorkflowStep(step.content);
+            validateWorkflowStep(step.content);
           }
         });
       },
@@ -298,6 +265,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<
       userRequest,
       parsedFifthStepResult,
     );
+    steps.push(parsedSixthStepResult);
     chatStore.addStepMessage(parsedSixthStepResult);
     yield '[BREAK]';
 

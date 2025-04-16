@@ -1,38 +1,38 @@
 // src/features/ollama-api/streaming/infra/create-chat.ts
 import { useAbortEventBusStore } from '@/features/chat/store/abort-eventbus-store';
-import { ChatRequest, Ollama, Options } from 'ollama';
+import { useAssistantConfigStore } from '@/features/chat/store/assistant-config-store';
+import { ChatRequest, Ollama } from 'ollama';
 
-export const createChat = (ollamaUrl: string, model: string, userOptions: Partial<Options>) => {
+export async function* chatFn(
+  request: Omit<ChatRequest, 'model' | 'stream'>,
+): AsyncGenerator<string, string, unknown> {
+  const { selectedModel, parameters, ollamaUrl } = useAssistantConfigStore.getState();
+
   const ollama = new Ollama({ host: ollamaUrl });
+  const stream = await ollama.chat({
+    model: selectedModel,
+    messages: request.messages,
+    stream: true,
+    ...(request ?? {}),
+    options: { ...parameters, ...(request.options ?? {}) },
+  });
 
-  return async function* (
-    request: Omit<ChatRequest, 'model' | 'stream'>,
-  ): AsyncGenerator<string, string, unknown> {
-    const stream = await ollama.chat({
-      model,
-      messages: request.messages,
-      stream: true,
-      ...(request ?? {}),
-      options: { ...userOptions, ...(request.options ?? {}) },
-    });
+  let response = '';
 
-    let response = '';
+  const abortEvent = useAbortEventBusStore.getState().registerAbortCallback(() => {
+    stream.abort();
+  });
 
-    const abortEvent = useAbortEventBusStore.getState().registerAbortCallback(() => {
-      stream.abort();
-    });
-
-    for await (const chunk of stream) {
-      if (chunk.message) {
-        response += chunk.message.content;
-        yield chunk.message.content;
-      }
+  for await (const chunk of stream) {
+    if (chunk.message) {
+      response += chunk.message.content;
+      yield chunk.message.content;
     }
+  }
 
-    useAbortEventBusStore.getState().unregisterAbortCallback(abortEvent);
+  useAbortEventBusStore.getState().unregisterAbortCallback(abortEvent);
 
-    console.log('[createChat] Response:', response);
+  console.log('[createChat] Response:', response);
 
-    return response;
-  };
+  return response;
 };

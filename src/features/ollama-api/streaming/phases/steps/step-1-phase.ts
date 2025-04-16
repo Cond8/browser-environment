@@ -2,6 +2,7 @@
 import { SYSTEM_PROMPT } from '@/features/ollama-api/streaming/phases/prompts-system';
 import { ChatRequest } from 'ollama';
 import { WorkflowStep } from '../../api/workflow-step';
+import { chatFn } from '../../infra/create-chat';
 
 export const FIRST_STEP_PROMPT = (userRequest: string, interfaceResponse: WorkflowStep) =>
   `
@@ -73,9 +74,6 @@ export async function* firstStepPhase(
   userRequest: string,
   alignmentResponse: string,
   interfaceResponse: WorkflowStep,
-  chatFn: (
-    request: Omit<ChatRequest, 'model' | 'stream'>,
-  ) => AsyncGenerator<string, string, unknown>,
 ): AsyncGenerator<string, string, unknown> {
   const prompt = SYSTEM_PROMPT(FIRST_STEP_PROMPT(userRequest, interfaceResponse));
   console.log('[firstStepPhase] Starting step generation with prompt:', prompt);

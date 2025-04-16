@@ -5,6 +5,7 @@ import { FIRST_STEP_PROMPT } from './step-1-phase';
 import { SECOND_STEP_PROMPT } from './step-2-phase';
 import { THIRD_STEP_PROMPT } from './step-3-phase';
 import { FOURTH_STEP_PROMPT } from './step-4-phase';
+import { chatFn } from '../../infra/create-chat';
 
 export const FIFTH_STEP_PROMPT = () =>
   `
@@ -24,9 +25,6 @@ export async function* fifthStepPhase(
   secondStep: WorkflowStep,
   thirdStep: WorkflowStep,
   fourthStep: WorkflowStep,
-  chatFn: (
-    request: Omit<ChatRequest, 'model' | 'stream'>,
-  ) => AsyncGenerator<string, string, unknown>,
 ): AsyncGenerator<string, string, unknown> {
   return yield* chatFn({
     messages: [

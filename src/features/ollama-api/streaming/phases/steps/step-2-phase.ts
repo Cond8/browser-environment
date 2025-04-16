@@ -3,6 +3,7 @@ import { ChatRequest } from 'ollama';
 import { WorkflowStep } from '../../api/workflow-step';
 
 import { FIRST_STEP_PROMPT } from './step-1-phase';
+import { chatFn } from '../../infra/create-chat';
 export const SECOND_STEP_PROMPT = () =>
   `
 ## TASK
@@ -18,9 +19,6 @@ export async function* secondStepPhase(
   alignmentResponse: string,
   interfaceResponse: WorkflowStep,
   firstStep: WorkflowStep,
-  chatFn: (
-    request: Omit<ChatRequest, 'model' | 'stream'>,
-  ) => AsyncGenerator<string, string, unknown>,
 ): AsyncGenerator<string, string, unknown> {
   console.log('[secondStepPhase] Starting step generation with prompt:', prompt);
   return yield* chatFn({

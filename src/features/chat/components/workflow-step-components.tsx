@@ -1,6 +1,7 @@
 // src/features/chat/components/workflow-step-components.tsx
 import { cn } from '@/lib/utils';
-import { Code, FileText, FunctionSquare, Goal } from 'lucide-react';
+import { ChevronDown, ChevronRight, Code, FileText, FunctionSquare, Goal } from 'lucide-react';
+import { useState } from 'react';
 import { JsonSchemaRenderer } from './json-schema-renderer';
 
 // Utility function to convert PascalCase/camelCase to Space Case
@@ -19,15 +20,6 @@ interface PropertyDefinition {
 }
 
 interface WorkflowInterface {
-  name: string;
-  module: string;
-  function: string;
-  goal: string;
-  params: Record<string, PropertyDefinition>;
-  returns: Record<string, PropertyDefinition>;
-}
-
-interface PartialWorkflowInterface {
   name?: string;
   module?: string;
   function?: string;
@@ -41,60 +33,42 @@ interface WorkflowStepDisplayProps {
   className?: string;
 }
 
-interface PartialWorkflowStepDisplayProps {
-  step: PartialWorkflowInterface;
-  className?: string;
-}
-
 export const WorkflowStepDisplay = ({ step, className }: WorkflowStepDisplayProps) => {
+  const [expanded, setExpanded] = useState(false);
+  const hasDetails =
+    Object.keys(step).length > 2 || !!(step.module || step.function || step.params || step.returns);
+
   return (
     <div className={cn('p-4 space-y-4 bg-card rounded-lg border', className)}>
       {/* Header Section */}
-      <div className="flex items-center gap-2">
-        <Code className="h-5 w-5 text-primary shrink-0" />
-        <h3 className="text-lg font-semibold truncate">{toSpaceCase(step.name)}</h3>
-      </div>
-
-      {/* Goal Section */}
-      <div className="flex items-start gap-2">
-        <Goal className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
-        <p className="text-sm text-muted-foreground">{step.goal}</p>
-      </div>
-
-      {/* Module and Function Section */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-          <span className="text-sm font-medium truncate">{toSpaceCase(step.module)}</span>
+          <Code className="h-5 w-5 text-primary shrink-0" />
+          <h3 className="text-lg font-semibold truncate">
+            {step.name ? toSpaceCase(step.name) : 'Loading...'}
+          </h3>
         </div>
-        <div className="flex items-center gap-2">
-          <FunctionSquare className="h-4 w-4 text-muted-foreground shrink-0" />
-          <span className="text-sm font-medium truncate">{toSpaceCase(step.function)}</span>
-        </div>
+        {hasDetails && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+          >
+            {expanded ? (
+              <>
+                <ChevronDown className="h-3 w-3" />
+                Less
+              </>
+            ) : (
+              <>
+                <ChevronRight className="h-3 w-3" />
+                More...
+              </>
+            )}
+          </button>
+        )}
       </div>
 
-      {/* Parameters and Returns Sections */}
-      <JsonSchemaRenderer schema={step.params} title="Parameters" />
-      <JsonSchemaRenderer schema={step.returns} title="Returns" />
-    </div>
-  );
-};
-
-export const PartialWorkflowStepDisplay = ({
-  step,
-  className,
-}: PartialWorkflowStepDisplayProps) => {
-  return (
-    <div className={cn('p-4 space-y-4 bg-card rounded-lg border', className)}>
-      {/* Header Section */}
-      <div className="flex items-center gap-2">
-        <Code className="h-5 w-5 text-primary shrink-0" />
-        <h3 className="text-lg font-semibold truncate">
-          {step.name ? toSpaceCase(step.name) : 'Loading...'}
-        </h3>
-      </div>
-
-      {/* Goal Section */}
+      {/* Goal Section - Always visible */}
       {step.goal && (
         <div className="flex items-start gap-2">
           <Goal className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
@@ -102,27 +76,35 @@ export const PartialWorkflowStepDisplay = ({
         </div>
       )}
 
-      {/* Module and Function Section */}
-      {(step.module || step.function) && (
-        <div className="grid grid-cols-2 gap-4">
-          {step.module && (
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="text-sm font-medium truncate">{toSpaceCase(step.module)}</span>
+      {/* Collapsible content */}
+      {expanded && (
+        <>
+          {/* Module and Function Section */}
+          {(step.module || step.function) && (
+            <div className="grid grid-cols-2 gap-4">
+              {step.module && (
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm font-medium truncate">{toSpaceCase(step.module)}</span>
+                </div>
+              )}
+              {step.function && (
+                <div className="flex items-center gap-2">
+                  <FunctionSquare className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm font-medium truncate">{toSpaceCase(step.function)}</span>
+                </div>
+              )}
             </div>
           )}
-          {step.function && (
-            <div className="flex items-center gap-2">
-              <FunctionSquare className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="text-sm font-medium truncate">{toSpaceCase(step.function)}</span>
-            </div>
-          )}
-        </div>
-      )}
 
-      {/* Parameters and Returns Sections */}
-      {step.params && <JsonSchemaRenderer schema={step.params} title="Parameters" />}
-      {step.returns && <JsonSchemaRenderer schema={step.returns} title="Returns" />}
+          {/* Parameters and Returns Sections */}
+          {step.params && <JsonSchemaRenderer schema={step.params} title="Parameters" />}
+          {step.returns && <JsonSchemaRenderer schema={step.returns} title="Returns" />}
+        </>
+      )}
     </div>
   );
 };
+
+// For backward compatibility - aliasing PartialWorkflowStepDisplay to WorkflowStepDisplay
+export const PartialWorkflowStepDisplay = WorkflowStepDisplay;
