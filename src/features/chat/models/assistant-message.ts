@@ -37,7 +37,16 @@ export class AssistantMessage implements Message {
   error?: Error;
 
   get content(): string {
-    return this.rawChunks.join('\n\n');
+    // this is going to be a hard one
+    // because we need to add the ```json tags whenever a raw chunk is a json
+    // we hope that most of the raw chunks have the ```json tags
+    const content = this.rawChunks.map(chunk => {
+      if (this.isJson(chunk)) {
+        return `\n\n\`\`\`json\n${chunk}\n\`\`\`\n\n`;
+      }
+      return chunk;
+    });
+    return content.join('\n\n');
   }
 
   constructor() {
@@ -49,27 +58,19 @@ export class AssistantMessage implements Message {
   }
 
   addInterfaceResponse(response: string) {
-    try {
-      JSON.parse(response);
-    } catch (e) {
-      const foundStep = response.match(/```json\n(.*)\n```/);
-      if (!foundStep) {
-        throw new Error('Interface response not found');
-      }
+    if (this.isParsableJson(response)) {
+      this.rawChunks.push(response);
+    } else {
+      throw new Error('Interface response not found');
     }
-    this.rawChunks.push(response);
   }
 
   addStepResponse(response: string) {
-    try {
-      JSON.parse(response);
-    } catch (e) {
-      const foundStep = response.match(/```json\n(.*)\n```/);
-      if (!foundStep) {
-        throw new Error('Interface response not found');
-      }
+    if (this.isParsableJson(response)) {
+      this.rawChunks.push(response);
+    } else {
+      throw new Error('Step response not found');
     }
-    this.rawChunks.push(response);
   }
 
   get workflow(): WorkFlowStep[] {
@@ -109,5 +110,30 @@ export class AssistantMessage implements Message {
 
   setError(error: Error) {
     this.error = error;
+  }
+
+  private isJson(chunk: string): boolean {
+    try {
+      JSON.parse(chunk);
+      return true;
+    } catch (e) {}
+    return false;
+  }
+
+  private isParsableJson(chunk: string): boolean {
+    try {
+      JSON.parse(chunk);
+      return true;
+    } catch (e) {}
+
+    if (this.hasParsableJson(chunk)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private hasParsableJson(chunk: string): boolean {
+    return !!chunk.match(/```json\n(.*)\n```/);
   }
 }

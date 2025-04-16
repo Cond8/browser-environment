@@ -3,11 +3,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useStreamSourceStore } from '@/features/ollama-api/streaming/infra/stream-source-store';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
+import { AssistantMessage } from '../../models/assistant-message';
 import { ThreadMessage, useChatStore } from '../../store/chat-store';
 import { AssistantDisplay } from '../assistant-display';
 import { EmptyChatState } from '../empty/empty-chat-state';
+import { StreamingAssistantDisplay } from '../streaming-assistant-display';
 import { UserDisplay } from '../user-display';
-import { ErrorDisplay } from './error-display';
 
 export const ChatContent = () => {
   const currentThread = useChatStore().getCurrentThread();
@@ -35,36 +36,34 @@ export const ChatContent = () => {
       <div className="flex flex-col">
         {currentThread.messages.map((message: ThreadMessage) => {
           // Determine message error
-          const error = getMessageError(message);
 
           return (
             <div
-              key={message.id}
+              key={message.content}
               className={cn(
                 'w-full border-b',
                 message.role === 'user' ? 'bg-card' : 'bg-background',
               )}
             >
-              {message.role === 'assistant' ? (
-                error ? (
-                  <ErrorDisplay error={error} />
-                ) : (
-                  <AssistantDisplay content={message} />
-                )
+              {isAssistantMessage(message) ? (
+                <AssistantDisplay assistantMessage={message} />
               ) : (
-                // User message
-                <UserDisplay content={getMessageContent(message)} />
+                <UserDisplay content={message.content} />
               )}
             </div>
           );
         })}
         {isStreaming && streamMessage && (
           <div className="w-full border-b bg-background">
-            <AssistantDisplay content={streamMessage} />
+            <StreamingAssistantDisplay assistantMessage={streamMessage} />
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
     </ScrollArea>
   );
+};
+
+const isAssistantMessage = (message: ThreadMessage): message is AssistantMessage => {
+  return message.role === 'assistant';
 };

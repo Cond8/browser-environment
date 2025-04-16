@@ -22,7 +22,7 @@ export interface ChatStore {
 
   getCurrentThread: () => Thread | null;
   setCurrentThread: (threadId: Thread['id'] | null) => void;
-  createThread: (userMessage: Message, id: string) => void;
+  createThread: (userMessage: Message) => void;
   resetThread: () => void;
 
   // Message management
@@ -31,7 +31,7 @@ export interface ChatStore {
   addAssistantMessage: (message: AssistantMessage) => void;
 
   getAllMessages: () => ThreadMessage[];
-  getMessagesUntil: (id: number) => ThreadMessage[];
+  getMessagesUntil: (message: ThreadMessage) => ThreadMessage[];
 
   getRecentThreads: (limit?: number) => Thread[];
   getTimeAgo: (timestamp: number) => string;
@@ -56,7 +56,8 @@ export const useChatStore = create<ChatStore>()(
         return currentId ? get().threads[currentId] : null;
       },
 
-      createThread: (userMessage: Message, id: string) => {
+      createThread: (userMessage: Message) => {
+        const id = nanoid();
         set(state => {
           state.threads[id] = {
             id: id,
@@ -65,6 +66,7 @@ export const useChatStore = create<ChatStore>()(
             error: null,
             timestamp: Date.now(),
           };
+          state.currentThreadId = id;
         });
       },
 
@@ -88,11 +90,10 @@ export const useChatStore = create<ChatStore>()(
         };
 
         if (!get().currentThreadId) {
-          const id = nanoid();
-          get().createThread(userMessage, id);
-          get().setCurrentThread(id);
+          get().createThread(userMessage);
+        } else {
+          get().addThreadMessage(userMessage);
         }
-        get().addThreadMessage(userMessage);
       },
 
       addAssistantMessage: (message: AssistantMessage): void => {
@@ -101,9 +102,7 @@ export const useChatStore = create<ChatStore>()(
 
       getRecentThreads: (limit = 5): Thread[] => {
         const threads = Object.values(get().threads);
-        return threads
-          .sort((a, b) => b.timestamp - a.timestamp)
-          .slice(0, limit);
+        return threads.sort((a, b) => b.timestamp - a.timestamp).slice(0, limit);
       },
 
       getTimeAgo: (timestamp: number): string => {
@@ -139,6 +138,8 @@ export const useChatStore = create<ChatStore>()(
 
       getMessagesUntil: (message: ThreadMessage): ThreadMessage[] => {
         const thread = get().getCurrentThread();
+        if (!thread) return [];
+        return thread.messages.slice(0, thread.messages.indexOf(message));
       },
     })),
     {
