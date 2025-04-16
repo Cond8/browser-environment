@@ -1,4 +1,4 @@
-// src/features/ollama-api/streaming/phases/steps/step-3-phase.ts
+// src/features/ollama-api/streaming/phases/steps/step-3.ts
 import { AssistantMessage } from '@/features/chat/models/assistant-message';
 
 export const THIRD_STEP_PROMPT = () =>

@@ -1,4 +1,4 @@
-// src/features/ollama-api/streaming/phases/steps/step-6-phase.ts
+// src/features/ollama-api/streaming/phases/steps/step-2-to-6-phase.ts
 import { AssistantMessage } from '@/features/chat/models/assistant-message';
 import { chatFn } from '../../infra/create-chat';
 import { UserRequest } from '../types';

@@ -1,3 +1,4 @@
+// src/features/chat/components/assistant-display.tsx
 import { processJsonChunk } from '@/features/editor/transpilers-json-source/my-json-parser';
 import { memo, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';

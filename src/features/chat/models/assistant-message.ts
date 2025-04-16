@@ -1,3 +1,4 @@
+// src/features/chat/models/assistant-message.ts
 import { nanoid } from 'nanoid';
 import { Message, ToolCall } from 'ollama';
 
