@@ -22,14 +22,12 @@ export async function* secondStepPhase(
     request: Omit<ChatRequest, 'model' | 'stream'>,
   ) => AsyncGenerator<string, string, unknown>,
 ): AsyncGenerator<string, string, unknown> {
-  const firstStepPrompt = SYSTEM_PROMPT(FIRST_STEP_PROMPT(userRequest, interfaceResponse));
-  const prompt = SYSTEM_PROMPT(SECOND_STEP_PROMPT());
   console.log('[secondStepPhase] Starting step generation with prompt:', prompt);
   return yield* chatFn({
     messages: [
       {
         role: 'system',
-        content: firstStepPrompt,
+        content: SYSTEM_PROMPT(FIRST_STEP_PROMPT(userRequest, interfaceResponse)),
       },
       {
         role: 'user',
@@ -41,7 +39,7 @@ export async function* secondStepPhase(
       },
       {
         role: 'user',
-        content: prompt,
+        content: SECOND_STEP_PROMPT(),
       },
     ],
   });

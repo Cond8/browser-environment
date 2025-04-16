@@ -1,6 +1,11 @@
 import { SYSTEM_PROMPT } from '@/features/ollama-api/streaming/phases/prompts-system';
 import { ChatRequest } from 'ollama';
 import { WorkflowStep } from '../../api/workflow-step';
+import { FIRST_STEP_PROMPT } from './step-1-phase';
+import { FOURTH_STEP_PROMPT } from './step-4-phase';
+import { THIRD_STEP_PROMPT } from './step-3-phase';
+import { SECOND_STEP_PROMPT } from './step-2-phase';
+import { FIFTH_STEP_PROMPT } from './step-5-phase';
 
 export const SIXTH_STEP_PROMPT = () =>
   `
@@ -25,13 +30,11 @@ export async function* sixthStepPhase(
     request: Omit<ChatRequest, 'model' | 'stream'>,
   ) => AsyncGenerator<string, string, unknown>,
 ): AsyncGenerator<string, string, unknown> {
-  const prompt = SYSTEM_PROMPT(SIXTH_STEP_PROMPT());
-  console.log('[sixthStepPhase] Starting step generation with prompt:', prompt);
   return yield* chatFn({
     messages: [
       {
         role: 'system',
-        content: prompt,
+        content: SYSTEM_PROMPT(FIRST_STEP_PROMPT(userRequest, interfaceResponse)),
       },
       {
         role: 'user',
@@ -42,16 +45,32 @@ export async function* sixthStepPhase(
         content: '```json \n' + JSON.stringify(firstStep, null, 2) + '\n```',
       },
       {
+        role: 'user',
+        content: SECOND_STEP_PROMPT(),
+      },
+      {
         role: 'assistant',
         content: '```json \n' + JSON.stringify(secondStep, null, 2) + '\n```',
+      },
+      {
+        role: 'user',
+        content: THIRD_STEP_PROMPT(),
       },
       {
         role: 'assistant',
         content: '```json \n' + JSON.stringify(thirdStep, null, 2) + '\n```',
       },
       {
+        role: 'user',
+        content: FOURTH_STEP_PROMPT(),
+      },
+      {
         role: 'assistant',
         content: '```json \n' + JSON.stringify(fourthStep, null, 2) + '\n```',
+      },
+      {
+        role: 'user',
+        content: FIFTH_STEP_PROMPT(),
       },
       {
         role: 'assistant',
@@ -59,7 +78,7 @@ export async function* sixthStepPhase(
       },
       {
         role: 'user',
-        content: 'Generate the sixth step focusing on formatting the final output.',
+        content: SIXTH_STEP_PROMPT(),
       },
     ],
   });

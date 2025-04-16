@@ -1,6 +1,8 @@
 import { SYSTEM_PROMPT } from '@/features/ollama-api/streaming/phases/prompts-system';
 import { ChatRequest } from 'ollama';
 import { WorkflowStep } from '../../api/workflow-step';
+import { FIRST_STEP_PROMPT } from './step-1-phase';
+import { SECOND_STEP_PROMPT } from './step-2-phase';
 
 export const THIRD_STEP_PROMPT = () =>
   `
@@ -22,13 +24,11 @@ export async function* thirdStepPhase(
     request: Omit<ChatRequest, 'model' | 'stream'>,
   ) => AsyncGenerator<string, string, unknown>,
 ): AsyncGenerator<string, string, unknown> {
-  const prompt = SYSTEM_PROMPT(THIRD_STEP_PROMPT());
-  console.log('[thirdStepPhase] Starting step generation with prompt:', prompt);
   return yield* chatFn({
     messages: [
       {
         role: 'system',
-        content: prompt,
+        content: SYSTEM_PROMPT(FIRST_STEP_PROMPT(userRequest, interfaceResponse)),
       },
       {
         role: 'user',
@@ -39,12 +39,16 @@ export async function* thirdStepPhase(
         content: '```json \n' + JSON.stringify(firstStep, null, 2) + '\n```',
       },
       {
+        role: 'user',
+        content: SECOND_STEP_PROMPT(),
+      },
+      {
         role: 'assistant',
         content: '```json \n' + JSON.stringify(secondStep, null, 2) + '\n```',
       },
       {
         role: 'user',
-        content: 'Generate the third step focusing on enrichment.',
+        content: THIRD_STEP_PROMPT(),
       },
     ],
   });

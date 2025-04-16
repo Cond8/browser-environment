@@ -1,7 +1,6 @@
 // src/features/ollama-api/streaming/phases/steps/step-1-phase.ts
 import { SYSTEM_PROMPT } from '@/features/ollama-api/streaming/phases/prompts-system';
 import { ChatRequest } from 'ollama';
-import { WorkflowChainError } from '../../api/workflow-chain';
 import { WorkflowStep } from '../../api/workflow-step';
 
 export const FIRST_STEP_PROMPT = (userRequest: string, interfaceResponse: WorkflowStep) =>
