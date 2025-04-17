@@ -3,7 +3,6 @@ export type WorkflowPhase = 'interface' | 'step' | 'stream' | 'alignment';
 
 export type UserRequest = {
   userRequest: string;
-  alignmentResponse: string;
 };
 
 export interface AssistantTextChunk {

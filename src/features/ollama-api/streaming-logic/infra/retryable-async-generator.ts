@@ -1,5 +1,5 @@
 // src/features/ollama-api/streaming-logic/infra/retryable-async-generator.ts
-import { StreamingAssistantMessage } from '@/features/chat/models/assistant-message';
+import { StreamingAssistantMessage } from '@/features/chat/models/streaming-assistant-message';
 import { useRetryEventBusStore } from '../../stores/retry-event-bus-store';
 import { WorkflowPhase } from '../phases/types';
 

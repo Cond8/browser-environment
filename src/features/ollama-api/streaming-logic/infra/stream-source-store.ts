@@ -22,8 +22,9 @@ export const useStreamSourceStore = create<StreamSourceState>()(
       set({ isStreaming: true, message: '' });
       console.log('startWorkflowChain');
 
-      let finalAssistantMessage: AssistantMessage | undefined = undefined;
       let rawSlmBuffer = '';
+
+      let finalAssistantMessage: AssistantMessage | undefined = undefined;
 
       try {
         const generator = executeWorkflowChain();
@@ -32,8 +33,7 @@ export const useStreamSourceStore = create<StreamSourceState>()(
           const { value, done } = await generator.next();
           if (done) {
             // At the end, create a final message from the accumulated buffer
-            finalAssistantMessage = new AssistantMessage();
-            finalAssistantMessage.rawChunks = [rawSlmBuffer];
+            finalAssistantMessage = value;
             break;
           }
 

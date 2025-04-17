@@ -24,19 +24,15 @@ ${JSON_RULES}
 export const STEP_3_MESSAGES = (assistantMessage: AssistantMessage) => [
   {
     role: 'assistant',
-    content:
-      typeof assistantMessage.getStepString(2) === 'string'
-        ? assistantMessage.getStepString(2)
-        : JSON.stringify(assistantMessage.getStepString(2)),
+    content: assistantMessage.getStepString(2),
   },
   { role: 'user', content: STEP_3_PROMPT() },
 ];
 
 export async function* thirdStepPhase(
   userReq: UserRequest,
+  assistantMessage: AssistantMessage,
 ): AsyncGenerator<string, string, unknown> {
-  const assistantMessage = new AssistantMessage();
-  assistantMessage.rawChunks = [userReq.alignmentResponse];
   return yield* chatFn({
     messages: [
       ...STEP_1_MESSAGES(userReq, assistantMessage),

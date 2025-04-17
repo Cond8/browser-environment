@@ -3,7 +3,7 @@ import { useRetryEventBusStore } from '@/features/ollama-api/stores/retry-event-
 import { useStreamSourceStore } from '@/features/ollama-api/streaming-logic/infra/stream-source-store';
 import { useEffect, useRef } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import { StreamingAssistantMessage } from '../models/assistant-message';
+import { StreamingAssistantMessage } from '../models/streaming-assistant-message';
 import { AssistantDisplay } from './assistant-display';
 
 function ErrorFallback({

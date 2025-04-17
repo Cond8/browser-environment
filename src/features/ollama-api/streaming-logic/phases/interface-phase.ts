@@ -1,4 +1,5 @@
 // src/features/ollama-api/streaming/phases/interface-phase.ts
+import { AssistantMessage } from '@/features/chat/models/assistant-message';
 import { chatFn } from '../infra/create-chat';
 import { UserRequest } from './types';
 
@@ -50,7 +51,9 @@ Output a single, complete JSON object.
 
 export async function* interfacePhase(
   userReq: UserRequest,
+  assistantMessage: AssistantMessage,
 ): AsyncGenerator<string, string, unknown> {
+  console.log('interfacePhase', { userReq, assistantMessage });
   return yield* chatFn({
     messages: [
       {
@@ -59,10 +62,7 @@ export async function* interfacePhase(
       },
       {
         role: 'user',
-        content:
-          typeof userReq.alignmentResponse === 'string'
-            ? userReq.alignmentResponse
-            : JSON.stringify(userReq.alignmentResponse),
+        content: assistantMessage.alignmentResponse,
       },
     ],
   });
