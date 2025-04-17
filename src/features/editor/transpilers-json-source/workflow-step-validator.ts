@@ -1,5 +1,5 @@
 // src/features/editor/transpilers-json-source/workflow-step-validator.ts
-import { WorkflowStep } from '@/features/chat/models/assistant-message';
+import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import { z } from 'zod';
 export class WorkflowStepValidationError extends Error {
   constructor(

@@ -1,5 +1,5 @@
 // src/features/editor/transpilers-dsl-source/dsl-to-json.ts
-import { WorkflowStep } from '@/features/chat/models/assistant-message';
+import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import { parse } from 'comment-parser';
 
 export function dslToJson(dsl: string): WorkflowStep {

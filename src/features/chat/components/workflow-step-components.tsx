@@ -1,6 +1,7 @@
 // src/features/chat/components/workflow-step-components.tsx
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import { cn } from '@/lib/utils';
 import {
   Brackets,
@@ -11,7 +12,6 @@ import {
   FunctionSquare,
 } from 'lucide-react';
 import { useState } from 'react';
-import { WorkflowStep } from '../models/assistant-message';
 import { JsonSchemaRenderer } from './json-schema-renderer';
 
 // Utility function to convert PascalCase/camelCase to Space Case

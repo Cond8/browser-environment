@@ -1,5 +1,5 @@
 // src/features/editor/transpilers-json-source/my-json-parser.ts
-import { WorkflowStep } from '@/features/chat/models/assistant-message';
+import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import { jsonrepair } from 'jsonrepair';
 import { transformToInterface } from './my-json-fixer';
 
@@ -46,7 +46,6 @@ export function processJsonChunk(chunk: string): WorkflowStep {
 
   // Try direct parse
   let parsedContent = parseJsonWithErrorHandling(contentToParse);
-
 
   if (parsedContent) {
     return parsedContent;

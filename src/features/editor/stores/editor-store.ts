@@ -1,5 +1,5 @@
 // src/features/editor/stores/editor-store.ts
-import { WorkflowStep } from '@/features/chat/models/assistant-message';
+import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';

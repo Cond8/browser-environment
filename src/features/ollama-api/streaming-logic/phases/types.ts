@@ -5,3 +5,24 @@ export type UserRequest = {
   userRequest: string;
   alignmentResponse: string;
 };
+
+export interface AssistantTextChunk {
+  type: 'text';
+  content: string;
+}
+
+export interface AssistantJsonChunk {
+  type: 'json';
+  content: string;
+}
+
+export type AssistantChunk = AssistantTextChunk | AssistantJsonChunk;
+
+export interface WorkflowStep {
+  name: string;
+  module: string;
+  functionName: string;
+  goal: string;
+  params: any;
+  returns: any;
+}

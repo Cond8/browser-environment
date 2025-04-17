@@ -1,28 +1,8 @@
 import { processJsonChunk } from '@/features/editor/transpilers-json-source/my-json-parser';
+import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import { nanoid } from 'nanoid';
 import { ToolCall } from 'ollama';
 import { AssistantMessage as BaseAssistantMessage } from './message';
-
-export interface AssistantTextChunk {
-  type: 'text';
-  content: string;
-}
-
-export interface AssistantJsonChunk {
-  type: 'json';
-  content: string;
-}
-
-export type AssistantChunk = AssistantTextChunk | AssistantJsonChunk;
-
-export interface WorkflowStep {
-  name: string;
-  module: string;
-  functionName: string;
-  goal: string;
-  params: any;
-  returns: any;
-}
 
 export class AssistantMessage implements BaseAssistantMessage {
   id: string;

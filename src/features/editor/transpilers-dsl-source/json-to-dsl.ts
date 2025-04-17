@@ -1,5 +1,5 @@
 // src/features/editor/transpilers-dsl-source/json-to-dsl.ts
-import { WorkflowStep } from '@/features/chat/models/assistant-message';
+import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 
 const getTypeFromSchema = (schema: any): string => {
   if (!schema) return 'any';

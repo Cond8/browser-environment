@@ -1,5 +1,5 @@
 // src/features/editor/transpilers-dsl-source/json-to-js.ts
-import { WorkflowStep } from '@/features/chat/models/assistant-message';
+import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import { jsonToDsl } from './json-to-dsl';
 
 export const jsonToJs = (json: WorkflowStep[]): string => {
