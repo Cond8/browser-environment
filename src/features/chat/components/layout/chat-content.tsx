@@ -3,7 +3,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 import { AssistantMessage } from '../../models/assistant-message';
-import { ThreadMessage } from '../../models/message';
 import { useChatStore } from '../../store/chat-store';
 import { AssistantDisplay } from '../assistant-display';
 import { EmptyChatState } from '../empty/empty-chat-state';

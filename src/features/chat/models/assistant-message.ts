@@ -68,6 +68,64 @@ export class AssistantMessage implements BaseAssistantMessage {
   }
 }
 
+export class StreamingAssistantMessage extends AssistantMessage {
+  private currentContent: string = '';
+
+  constructor(content?: string) {
+    super();
+    if (content) {
+      this.currentContent = content;
+      this.tryParseContent();
+    }
+  }
+
+  addToken(token: string) {
+    this.currentContent += token;
+    this.tryParseContent();
+    return this;
+  }
+
+  /**
+   * Attempts to repair and parse partial JSON from the current content stream
+   */
+  private tryParseContent() {
+    // Always update the raw content
+    this.rawChunks = [this.currentContent];
+
+    try {
+      // Try to identify and parse any JSON objects in the stream
+      const jsonMatches = this.currentContent.match(/\{[\s\S]*?\}/g);
+      if (jsonMatches) {
+        for (const match of jsonMatches) {
+          try {
+            const parsed = JSON.parse(match);
+            if (parsed && typeof parsed === 'object') {
+              // Successfully parsed a JSON object, might be a workflow step
+              this.addJsonResponse(match);
+            }
+          } catch (e) {
+            // Ignore parse errors for partial objects
+          }
+        }
+      }
+    } catch (e) {
+      // Silently fail if we can't parse the content yet
+      console.debug('Error parsing streaming content:', e);
+    }
+  }
+
+  override get content(): string {
+    return this.currentContent;
+  }
+
+  /**
+   * Creates a new StreamingAssistantMessage with updated content
+   */
+  static fromContent(content: string): StreamingAssistantMessage {
+    return new StreamingAssistantMessage(content);
+  }
+}
+
 export function extractWorkflowStepsFromChunks(chunks: string[]): WorkflowStep[] {
   const steps: WorkflowStep[] = [];
 

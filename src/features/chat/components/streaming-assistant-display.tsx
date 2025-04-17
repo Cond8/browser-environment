@@ -1,23 +1,21 @@
 // src/features/chat/components/streaming-assistant-display.tsx
 import { useStreamSourceStore } from '@/features/ollama-api/streaming-logic/infra/stream-source-store';
-import { cn } from '@/lib/utils';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { markdownComponents } from './markdown-components';
+import { useMemo } from 'react';
+import { StreamingAssistantMessage } from '../models/assistant-message';
+import { AssistantDisplay } from './assistant-display';
 
 export const StreamingAssistantDisplay = () => {
   const isStreaming = useStreamSourceStore(state => state.isStreaming);
   const streamMessage = useStreamSourceStore(state => state.message);
 
+  // Create a new StreamingAssistantMessage on each render when the streamMessage changes
+  const assistantMessage = useMemo(() => {
+    return StreamingAssistantMessage.fromContent(streamMessage || '');
+  }, [streamMessage]);
+
   if (!isStreaming) {
     return null;
   }
 
-  return (
-    <div className={cn('prose dark:prose-invert max-w-none p-4')}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-        {streamMessage}
-      </ReactMarkdown>
-    </div>
-  );
+  return <AssistantDisplay assistantMessage={assistantMessage} />;
 };
