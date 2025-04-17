@@ -146,7 +146,6 @@ export const useChatStore = create<ChatStore>()(
     {
       name: 'chat-storage',
       partialize: state => ({
-        currentThreadId: state.currentThreadId,
         threads: state.threads,
       }),
     },
