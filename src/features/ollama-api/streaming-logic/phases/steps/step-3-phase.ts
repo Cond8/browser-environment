@@ -19,6 +19,8 @@ Modules (pick one):
   format: [format, stringify, summarize, render, compile, prepare]
 
 ${JSON_RULES}
+
+Output a single, complete JSON object. Surrounded by \`\`\`json and \`\`\`.
 `.trim();
 
 export const STEP_3_MESSAGES = (assistantMessage: AssistantMessage) => [

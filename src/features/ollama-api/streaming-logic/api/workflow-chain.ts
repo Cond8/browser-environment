@@ -2,7 +2,10 @@
 import { AssistantMessage } from '@/features/chat/models/assistant-message';
 import { UserMessage } from '@/features/chat/models/message';
 import { useChatStore } from '../../../chat/store/chat-store';
-import { retryableAsyncGenerator } from '../infra/retryable-async-generator';
+import {
+  retryableAsyncGenerator,
+  RetryableGeneratorOptions,
+} from '../infra/retryable-async-generator';
 import { alignmentPhase } from '../phases/alignment-phase';
 import { interfacePhase } from '../phases/interface-phase';
 import { firstStepPhase } from '../phases/steps/step-1-phase';
@@ -54,22 +57,49 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
 
   const assistantMessage = new AssistantMessage();
 
+  // Create a retry trigger system
+  const retryCallbacks: (() => void)[] = [];
+  const registerRetryTrigger = (callback: () => void) => {
+    retryCallbacks.push(callback);
+    return () => {
+      const index = retryCallbacks.indexOf(callback);
+      if (index !== -1) {
+        retryCallbacks.splice(index, 1);
+      }
+    };
+  };
+
+  const retryOptions: RetryableGeneratorOptions = {
+    shouldRecover: err => {
+      if (err instanceof WorkflowChainError) {
+        return err.phase === 'stream';
+      }
+      return false;
+    },
+    fallbackValue: acc => acc,
+    registerRetryTrigger,
+    maxChunkSize: 10_000,
+  };
+
   try {
     /* ============================
      * ===== ALIGNMENT PHASE =====
      * ============================ */
     console.log('alignmentPhase');
-    const alignmentResult = yield* retryableAsyncGenerator<string>('alignment', () =>
-      alignmentPhase(userReq),
+    const alignmentResult = yield* retryableAsyncGenerator(
+      () => alignmentPhase(userReq),
+      retryOptions,
     );
+    console.log('alignmentResult', { alignmentResult });
     assistantMessage.addAlignmentResponse(alignmentResult);
 
     /* =============================
      * ===== INTERFACE PHASE ======
      * ============================= */
     console.log('interfacePhase');
-    const interfaceResult = yield* retryableAsyncGenerator<string>('interface', () =>
-      interfacePhase(userReq, assistantMessage),
+    const interfaceResult = yield* retryableAsyncGenerator(
+      () => interfacePhase(userReq, assistantMessage),
+      retryOptions,
     );
     assistantMessage.addInterfaceResponse(interfaceResult);
 
@@ -77,8 +107,9 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
      * ===== ENRICH STEP ========
      * =========================== */
     console.log('firstStepPhase (enrich)');
-    const enrichStep = yield* retryableAsyncGenerator<string>('step', () =>
-      firstStepPhase(userReq, assistantMessage),
+    const enrichStep = yield* retryableAsyncGenerator(
+      () => firstStepPhase(userReq, assistantMessage),
+      retryOptions,
     );
     assistantMessage.addStepEnrichResponse(enrichStep);
 
@@ -86,8 +117,9 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
      * ===== LOGIC STEP ========
      * ========================== */
     console.log('secondStepPhase (logic)');
-    const logicStep = yield* retryableAsyncGenerator<string>('step', () =>
-      secondStepPhase(userReq, assistantMessage),
+    const logicStep = yield* retryableAsyncGenerator(
+      () => secondStepPhase(userReq, assistantMessage),
+      retryOptions,
     );
     assistantMessage.addStepLogicResponse(logicStep);
 
@@ -95,8 +127,9 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
      * ===== FORMAT STEP =========
      * ============================ */
     console.log('thirdStepPhase (format)');
-    const formatStep = yield* retryableAsyncGenerator<string>('step', () =>
-      thirdStepPhase(userReq, assistantMessage),
+    const formatStep = yield* retryableAsyncGenerator(
+      () => thirdStepPhase(userReq, assistantMessage),
+      retryOptions,
     );
     assistantMessage.addStepFormatResponse(formatStep);
 

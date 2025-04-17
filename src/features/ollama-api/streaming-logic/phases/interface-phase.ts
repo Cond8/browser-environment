@@ -1,6 +1,7 @@
 // src/features/ollama-api/streaming/phases/interface-phase.ts
 import { AssistantMessage } from '@/features/chat/models/assistant-message';
 import { chatFn } from '../infra/create-chat';
+import { JSON_RULES } from './rules';
 import { UserRequest } from './types';
 
 export const INTERFACE_PROMPT = (userRequest: string) =>
@@ -32,9 +33,7 @@ Return a **single JSON object** with this exact structure:
   }
 }
 
-Rules:
-- Output only a valid JSON object and nothing else.
-- Do not include backticks, markdown formatting, or comments.
+${JSON_RULES}
 - \`name\` must be in PascalCase.
 - \`functionName\` must be two words in camelCase.
 - All field names must be single words in camelCase.
@@ -46,7 +45,7 @@ Rules:
 User request:
 ${userRequest}
 
-Output a single, complete JSON object.
+Output a single, complete JSON object. Surrounded by \`\`\`json and \`\`\`.
 `.trim();
 
 export async function* interfacePhase(
