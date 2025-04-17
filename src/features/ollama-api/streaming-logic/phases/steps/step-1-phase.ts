@@ -5,18 +5,13 @@ import { UserRequest } from '../types';
 
 export const SYSTEM_PROMPT = (userRequest: string, interfaceResponse: string) =>
   `
-You are generating the first step of a 3-step workflow.
+You are generating the first step of a workflow: the Enrich step.
 
-Each workflow has exactly 3 steps:
-1. Enrich — Fetch external data or trigger side effects
-2. Logic — Analyze and make decisions based on enriched input
-3. Format — Shape the final output
+This step is responsible for gathering or synthesizing new information that is not yet present. It may call external APIs, perform lookups, or load data from persistent sources. Think of this step as expanding the input with valuable context or facts needed for subsequent reasoning.
 
-This is Step 1: **Enrich**
+The output of this step should feel like a *natural enrichment* of the input — it provides missing data, augments what the user gave, or prepares the ground for thoughtful logic.
 
-Your task is to generate a single JSON object describing this step.
-
-Structure:
+You must return a **single valid JSON object** describing this step in the following structure:
 
 {
   "name": "PascalCaseName",
@@ -37,17 +32,16 @@ Structure:
   }
 }
 
-Rules:
-- Output must be a single valid JSON object only.
-- Do not include markdown, explanations, or formatting.
+Strict rules:
+- Output must be a single valid JSON object.
+- Do not include markdown formatting outside the goal.
+- Do not add explanations or extra prose.
 - name must be in PascalCase.
 - functionName must be two words in camelCase.
-- All field names must be in camelCase and single words.
+- All keys must be single camelCase words.
 - Valid types: string, number, boolean, object, array.
-- Do not use: required, properties, items, enum, default, or any nesting.
-- Do not include arrays of objects or additional fields.
-
-This step should perform side effects: external fetches, lookups, file loads, or API calls.
+- Do **not** use: required, properties, items, enum, default, or nested object schemas.
+- Do **not** include arrays of objects or extra fields.
 
 User Request:
 ${userRequest}
@@ -55,7 +49,7 @@ ${userRequest}
 Interface:
 ${interfaceResponse}
 
-Output a single valid JSON object.
+Respond with a single valid JSON object only.
 `.trim();
 
 export const STEP_1_MESSAGES = (userReq: UserRequest, assistantMessage: AssistantMessage) => [

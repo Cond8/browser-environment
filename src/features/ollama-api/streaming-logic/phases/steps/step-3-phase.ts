@@ -7,10 +7,19 @@ import { STEP_2_MESSAGES } from './step-2-phase';
 
 export const STEP_3_PROMPT = () =>
   `
-Generate the third step: format.
+Generate the third step: **Format**.
 
-Use the same structure as before. This step prepares the final output.
-Reminder to put code fences around the JSON object.
+This step should:
+- Take the processed data from the Logic step
+- Structure it into a clear, human-readable format
+- Ensure all necessary information is present and properly organized
+- Prepare the final output for delivery or display
+
+The focus is purely on presentation - no new data gathering or logical operations should be introduced.
+
+Use the same JSON structure as previous steps, but focus on formatting and presentation aspects.
+
+Respond with a single valid JSON object wrapped in markdown code fences.
 `.trim();
 
 export const STEP_3_MESSAGES = (assistantMessage: AssistantMessage) => [

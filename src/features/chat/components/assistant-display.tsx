@@ -1,5 +1,6 @@
 // src/features/chat/components/assistant-display.tsx
 import { Button } from '@/components/ui/button';
+import { parseSlm } from '@/features/editor/transpilers-json-source/slm-parser';
 import { cn } from '@/lib/utils';
 import { Code, MessageSquare } from 'lucide-react';
 import { memo, useMemo, useState } from 'react';
@@ -8,7 +9,6 @@ import remarkGfm from 'remark-gfm';
 import { AssistantMessage } from '../models/assistant-message';
 import { markdownComponents } from './markdown-components';
 import { WorkflowStepDisplay } from './workflow-step-components';
-import { parseSlm } from '@/features/editor/transpilers-json-source/slm-parser';
 
 interface AssistantDisplayProps {
   assistantMessage: AssistantMessage;
@@ -24,7 +24,7 @@ const MarkdownRenderer = memo(({ content }: { content: string }) => (
 
 export const AssistantDisplay = ({ assistantMessage }: AssistantDisplayProps) => {
   const [showRaw, setShowRaw] = useState(false);
-  
+
   const parsedSlm = useMemo(() => {
     try {
       return parseSlm(assistantMessage.content ?? '');
@@ -35,9 +35,9 @@ export const AssistantDisplay = ({ assistantMessage }: AssistantDisplayProps) =>
   }, [assistantMessage.content]);
 
   const hasMarkdownSections = !!(
-    parsedSlm.markdown.goal || 
-    parsedSlm.markdown.inputs || 
-    parsedSlm.markdown.outputs || 
+    parsedSlm.markdown.goal ||
+    parsedSlm.markdown.inputs ||
+    parsedSlm.markdown.outputs ||
     parsedSlm.markdown.plan
   );
 
@@ -61,7 +61,9 @@ export const AssistantDisplay = ({ assistantMessage }: AssistantDisplayProps) =>
 
       {showRaw ? (
         <div className="p-4 bg-muted rounded-lg">
-          <pre className="text-sm whitespace-pre-wrap overflow-auto max-h-[500px]">{assistantMessage.content}</pre>
+          <pre className="text-sm whitespace-pre-wrap overflow-auto max-h-[500px]">
+            {assistantMessage.content}
+          </pre>
         </div>
       ) : (
         <div className="space-y-4 px-4">
@@ -74,21 +76,21 @@ export const AssistantDisplay = ({ assistantMessage }: AssistantDisplayProps) =>
                   <MarkdownRenderer content={parsedSlm.markdown.goal} />
                 </div>
               )}
-              
+
               {parsedSlm.markdown.inputs && (
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold mb-2">Inputs</h3>
                   <MarkdownRenderer content={parsedSlm.markdown.inputs} />
                 </div>
               )}
-              
+
               {parsedSlm.markdown.outputs && (
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold mb-2">Outputs</h3>
                   <MarkdownRenderer content={parsedSlm.markdown.outputs} />
                 </div>
               )}
-              
+
               {parsedSlm.markdown.plan && parsedSlm.markdown.plan.length > 0 && (
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold mb-2">Plan</h3>
@@ -96,7 +98,10 @@ export const AssistantDisplay = ({ assistantMessage }: AssistantDisplayProps) =>
                     {parsedSlm.markdown.plan.map((step, i) => (
                       <li key={i} className="text-sm">
                         <div className="prose">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={markdownComponents}
+                          >
                             {step}
                           </ReactMarkdown>
                         </div>
@@ -114,17 +119,14 @@ export const AssistantDisplay = ({ assistantMessage }: AssistantDisplayProps) =>
               <h3 className="text-lg font-semibold">Workflow Steps</h3>
               <div className="grid gap-3">
                 {parsedSlm.steps.map((step, i) => (
-                  <div 
-                    key={i} 
+                  <div
+                    key={i}
                     className={cn(
-                      "border rounded-lg overflow-hidden",
-                      i === 0 ? "border-primary bg-primary/5" : "border-border bg-card"
+                      'border rounded-lg overflow-hidden',
+                      i === 0 ? 'border-primary bg-primary/5' : 'border-border bg-card',
                     )}
                   >
-                    <WorkflowStepDisplay 
-                      step={step} 
-                      isInterface={i === 0}
-                    />
+                    <WorkflowStepDisplay step={step} isInterface={i === 0} />
                   </div>
                 ))}
               </div>
