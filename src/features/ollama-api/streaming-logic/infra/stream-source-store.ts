@@ -1,5 +1,6 @@
 // src/features/ollama-api/streaming-logic/infra/stream-source-store.ts
 import { AssistantMessage } from '@/features/chat/models/assistant-message';
+import { useChatStore } from '@/features/chat/store/chat-store';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { executeWorkflowChain } from '../api/workflow-chain';
@@ -18,10 +19,11 @@ export const useStreamSourceStore = create<StreamSourceState>()(
     setIsStreaming: (isLoading: boolean) => set({ isStreaming: isLoading }),
 
     startWorkflowChain: async () => {
-      set({ isStreaming: true });
+      set({ isStreaming: true, message: '' });
       console.log('startWorkflowChain');
 
       let finalAssistantMessage: AssistantMessage | undefined = undefined;
+      let rawSlmBuffer = '';
 
       try {
         const generator = executeWorkflowChain();
@@ -29,17 +31,30 @@ export const useStreamSourceStore = create<StreamSourceState>()(
         while (true) {
           const { value, done } = await generator.next();
           if (done) {
-            finalAssistantMessage = value; // This is the return value of the async generator
+            // At the end, create a final message from the accumulated buffer
+            finalAssistantMessage = new AssistantMessage();
+            finalAssistantMessage.rawChunks = [rawSlmBuffer];
             break;
           }
+
+          // Accumulate the raw SLM
+          rawSlmBuffer += value;
+
+          // Update UI state
           set(state => {
             state.message += value;
           });
         }
 
+        // First set streaming to false
         set(state => {
           state.isStreaming = false;
         });
+
+        // Then add the final message to the chat store
+        if (finalAssistantMessage) {
+          useChatStore.getState().addAssistantMessage(finalAssistantMessage);
+        }
 
         return finalAssistantMessage;
       } catch (error: any) {

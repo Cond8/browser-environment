@@ -53,7 +53,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
     alignmentResponse: '',
   };
 
-  const assistantMessage = new AssistantMessage();
+  let rawSlmBuffer = '';
 
   try {
     /* ============================
@@ -63,10 +63,8 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
     const alignmentResult = yield* retryableAsyncGenerator<string>('alignment', () =>
       alignmentPhase(userReq),
     );
-    assistantMessage.addAlignmentResponse(alignmentResult);
+    rawSlmBuffer += alignmentResult + '\n\n';
     userReq.alignmentResponse = alignmentResult;
-
-    yield '\n\n';
 
     /* =============================
      * ===== INTERFACE PHASE ======
@@ -76,53 +74,53 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
       const interfaceResult = yield* retryableAsyncGenerator<string>('interface', () =>
         interfacePhase(userReq),
       );
-      assistantMessage.addInterfaceResponse(interfaceResult);
+      rawSlmBuffer += interfaceResult + '\n\n';
     } catch (error) {
       console.error('Error in interfacePhase:', error);
       throw new WorkflowChainError('Error in interfacePhase', 'interface', error as Error);
     }
-
-    yield '\n\n';
 
     /* ===========================
      * ===== ENRICH STEP ========
      * =========================== */
     console.log('firstStepPhase (enrich)');
     const enrichStep = yield* retryableAsyncGenerator<string>('step', () =>
-      firstStepPhase(userReq, assistantMessage),
+      firstStepPhase(userReq),
     );
-    assistantMessage.addStepResponse(enrichStep);
-
-    yield '\n\n';
+    rawSlmBuffer += enrichStep + '\n\n';
 
     /* ==========================
      * ===== LOGIC STEP ========
      * ========================== */
     console.log('secondStepPhase (logic)');
     const logicStep = yield* retryableAsyncGenerator<string>('step', () =>
-      secondStepPhase(userReq, assistantMessage),
+      secondStepPhase(userReq),
     );
-    assistantMessage.addStepResponse(logicStep);
-
-    yield '\n\n';
+    rawSlmBuffer += logicStep + '\n\n';
 
     /* ============================
      * ===== FORMAT STEP =========
      * ============================ */
     console.log('thirdStepPhase (format)');
     const formatStep = yield* retryableAsyncGenerator<string>('step', () =>
-      thirdStepPhase(userReq, assistantMessage),
+      thirdStepPhase(userReq),
     );
-    assistantMessage.addStepResponse(formatStep);
+    rawSlmBuffer += formatStep;
 
-    return assistantMessage;
+    // Create final message from accumulated buffer
+    const finalMessage = new AssistantMessage();
+    finalMessage.rawChunks = [rawSlmBuffer];
+    return finalMessage;
   } catch (error) {
     const err =
       error instanceof WorkflowChainError
         ? error
         : new WorkflowChainError('Unexpected error in workflow chain', 'stream', error as Error);
 
-    assistantMessage.setError(err);
+    // Create error message with accumulated buffer
+    const errorMessage = new AssistantMessage();
+    errorMessage.rawChunks = [rawSlmBuffer];
+    errorMessage.setError(err);
     throw err;
   }
 }

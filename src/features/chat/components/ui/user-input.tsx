@@ -53,7 +53,6 @@ export function UserInput() {
   }, []);
 
   const addUserMessage = useChatStore(state => state.addUserMessage);
-  const addAssistantMessage = useChatStore(state => state.addAssistantMessage);
   const triggerAbort = useAbortEventBusStore(state => state.triggerAbort);
   const isLoading = useStreamSourceStore(state => state.isStreaming);
   const setIsLoading = useStreamSourceStore(state => state.setIsStreaming);
@@ -68,8 +67,7 @@ export function UserInput() {
     addUserMessage(trimmed);
     setMessage('');
     try {
-      const result = await startWorkflowChain();
-      addAssistantMessage(result);
+      await startWorkflowChain();
     } catch (error) {
       console.error('Unexpected error during workflow chain:', error);
     } finally {

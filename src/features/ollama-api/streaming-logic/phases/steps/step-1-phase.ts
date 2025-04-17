@@ -1,8 +1,8 @@
 // src/features/ollama-api/streaming-logic/phases/steps/step-1-phase.ts
 import { AssistantMessage } from '@/features/chat/models/assistant-message';
 import { chatFn } from '../../infra/create-chat';
-import { UserRequest } from '../types';
 import { JSON_RULES } from '../rules';
+import { UserRequest } from '../types';
 
 export const SYSTEM_PROMPT = (userRequest: string, interfaceResponse: string) =>
   `
@@ -57,17 +57,26 @@ Respond with a single valid JSON object only.
 export const STEP_1_MESSAGES = (userReq: UserRequest, assistantMessage: AssistantMessage) => [
   {
     role: 'system',
-    content: SYSTEM_PROMPT(userReq.userRequest, assistantMessage.interfaceString),
+    content: SYSTEM_PROMPT(
+      userReq.userRequest,
+      typeof assistantMessage.interfaceString === 'string'
+        ? assistantMessage.interfaceString
+        : JSON.stringify(assistantMessage.interfaceString),
+    ),
   },
   {
     role: 'user',
-    content: userReq.alignmentResponse,
+    content:
+      typeof userReq.alignmentResponse === 'string'
+        ? userReq.alignmentResponse
+        : JSON.stringify(userReq.alignmentResponse),
   },
 ];
 
 export async function* firstStepPhase(
   userReq: UserRequest,
-  assistantMessage: AssistantMessage,
 ): AsyncGenerator<string, string, unknown> {
+  const assistantMessage = new AssistantMessage();
+  assistantMessage.rawChunks = [userReq.alignmentResponse];
   return yield* chatFn({ messages: STEP_1_MESSAGES(userReq, assistantMessage) });
 }

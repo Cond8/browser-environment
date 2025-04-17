@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
   CircleDot,
+  Code,
   FileText,
   FunctionSquare,
 } from 'lucide-react';
@@ -39,7 +40,10 @@ export const WorkflowStepDisplay = ({
   const [expanded, setExpanded] = useState(isStreaming);
   const hasDetails =
     Object.keys(step).length > 2 ||
-    !!(step.module || step.functionName || step.params || step.returns);
+    !!(step.module || step.functionName || step.params || step.returns || (step as any).rawContent);
+
+  // Check if we have raw content (for displaying raw JSON)
+  const hasRawContent = !!(step as any).rawContent;
 
   return (
     <div
@@ -57,6 +61,8 @@ export const WorkflowStepDisplay = ({
           <div className="flex items-center gap-2 mb-1">
             {isInterface ? (
               <Brackets className="h-4 w-4 text-primary shrink-0" />
+            ) : hasRawContent ? (
+              <Code className="h-4 w-4 text-muted-foreground shrink-0" />
             ) : (
               <CircleDot className="h-4 w-4 text-muted-foreground shrink-0" />
             )}
@@ -104,6 +110,13 @@ export const WorkflowStepDisplay = ({
       {/* Expandable content */}
       {expanded && (
         <div className="mt-3 ml-6 space-y-3">
+          {/* Raw Content Section - For displaying raw JSON */}
+          {hasRawContent && (
+            <div className="bg-muted rounded-md p-3 overflow-auto max-h-[300px]">
+              <pre className="text-xs whitespace-pre-wrap">{(step as any).rawContent}</pre>
+            </div>
+          )}
+
           {/* Module and Function Section */}
           {(step.module || step.functionName) && (
             <div className="flex flex-wrap gap-2">
@@ -129,10 +142,12 @@ export const WorkflowStepDisplay = ({
           )}
 
           {/* Parameters and Returns Sections */}
-          <div className="space-y-2 pt-1">
-            {step.params && <JsonSchemaRenderer schema={step.params} title="Parameters" />}
-            {step.returns && <JsonSchemaRenderer schema={step.returns} title="Returns" />}
-          </div>
+          {!hasRawContent && (
+            <div className="space-y-2 pt-1">
+              {step.params && <JsonSchemaRenderer schema={step.params} title="Parameters" />}
+              {step.returns && <JsonSchemaRenderer schema={step.returns} title="Returns" />}
+            </div>
+          )}
         </div>
       )}
     </div>

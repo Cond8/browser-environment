@@ -1,4 +1,4 @@
-// src/features/ollama-api/streaming-logic/phases/types.ts
+// src/features/ollama-api/streaming/phases/types.ts
 export type WorkflowPhase = 'interface' | 'step' | 'stream' | 'alignment';
 
 export type UserRequest = {
@@ -25,4 +25,5 @@ export interface WorkflowStep {
   goal: string;
   params: any;
   returns: any;
+  rawContent?: string; // Optional raw content for storing unparsed JSON
 }

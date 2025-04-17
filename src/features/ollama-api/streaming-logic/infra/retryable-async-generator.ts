@@ -47,8 +47,8 @@ export async function* retryableAsyncGenerator<T>(
 
       try {
         for await (const chunk of generator) {
-          // Skip empty chunks
-          if (!chunk || !chunk.trim()) {
+          // Skip empty chunks - ensure chunk is a string before calling trim()
+          if (!chunk || typeof chunk !== 'string' || !chunk.trim()) {
             yield chunk;
             continue;
           }
@@ -89,6 +89,11 @@ export async function* retryableAsyncGenerator<T>(
           yield chunk;
         }
         result = await generator.next(); // Final return
+
+        // If we have a message and the final result doesn't, use our message
+        if (message && (!result.value || result.value === '')) {
+          result = { done: true, value: message as unknown as T };
+        }
       } catch (error) {
         // If it's a non-critical error during streaming, log and continue
         if (

@@ -71,7 +71,8 @@ export class AssistantMessage implements BaseAssistantMessage {
   }
 
   get interfaceString(): string {
-    return JSON.stringify(this.interface, null, 2);
+    const interfaceObj = this.interface;
+    return typeof interfaceObj === 'string' ? interfaceObj : JSON.stringify(interfaceObj, null, 2);
   }
 
   getStep(num: number): WorkflowStep {
@@ -87,7 +88,8 @@ export class AssistantMessage implements BaseAssistantMessage {
   }
 
   getStepString(num: number): string {
-    return JSON.stringify(this.getStep(num), null, 2);
+    const step = this.getStep(num);
+    return typeof step === 'string' ? step : JSON.stringify(step, null, 2);
   }
 
   get steps(): WorkflowStep[] {
@@ -164,8 +166,8 @@ export class StreamingAssistantMessage extends AssistantMessage {
     this.rawChunks = [this.currentContent];
     this.parseError = null;
 
-    // Don't attempt parsing if content is empty
-    if (!this.currentContent.trim()) {
+    // Don't attempt parsing if content is empty or not a string
+    if (typeof this.currentContent !== 'string' || !this.currentContent.trim()) {
       return;
     }
 
@@ -257,25 +259,88 @@ export class StreamingAssistantMessage extends AssistantMessage {
   static fromContent(content: string): StreamingAssistantMessage {
     return new StreamingAssistantMessage(content);
   }
+
+  /**
+   * Converts the StreamingAssistantMessage to a final AssistantMessage instance
+   * This ensures proper object identity for storage in state
+   */
+  toFinalMessage(): AssistantMessage {
+    const finalMessage = new AssistantMessage();
+
+    // Transfer all important properties
+    finalMessage.id = this.id;
+    finalMessage.timestamp = this.timestamp;
+
+    // Copy the raw chunks
+    if (this.rawChunks && this.rawChunks.length > 0) {
+      finalMessage.rawChunks = [...this.rawChunks];
+    } else if (this.currentContent) {
+      // If no raw chunks but we have content, add it as a chunk
+      finalMessage.rawChunks = [this.currentContent];
+    }
+
+    // Copy other properties if they exist
+    if (this.tool_calls) finalMessage.tool_calls = this.tool_calls;
+    if (this.images) finalMessage.images = this.images;
+    if (this.error) finalMessage.error = this.error;
+
+    return finalMessage;
+  }
 }
 
 export function extractWorkflowStepsFromChunks(chunks: string[]): WorkflowStep[] {
   const steps: WorkflowStep[] = [];
 
   // If we have no chunks, return an empty placeholder step
-  if (!chunks || chunks.length === 0 || chunks.every(chunk => !chunk?.trim())) {
+  if (
+    !chunks ||
+    chunks.length === 0 ||
+    chunks.every(chunk => typeof chunk !== 'string' || !chunk.trim())
+  ) {
     return [createDefaultWorkflowStep('EmptyWorkflow', 'process_empty', 'Process empty input')];
   }
 
   for (const chunk of chunks) {
-    // Skip empty chunks
-    if (!chunk?.trim()) continue;
+    // Skip empty chunks or non-string chunks
+    if (typeof chunk !== 'string' || !chunk.trim()) continue;
 
     try {
+      // Store the raw JSON string as-is without attempting to parse it
+      // This allows UI components to decide how to display it
       const step = processJsonChunk(chunk);
-      if (step) steps.push(step);
+
+      // Keep the raw chunk as a string if we can't parse it
+      if (step) {
+        // If step is already parsed, store it as is
+        steps.push(step);
+      } else if (chunk.includes('{') && chunk.includes('}')) {
+        // If it looks like JSON but couldn't be parsed, store the raw string
+        // Create a special WorkflowStep that contains the raw string
+        steps.push({
+          name: 'RawJsonStep',
+          module: 'unknown',
+          functionName: 'rawJsonData',
+          goal: 'Raw JSON data from LLM response',
+          params: {},
+          returns: {},
+          rawContent: chunk,
+        } as WorkflowStep);
+      }
     } catch (e) {
       console.warn('Skipping non-JSON chunk:', e);
+
+      // If it looks like JSON but couldn't be parsed, store the raw string
+      if (chunk.includes('{') && chunk.includes('}')) {
+        steps.push({
+          name: 'RawJsonStep',
+          module: 'unknown',
+          functionName: 'rawJsonData',
+          goal: 'Raw JSON data from LLM response',
+          params: {},
+          returns: {},
+          rawContent: chunk,
+        } as WorkflowStep);
+      }
     }
   }
 
