@@ -1,10 +1,10 @@
-// src/features/ollama-api/streaming/api/workflow-chain.ts
 import { AssistantMessage } from '@/features/chat/models/assistant-message';
 import { useChatStore } from '../../../chat/store/chat-store';
 import { alignmentPhase } from '../phases/alignment-phase';
 import { interfacePhase } from '../phases/interface-phase';
 import { firstStepPhase } from '../phases/steps/step-1-phase';
-import { secondToSixthStepPhase } from '../phases/steps/step-2-to-6-phase';
+import { secondStepPhase } from '../phases/steps/step-2-phase';
+import { thirdStepPhase } from '../phases/steps/step-3-phase';
 import { UserRequest, WorkflowPhase } from '../phases/types';
 
 export class WorkflowChainError extends Error {
@@ -49,13 +49,12 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
     alignmentResponse: '',
   };
 
-  // Create a single assistant message at the start
   const assistantMessage = new AssistantMessage();
 
   try {
-    /* ===========================
+    /* ============================
      * ===== ALIGNMENT PHASE =====
-     * ===========================*/
+     * ============================ */
     console.log('alignmentPhase');
     const alignmentResult = yield* alignmentPhase(userReq);
     assistantMessage.addAlignmentResponse(alignmentResult);
@@ -63,9 +62,9 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
 
     yield '\n\n';
 
-    /* ===========================
-     * ===== INTERFACE PHASE =====
-     * ===========================*/
+    /* =============================
+     * ===== INTERFACE PHASE ======
+     * ============================= */
     try {
       console.log('interfacePhase');
       const interfaceResult = yield* interfacePhase(userReq);
@@ -77,29 +76,30 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
 
     yield '\n\n';
 
-    /* =============================
-     * ===== FIRST STEP PHASES =====
-     * =============================*/
-    console.log('firstStepPhase');
-    const firstStepResult = yield* firstStepPhase(userReq, assistantMessage);
-    assistantMessage.addStepResponse(firstStepResult);
+    /* ===========================
+     * ===== ENRICH STEP ========
+     * =========================== */
+    console.log('firstStepPhase (enrich)');
+    const enrichStep = yield* firstStepPhase(userReq, assistantMessage);
+    assistantMessage.addStepResponse(enrichStep);
 
     yield '\n\n';
 
-    /* ================================
-     * ===== SECOND TO SIXTH STEP =====
-     * ================================*/
-    for (let i = 2; i < 7; i++) {
-      console.log(`secondToSixthStepPhase ${i}`);
-      const parsedSecondToSixthStepResult = yield* secondToSixthStepPhase(
-        userReq,
-        assistantMessage,
-        i,
-      );
-      assistantMessage.addStepResponse(parsedSecondToSixthStepResult);
+    /* ==========================
+     * ===== LOGIC STEP ========
+     * ========================== */
+    console.log('secondStepPhase (logic)');
+    const logicStep = yield* secondStepPhase(userReq, assistantMessage);
+    assistantMessage.addStepResponse(logicStep);
 
-      yield '\n\n';
-    }
+    yield '\n\n';
+
+    /* ============================
+     * ===== FORMAT STEP =========
+     * ============================ */
+    console.log('thirdStepPhase (format)');
+    const formatStep = yield* thirdStepPhase(userReq, assistantMessage);
+    assistantMessage.addStepResponse(formatStep);
 
     return assistantMessage;
   } catch (error) {

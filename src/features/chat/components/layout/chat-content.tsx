@@ -30,7 +30,7 @@ export const ChatContent = () => {
 
   return (
     <ScrollArea className="flex-1">
-      <div className="flex flex-col max-w-2xl mx-auto w-full break-words whitespace-pre-wrap">
+      <div className="flex flex-col max-w-2xl mx-auto w-full break-words px-6 py-4 space-y-4">
         {currentThread.messages.map((message: ThreadMessage, idx: number) => {
           // Determine message error
 

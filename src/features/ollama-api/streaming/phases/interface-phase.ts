@@ -4,49 +4,48 @@ import { UserRequest } from './types';
 
 export const INTERFACE_PROMPT = (userRequest: string) =>
   `
-You are an expert in JSON schema design.
+You are a system interface designer. Define a JSON object that represents the contract for a workflow engine.
 
-You are designing the input/output contract for a workflow engine. Think of this as defining a single function that:
-- Takes named inputs via \`params\`
-- Produces named outputs via \`returns\`
+This interface must describe:
+- What inputs the workflow accepts (\`params\`)
+- What outputs it produces (\`returns\`)
 
-You must output a single JSON object matching this structure exactly:
+Return a **single JSON object** with this exact structure:
 
-\`\`\`json
 {
   "name": "PascalCaseWorkflowName",
   "module": "one of [extract, parse, validate, transform, logic, calculate, format, io, storage, integrate, understand, generate]",
   "functionName": "doubleWordedCamelCaseName",
-  "goal": "A markdown-formatted summary of the workflow's purpose.",
+  "goal": "A markdown-formatted summary of what the workflow does.",
   "params": {
     "inputName": {
       "type": "string",
-      "description": "What this input means."
+      "description": "Explanation of this input"
     }
   },
   "returns": {
     "outputName": {
       "type": "string",
-      "description": "What this output means."
+      "description": "Explanation of this output"
     }
   }
 }
-\`\`\`
 
 Rules:
-- Output only a single valid JSON object and nothing else.
-- The \`name\` field must be in PascalCase.
-- The \`functionName\` must be in camelCase and contain exactly two words.
-- Field names inside \`params\` and \`returns\` must be in camelCase.
-- Only use types: \`string\`, \`number\`, \`boolean\`, \`object\`, \`array\`.
+- Output only a valid JSON object and nothing else.
+- Do not include backticks, markdown formatting, or comments.
+- \`name\` must be in PascalCase.
+- \`functionName\` must be two words in camelCase.
+- All field names must be single words in camelCase.
+- Valid types: string, number, boolean, object, array.
 - Each field must include both \`type\` and \`description\`.
-- Do not use: \`required\`, \`properties\`, \`items\`, \`enum\`, \`default\`, or any explanation.
-- Do not include arrays of objects or nested schemas.
-- Do not wrap the output in triple backticks.
+- Do not use: required, properties, items, enum, default, examples.
+- Do not nest schemas or include arrays of objects.
 
-User request: ${userRequest}
+User request:
+${userRequest}
 
-Respond with a single JSON object only.
+Output a single, complete JSON object.
 `.trim();
 
 export async function* interfacePhase(

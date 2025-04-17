@@ -5,93 +5,60 @@ import { UserRequest } from '../types';
 
 export const SYSTEM_PROMPT = (userRequest: string, interfaceResponse: string) =>
   `
-You are an assistant that helps users define structured workflows using a **JSON-based format**.
+You are generating the first step of a 3-step workflow.
 
-Each workflow is a sequence of exactly **7 JSON objects**:
-- The **first object** is the workflow interface.
-- The **next 6 objects** are individual validation steps that progressively prepare and check the inputs.
+Each workflow has exactly 3 steps:
+1. Enrich — Fetch external data or trigger side effects
+2. Logic — Analyze and make decisions based on enriched input
+3. Format — Shape the final output
 
-The first step must be a JSON object with this exact structure:
+This is Step 1: **Enrich**
 
-\`\`\`json-schema
+Your task is to generate a single JSON object describing this step.
+
+Structure:
+
 {
-  "name": "ValidateForm",
-  "module": "input_validation",
-  "functionName": "validate form inputs",
-  "goal": "This workflow verifies that incoming user-submitted form fields meet expected formats, types, and required presence, returning detailed validation results per field.",
+  "name": "PascalCaseName",
+  "module": "one of [extract, parse, validate, transform, logic, calculate, format, io, storage, integrate, understand, generate]",
+  "functionName": "camelCaseTwoWords",
+  "goal": "A markdown-formatted summary of what this step does.",
   "params": {
-    "formData": {
-      "type": "object",
-      "description": "The object representing raw form input submitted by the user."
-    },
-    "schema": {
-      "type": "object",
-      "description": "A validation schema object defining required fields, types, and rules."
-    },
-    "context": {
+    "inputName": {
       "type": "string",
-      "description": "An optional tag describing the form’s usage context (e.g., 'signup', 'profile_update')."
+      "description": "Explanation of this input."
     }
   },
   "returns": {
-    "isValid": {
-      "type": "boolean",
-      "description": "Whether all validations passed successfully."
-    },
-    "errors": {
-      "type": "array",
-      "description": "An array of validation error messages for each failed field."
-    },
-    "validatedData": {
-      "type": "object",
-      "description": "A sanitized and type-safe version of the form data."
+    "outputName": {
+      "type": "string",
+      "description": "Explanation of this output."
     }
   }
 }
-\`\`\`
-
-Available modules:
-- extract, parse, validate, transform, logic, calculate, format, io, storage, integrate, understand, generate
 
 Rules:
-- "name" must be a single word in PascalCase
-- "function" must be a single word in camelCase
-- All field names must be single words in camelCase
-- Use only types: string, number, boolean, array, object
-- Keep names concise and avoid multi-worded names
-- This step represents the first validation in the workflow
-- Define params and returns with meaningful names that describe their specific purpose
-- Each param and return should represent a distinct piece of data or configuration
+- Output must be a single valid JSON object only.
+- Do not include markdown, explanations, or formatting.
+- name must be in PascalCase.
+- functionName must be two words in camelCase.
+- All field names must be in camelCase and single words.
+- Valid types: string, number, boolean, object, array.
+- Do not use: required, properties, items, enum, default, or any nesting.
+- Do not include arrays of objects or additional fields.
 
----
-## VALIDATION FOCUS
+This step should perform side effects: external fetches, lookups, file loads, or API calls.
 
-This first step should focus on validating the inputs by:
-- Checking required fields are present
-- Validating data types and structure
-- Ensuring basic format requirements
-
----
-## USER REQUEST
-\`\`\`
+User Request:
 ${userRequest}
-\`\`\`
 
-## WORKFLOW INTERFACE
-\`\`\`
+Interface:
 ${interfaceResponse}
-\`\`\`
 
----
-## TASK
-
-Generate the first validation step based on the interface provided. The format should match the structure of the interface response.
-Output only the JSON for the step.
-
-### Response:
+Output a single valid JSON object.
 `.trim();
 
-export const FIRST_STEP_MESSAGES = (userReq: UserRequest, assistantMessage: AssistantMessage) => [
+export const STEP_1_MESSAGES = (userReq: UserRequest, assistantMessage: AssistantMessage) => [
   {
     role: 'system',
     content: SYSTEM_PROMPT(userReq.userRequest, assistantMessage.interfaceString),
@@ -106,5 +73,5 @@ export async function* firstStepPhase(
   userReq: UserRequest,
   assistantMessage: AssistantMessage,
 ): AsyncGenerator<string, string, unknown> {
-  return yield* chatFn({ messages: FIRST_STEP_MESSAGES(userReq, assistantMessage) });
+  return yield* chatFn({ messages: STEP_1_MESSAGES(userReq, assistantMessage) });
 }

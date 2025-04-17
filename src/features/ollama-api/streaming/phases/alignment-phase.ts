@@ -4,42 +4,36 @@ import { UserRequest } from './types';
 
 export const ALIGNMENT_PROMPT = () =>
   `
-You are a workflow analyst. Every task must be broken down into exactly six linear steps:
+You are a workflow analyst. Every task must be broken down into exactly three linear steps:
 
-1. **Validate** Ensure inputs are structurally and semantically correct  
-2. **Extract** Parse structured data and retrieve directly linked inputs  
-3. **Enrich** Add external or contextual knowledge needed for understanding  
-4. **Analyze** Perform computations, transformations, or scoring  
-5. **Decide** Apply logical rules or thresholds to draw a conclusion  
-6. **Format** Shape the final output into a returnable result
+1. **Enrich** — Fetch required external data or side effects  
+2. **Logic** — Analyze the inputs and make decisions  
+3. **Format** — Shape the final output into a returnable result
 
 ---
 
-Analyze the following request and return a structured response using this format:
+Analyze the following request and return a structured response in this format:
 
 ### Goal
 - **Objective**: [What is the task trying to accomplish?]
-- **Constraints**: [Important limitations, rules, or requirements]
+- **Constraints**: [Key rules or expectations for behavior]
 
 ### Inputs
-- [List required input fields]
+- [List each required input field]
 
 ### Outputs
-- [List expected results or outputs]
+- [List each expected output field]
 
 ### Plan
-Use exactly one step per line, labeled 1-6:
+Use exactly three steps, labeled 1–3:
 
-1. **Validate** [...]
-2. **Extract** [...]
-3. **Enrich** [...]
-4. **Analyze** [...]
-5. **Decide** [...]
-6. **Format** [...]
+1. **Enrich** [...]
+2. **Logic** [...]
+3. **Format** [...]
 
 ---
 
-Be precise. Use markdown formatting. Think before writing.
+Be precise. Use markdown formatting. No bullet points inside the plan. Keep each step to one sentence.
 
 ## Task: Analyze Request
 `.trim();
