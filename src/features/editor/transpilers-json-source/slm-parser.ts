@@ -143,7 +143,6 @@ export function parseSlm(content: string): ParsedSlm {
         currentSection.content = repaired;
         currentSection.parsed = JSON.parse(repaired) as WorkflowStep;
       } catch (e) {
-        console.error('Failed to repair final JSON block:', e);
         // Instead of throwing, treat it as markdown
         currentSection.type = 'markdown';
         currentSection.content = buffer.trim();

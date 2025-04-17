@@ -2,6 +2,7 @@
 import { AssistantMessage } from '@/features/chat/models/assistant-message';
 import { UserMessage } from '@/features/chat/models/message';
 import { useChatStore } from '../../../chat/store/chat-store';
+import { retryableAsyncGenerator } from '../infra/retryable-async-generator';
 import { alignmentPhase } from '../phases/alignment-phase';
 import { interfacePhase } from '../phases/interface-phase';
 import { firstStepPhase } from '../phases/steps/step-1-phase';
@@ -59,7 +60,9 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
      * ===== ALIGNMENT PHASE =====
      * ============================ */
     console.log('alignmentPhase');
-    const alignmentResult = yield* alignmentPhase(userReq);
+    const alignmentResult = yield* retryableAsyncGenerator<string>('alignment', () =>
+      alignmentPhase(userReq),
+    );
     assistantMessage.addAlignmentResponse(alignmentResult);
     userReq.alignmentResponse = alignmentResult;
 
@@ -70,7 +73,9 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
      * ============================= */
     try {
       console.log('interfacePhase');
-      const interfaceResult = yield* interfacePhase(userReq);
+      const interfaceResult = yield* retryableAsyncGenerator<string>('interface', () =>
+        interfacePhase(userReq),
+      );
       assistantMessage.addInterfaceResponse(interfaceResult);
     } catch (error) {
       console.error('Error in interfacePhase:', error);
@@ -83,7 +88,9 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
      * ===== ENRICH STEP ========
      * =========================== */
     console.log('firstStepPhase (enrich)');
-    const enrichStep = yield* firstStepPhase(userReq, assistantMessage);
+    const enrichStep = yield* retryableAsyncGenerator<string>('step', () =>
+      firstStepPhase(userReq, assistantMessage),
+    );
     assistantMessage.addStepResponse(enrichStep);
 
     yield '\n\n';
@@ -92,7 +99,9 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
      * ===== LOGIC STEP ========
      * ========================== */
     console.log('secondStepPhase (logic)');
-    const logicStep = yield* secondStepPhase(userReq, assistantMessage);
+    const logicStep = yield* retryableAsyncGenerator<string>('step', () =>
+      secondStepPhase(userReq, assistantMessage),
+    );
     assistantMessage.addStepResponse(logicStep);
 
     yield '\n\n';
@@ -101,7 +110,9 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
      * ===== FORMAT STEP =========
      * ============================ */
     console.log('thirdStepPhase (format)');
-    const formatStep = yield* thirdStepPhase(userReq, assistantMessage);
+    const formatStep = yield* retryableAsyncGenerator<string>('step', () =>
+      thirdStepPhase(userReq, assistantMessage),
+    );
     assistantMessage.addStepResponse(formatStep);
 
     return assistantMessage;

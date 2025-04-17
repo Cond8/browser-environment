@@ -1,6 +1,7 @@
 // src/features/chat/models/assistant-message.ts
 import { processJsonChunk } from '@/features/editor/transpilers-json-source/my-json-parser';
-import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
+import { useRetryEventBusStore } from '@/features/ollama-api/stores/retry-event-bus-store';
+import { WorkflowPhase, WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import { nanoid } from 'nanoid';
 import { ToolCall } from 'ollama';
 import { AssistantMessage as BaseAssistantMessage } from './message';
@@ -71,63 +72,90 @@ export class AssistantMessage implements BaseAssistantMessage {
 
 export class StreamingAssistantMessage extends AssistantMessage {
   private currentContent: string = '';
+  private parseError: Error | null = null;
 
   constructor(content?: string) {
     super();
     if (content) {
       this.currentContent = content;
-      this.tryParseContent();
+      this.tryParseContentSilently();
     }
   }
 
   addToken(token: string) {
     this.currentContent += token;
-    this.tryParseContent();
+    this.tryParseContentSilently();
     return this;
   }
 
   /**
-   * Attempts to repair and parse partial JSON from the current content stream
+   * Attempts to parse JSON from various formats in the content
    */
-  private tryParseContent() {
-    // Always update the raw content
+  private tryParseJson(content: string): boolean {
+    // Try parsing JSON from markdown code blocks
+    const jsonBlockMatch = content.match(/```json\n([\s\S]*?)\n```/);
+    if (jsonBlockMatch) {
+      try {
+        const parsed = JSON.parse(jsonBlockMatch[1]);
+        if (parsed && typeof parsed === 'object') {
+          this.addJsonResponse(jsonBlockMatch[1]);
+          return true;
+        }
+      } catch (e) {
+        // continue
+      }
+    }
+
+    // Try parsing standalone JSON objects
+    const potentialJson = content.match(/\{[\s\S]*?\}/g);
+    if (potentialJson) {
+      for (const match of potentialJson) {
+        if (match.match(/^{[^{}]*}$/)) {
+          try {
+            const parsed = JSON.parse(match);
+            if (parsed && typeof parsed === 'object') {
+              this.addJsonResponse(match);
+              return true;
+            }
+          } catch (e) {
+            // continue
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Attempts to parse content without throwing errors
+   */
+  private tryParseContentSilently() {
     this.rawChunks = [this.currentContent];
+    this.parseError = null;
 
     try {
-      // First check if we have a complete JSON object
-      const jsonMatches = this.currentContent.match(/```json\n([\s\S]*?)\n```/);
-      if (jsonMatches) {
-        try {
-          const parsed = JSON.parse(jsonMatches[1]);
-          if (parsed && typeof parsed === 'object') {
-            this.addJsonResponse(jsonMatches[1]);
-            return;
-          }
-        } catch (e) {
-          // Ignore parse errors for now
-        }
-      }
-
-      // If no complete JSON block found, look for potential partial JSON
-      const potentialJson = this.currentContent.match(/\{[\s\S]*?\}/g);
-      if (potentialJson) {
-        for (const match of potentialJson) {
-          // Only try to parse if it looks like a complete object
-          if (match.match(/^{[^{}]*}$/)) {
-            try {
-              const parsed = JSON.parse(match);
-              if (parsed && typeof parsed === 'object') {
-                this.addJsonResponse(match);
-              }
-            } catch (e) {
-              // Ignore parse errors for partial objects
-            }
-          }
-        }
+      if (!this.tryParseJson(this.currentContent)) {
+        this.parseError = new Error('Failed to parse JSON content');
       }
     } catch (e) {
-      // Silently fail if we can't parse the content yet
-      console.debug('Error parsing streaming content:', e);
+      this.parseError = e instanceof Error ? e : new Error('Unknown parsing error');
+    }
+  }
+
+  /**
+   * Attempts to repair and parse partial JSON from the current content stream
+   * This is called from within the async generator
+   */
+  tryParseContent(phase: WorkflowPhase = 'step'): void {
+    if (this.parseError) {
+      const canRetry = useRetryEventBusStore
+        .getState()
+        .triggerRetry(phase, this.parseError.message);
+      if (!canRetry) {
+        throw new Error('Max retry attempts reached for JSON parsing');
+      }
+      throw this.parseError;
     }
   }
 

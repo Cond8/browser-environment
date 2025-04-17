@@ -41,7 +41,6 @@ export function processJsonChunk(chunk: string): WorkflowStep {
 
   // Check if content is purely markdown without JSON
   if (isPureMarkdown(chunk)) {
-    console.warn('Content is purely markdown without any JSON content');
     return {
       name: 'MarkdownContent',
       module: 'format',
