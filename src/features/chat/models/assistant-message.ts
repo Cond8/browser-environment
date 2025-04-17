@@ -94,18 +94,34 @@ export class StreamingAssistantMessage extends AssistantMessage {
     this.rawChunks = [this.currentContent];
 
     try {
-      // Try to identify and parse any JSON objects in the stream
-      const jsonMatches = this.currentContent.match(/\{[\s\S]*?\}/g);
+      // First check if we have a complete JSON object
+      const jsonMatches = this.currentContent.match(/```json\n([\s\S]*?)\n```/);
       if (jsonMatches) {
-        for (const match of jsonMatches) {
-          try {
-            const parsed = JSON.parse(match);
-            if (parsed && typeof parsed === 'object') {
-              // Successfully parsed a JSON object, might be a workflow step
-              this.addJsonResponse(match);
+        try {
+          const parsed = JSON.parse(jsonMatches[1]);
+          if (parsed && typeof parsed === 'object') {
+            this.addJsonResponse(jsonMatches[1]);
+            return;
+          }
+        } catch (e) {
+          // Ignore parse errors for now
+        }
+      }
+
+      // If no complete JSON block found, look for potential partial JSON
+      const potentialJson = this.currentContent.match(/\{[\s\S]*?\}/g);
+      if (potentialJson) {
+        for (const match of potentialJson) {
+          // Only try to parse if it looks like a complete object
+          if (match.match(/^{[^{}]*}$/)) {
+            try {
+              const parsed = JSON.parse(match);
+              if (parsed && typeof parsed === 'object') {
+                this.addJsonResponse(match);
+              }
+            } catch (e) {
+              // Ignore parse errors for partial objects
             }
-          } catch (e) {
-            // Ignore parse errors for partial objects
           }
         }
       }

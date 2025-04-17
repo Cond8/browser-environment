@@ -32,8 +32,8 @@ export const AssistantDisplay = ({
   const parsedSlm = useMemo(() => {
     try {
       return parseSlm(assistantMessage.content ?? '');
-    } catch (error) {
-      console.error('Error parsing SLM content:', error);
+    } catch (error: any) {
+      console.error('Error parsing SLM content:', error.message);
       return { markdown: {}, steps: [] };
     }
   }, [assistantMessage.content]);

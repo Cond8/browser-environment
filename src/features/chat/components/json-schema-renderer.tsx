@@ -63,10 +63,14 @@ const PropertyDisplay = ({
   isRequired = false,
 }: {
   name: string;
-  property: PropertyDefinition;
+  property: PropertyDefinition | null;
   level?: number;
   isRequired?: boolean;
 }) => {
+  if (!property) {
+    return null;
+  }
+
   const hasNestedProperties = property.properties && Object.keys(property.properties).length > 0;
   const isArray = Array.isArray(property.type)
     ? property.type.includes('array')

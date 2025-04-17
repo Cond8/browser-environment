@@ -1,4 +1,3 @@
-// src/features/ollama-api/streaming-logic/api/workflow-chain.ts
 import { AssistantMessage } from '@/features/chat/models/assistant-message';
 import { UserMessage } from '@/features/chat/models/message';
 import { useChatStore } from '../../../chat/store/chat-store';

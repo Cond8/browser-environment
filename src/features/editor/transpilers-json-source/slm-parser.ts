@@ -19,6 +19,11 @@ interface ParsedSlm {
 }
 
 export function parseSlm(content: string): ParsedSlm {
+  if (!content || typeof content !== 'string') {
+    console.warn('Invalid content provided to parseSlm');
+    return { markdown: {}, steps: [] };
+  }
+
   const sections: SlmSection[] = [];
   let currentSection: SlmSection | null = null;
   let buffer = '';
@@ -139,6 +144,8 @@ export function parseSlm(content: string): ParsedSlm {
         currentSection.parsed = JSON.parse(repaired) as WorkflowStep;
       } catch (e) {
         console.error('Failed to repair final JSON block:', e);
+        // Instead of throwing, treat it as markdown
+        currentSection.type = 'markdown';
         currentSection.content = buffer.trim();
       }
     } else {
@@ -163,6 +170,9 @@ export function parseSlm(content: string): ParsedSlm {
         currentSection.parsed = JSON.parse(repaired) as WorkflowStep;
       } catch (repairError) {
         console.error('Failed to parse or repair JSON:', repairError);
+        // Instead of throwing, treat it as markdown
+        currentSection.type = 'markdown';
+        currentSection.content = buffer.trim();
       }
     }
 
