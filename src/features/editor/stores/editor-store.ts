@@ -1,17 +1,16 @@
 // src/features/editor/stores/editor-store.ts
-import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 interface EditorState {
   // File content and path
-  content: WorkflowStep[];
+  content: string;
   filePath: string | null;
   isLocalOnly: boolean;
 
   // Actions
-  setContent: (content: WorkflowStep[]) => void;
+  setContent: (content: string) => void;
   setFilePath: (filepath: string | null) => void;
 }
 
@@ -19,7 +18,7 @@ export const useEditorStore = create<EditorState>()(
   persist(
     immer(set => ({
       // Initial state
-      content: [],
+      content: '',
       filePath: null,
       isLocalOnly: true,
 
@@ -37,7 +36,7 @@ export const useEditorStore = create<EditorState>()(
           } else {
             state.filePath = filepath;
             state.isLocalOnly = false;
-            state.content = []; // TODO: should load from the Virtual File System
+            state.content = '';
           }
         });
       },
