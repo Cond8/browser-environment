@@ -1,4 +1,4 @@
-// src/features/ollama-api/streaming/infra/stream-source-store.ts
+// src/features/ollama-api/streaming-logic/infra/stream-source-store.ts
 import { AssistantMessage } from '@/features/chat/models/assistant-message';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';

@@ -12,6 +12,7 @@ import { WorkflowStepDisplay } from './workflow-step-components';
 
 interface AssistantDisplayProps {
   assistantMessage: AssistantMessage;
+  isStreaming?: boolean;
 }
 
 const MarkdownRenderer = memo(({ content }: { content: string }) => (
@@ -22,7 +23,10 @@ const MarkdownRenderer = memo(({ content }: { content: string }) => (
   </div>
 ));
 
-export const AssistantDisplay = ({ assistantMessage }: AssistantDisplayProps) => {
+export const AssistantDisplay = ({
+  assistantMessage,
+  isStreaming = false,
+}: AssistantDisplayProps) => {
   const [showRaw, setShowRaw] = useState(false);
 
   const parsedSlm = useMemo(() => {
@@ -126,7 +130,11 @@ export const AssistantDisplay = ({ assistantMessage }: AssistantDisplayProps) =>
                       i === 0 ? 'border-primary bg-primary/5' : 'border-border bg-card',
                     )}
                   >
-                    <WorkflowStepDisplay step={step} isInterface={i === 0} />
+                    <WorkflowStepDisplay
+                      step={step}
+                      isInterface={i === 0}
+                      isStreaming={isStreaming}
+                    />
                   </div>
                 ))}
               </div>

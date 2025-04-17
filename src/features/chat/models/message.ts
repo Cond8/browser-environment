@@ -1,3 +1,4 @@
+// src/features/chat/models/message.ts
 import { Message as OllamaMessage } from 'ollama/browser';
 
 export interface Message extends OllamaMessage {

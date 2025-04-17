@@ -1,3 +1,4 @@
+// src/features/chat/models/assistant-message.ts
 import { processJsonChunk } from '@/features/editor/transpilers-json-source/my-json-parser';
 import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import { nanoid } from 'nanoid';

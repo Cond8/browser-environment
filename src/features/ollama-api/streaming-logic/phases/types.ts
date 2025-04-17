@@ -1,4 +1,4 @@
-// src/features/ollama-api/streaming/phases/types.ts
+// src/features/ollama-api/streaming-logic/phases/types.ts
 export type WorkflowPhase = 'interface' | 'step' | 'stream' | 'alignment';
 
 export type UserRequest = {

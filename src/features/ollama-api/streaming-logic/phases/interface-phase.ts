@@ -1,4 +1,4 @@
-// src/features/ollama-api/streaming/phases/interface-phase.ts
+// src/features/ollama-api/streaming-logic/phases/interface-phase.ts
 import { chatFn } from '../infra/create-chat';
 import { UserRequest } from './types';
 

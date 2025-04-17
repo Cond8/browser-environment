@@ -27,10 +27,16 @@ interface WorkflowStepDisplayProps {
   step: WorkflowStep;
   className?: string;
   isInterface?: boolean;
+  isStreaming?: boolean;
 }
 
-export const WorkflowStepDisplay = ({ step, className, isInterface }: WorkflowStepDisplayProps) => {
-  const [expanded, setExpanded] = useState(false);
+export const WorkflowStepDisplay = ({
+  step,
+  className,
+  isInterface,
+  isStreaming = false,
+}: WorkflowStepDisplayProps) => {
+  const [expanded, setExpanded] = useState(isStreaming);
   const hasDetails =
     Object.keys(step).length > 2 ||
     !!(step.module || step.functionName || step.params || step.returns);

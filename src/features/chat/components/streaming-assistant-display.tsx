@@ -17,5 +17,5 @@ export const StreamingAssistantDisplay = () => {
     return null;
   }
 
-  return <AssistantDisplay assistantMessage={assistantMessage} />;
+  return <AssistantDisplay assistantMessage={assistantMessage} isStreaming={isStreaming} />;
 };

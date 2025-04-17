@@ -1,4 +1,4 @@
-// src/features/ollama-api/streaming/infra/retry-with-delay.ts
+// src/features/ollama-api/streaming-logic/infra/retry-with-delay.ts
 import { WorkflowChainError } from '../api/workflow-chain';
 import { WorkflowPhase } from '../phases/types';
 

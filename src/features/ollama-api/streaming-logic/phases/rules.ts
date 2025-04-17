@@ -1,4 +1,4 @@
-// src/features/ollama-api/streaming/phases/steps/common.ts
+// src/features/ollama-api/streaming-logic/phases/rules.ts
 export const JSON_RULES = `
 Rules:
 - Single valid JSON object
