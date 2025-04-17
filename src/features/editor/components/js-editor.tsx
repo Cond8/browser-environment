@@ -18,7 +18,9 @@ export const JsEditor = ({ jsonContent }: JsEditorProps) => {
   };
 
   useEffect(() => {
-    editorRef.current.setValue(jsonToJs(jsonContent));
+    if (editorRef.current) {
+      editorRef.current.setValue(jsonToJs(jsonContent));
+    }
   }, [jsonContent]);
 
   return (

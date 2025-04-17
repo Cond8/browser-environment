@@ -1,10 +1,20 @@
 // src/features/chat/models/assistant-message.ts
 import { processJsonChunk } from '@/features/editor/transpilers-json-source/my-json-parser';
 import { useRetryEventBusStore } from '@/features/ollama-api/stores/retry-event-bus-store';
+import {
+  JSON_PARSE_ERROR,
+  MAX_RETRY_ERROR,
+} from '@/features/ollama-api/streaming-logic/infra/retryable-async-generator';
 import { WorkflowPhase, WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
+import { createDefaultWorkflowStep } from '@/utils/workflow-helpers';
 import { nanoid } from 'nanoid';
 import { ToolCall } from 'ollama';
 import { AssistantMessage as BaseAssistantMessage } from './message';
+
+// Constants for content analysis thresholds
+const INTERFACE_PHASE_CONTENT_THRESHOLD = 100;
+const STEP_PHASE_CONTENT_THRESHOLD = 100;
+const SHORT_CONTENT_THRESHOLD = 20;
 
 export class AssistantMessage implements BaseAssistantMessage {
   id: string;
@@ -50,7 +60,14 @@ export class AssistantMessage implements BaseAssistantMessage {
   }
 
   get interface(): WorkflowStep {
-    return this.workflow[0];
+    const workflow = this.workflow;
+    return workflow.length > 0
+      ? workflow[0]
+      : createDefaultWorkflowStep(
+          'DefaultInterface',
+          'empty_interface',
+          'Process an empty interface',
+        );
   }
 
   get interfaceString(): string {
@@ -58,7 +75,15 @@ export class AssistantMessage implements BaseAssistantMessage {
   }
 
   getStep(num: number): WorkflowStep {
-    return this.workflow[num];
+    const workflow = this.workflow;
+    if (num < 0 || num >= workflow.length) {
+      return createDefaultWorkflowStep(
+        'MissingStep',
+        'empty_step',
+        `Placeholder for missing step ${num}`,
+      );
+    }
+    return workflow[num];
   }
 
   getStepString(num: number): string {
@@ -66,7 +91,8 @@ export class AssistantMessage implements BaseAssistantMessage {
   }
 
   get steps(): WorkflowStep[] {
-    return this.workflow.slice(1);
+    const workflow = this.workflow;
+    return workflow.length > 1 ? workflow.slice(1) : [];
   }
 }
 
@@ -102,26 +128,30 @@ export class StreamingAssistantMessage extends AssistantMessage {
           return true;
         }
       } catch (e) {
-        // continue
+        // continue - partial JSON in code blocks is fine during streaming
       }
     }
 
-    // Try parsing standalone JSON objects
+    // Try parsing standalone JSON objects - be more lenient when looking for JSON
     const potentialJson = content.match(/\{[\s\S]*?\}/g);
     if (potentialJson) {
       for (const match of potentialJson) {
-        if (match.match(/^{[^{}]*}$/)) {
-          try {
-            const parsed = JSON.parse(match);
-            if (parsed && typeof parsed === 'object') {
-              this.addJsonResponse(match);
-              return true;
-            }
-          } catch (e) {
-            // continue
+        try {
+          const parsed = JSON.parse(match);
+          if (parsed && typeof parsed === 'object') {
+            this.addJsonResponse(match);
+            return true;
           }
+        } catch (e) {
+          // continue - it's normal to have partial JSON during streaming
         }
       }
+    }
+
+    // Check if we have what looks like the start of JSON
+    if (content.includes('{') && content.includes('"')) {
+      // This is likely JSON being streamed - don't mark as error
+      return true;
     }
 
     return false;
@@ -134,9 +164,23 @@ export class StreamingAssistantMessage extends AssistantMessage {
     this.rawChunks = [this.currentContent];
     this.parseError = null;
 
+    // Don't attempt parsing if content is empty
+    if (!this.currentContent.trim()) {
+      return;
+    }
+
     try {
+      // During streaming, be more lenient with JSON parsing
       if (!this.tryParseJson(this.currentContent)) {
-        this.parseError = new Error('Failed to parse JSON content');
+        // Check if content seems to be partially streamed JSON
+        const hasJsonStart = this.currentContent.includes('{');
+        const hasJsonQuotes = this.currentContent.includes('"');
+        const isPartialJson = hasJsonStart && hasJsonQuotes;
+
+        // Only set an error if it doesn't look like partial JSON
+        if (!isPartialJson) {
+          this.parseError = new Error(JSON_PARSE_ERROR);
+        }
       }
     } catch (e) {
       this.parseError = e instanceof Error ? e : new Error('Unknown parsing error');
@@ -148,12 +192,56 @@ export class StreamingAssistantMessage extends AssistantMessage {
    * This is called from within the async generator
    */
   tryParseContent(phase: WorkflowPhase = 'step'): void {
-    if (this.parseError) {
+    // Skip parsing for alignment phase as it returns markdown
+    if (phase === 'alignment') {
+      return;
+    }
+
+    // During interface phase initial streaming, be more lenient
+    if (phase === 'interface' && this.currentContent.length < INTERFACE_PHASE_CONTENT_THRESHOLD) {
+      // For short content in the interface phase, only raise error on obvious problems
+      if (
+        this.parseError &&
+        !this.currentContent.includes('{') &&
+        this.currentContent.length > SHORT_CONTENT_THRESHOLD
+      ) {
+        throw this.parseError;
+      }
+      return;
+    }
+
+    // During step phase streaming, be more lenient until we have more content
+    if (phase === 'step') {
+      // Only throw if we have enough content AND it looks like invalid JSON
+      const hasJsonMarkers = this.currentContent.includes('{') && this.currentContent.includes('"');
+      const hasCompleteJsonObject = this.currentContent.includes('}');
+
+      // If we have what looks like a complete JSON object or enough content, then check for errors
+      if (
+        hasJsonMarkers &&
+        hasCompleteJsonObject &&
+        this.currentContent.length > STEP_PHASE_CONTENT_THRESHOLD
+      ) {
+        if (this.parseError) {
+          const canRetry = useRetryEventBusStore
+            .getState()
+            .triggerRetry(phase, this.parseError.message);
+          if (!canRetry) {
+            throw new Error(MAX_RETRY_ERROR);
+          }
+          throw this.parseError;
+        }
+      } else {
+        // Still streaming partial content, don't throw
+        return;
+      }
+    } else if (this.parseError) {
+      // For other phases, use the standard error handling
       const canRetry = useRetryEventBusStore
         .getState()
         .triggerRetry(phase, this.parseError.message);
       if (!canRetry) {
-        throw new Error('Max retry attempts reached for JSON parsing');
+        throw new Error(MAX_RETRY_ERROR);
       }
       throw this.parseError;
     }
@@ -174,13 +262,26 @@ export class StreamingAssistantMessage extends AssistantMessage {
 export function extractWorkflowStepsFromChunks(chunks: string[]): WorkflowStep[] {
   const steps: WorkflowStep[] = [];
 
+  // If we have no chunks, return an empty placeholder step
+  if (!chunks || chunks.length === 0 || chunks.every(chunk => !chunk?.trim())) {
+    return [createDefaultWorkflowStep('EmptyWorkflow', 'process_empty', 'Process empty input')];
+  }
+
   for (const chunk of chunks) {
+    // Skip empty chunks
+    if (!chunk?.trim()) continue;
+
     try {
       const step = processJsonChunk(chunk);
       if (step) steps.push(step);
     } catch (e) {
       console.warn('Skipping non-JSON chunk:', e);
     }
+  }
+
+  // If we processed all chunks but got no steps, provide a default
+  if (steps.length === 0) {
+    return [createDefaultWorkflowStep('DefaultWorkflow', 'process_data', 'Process input data')];
   }
 
   return steps;

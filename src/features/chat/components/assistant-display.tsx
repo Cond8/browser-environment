@@ -2,6 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { parseSlm } from '@/features/editor/transpilers-json-source/slm-parser';
 import { cn } from '@/lib/utils';
+import { EMPTY_PARSED_SLM } from '@/utils/workflow-helpers';
 import { Code, MessageSquare } from 'lucide-react';
 import { memo, useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -31,10 +32,14 @@ export const AssistantDisplay = ({
 
   const parsedSlm = useMemo(() => {
     try {
-      return parseSlm(assistantMessage.content ?? '');
+      // Only attempt parsing if content is non-empty
+      if (!assistantMessage.content?.trim()) {
+        return EMPTY_PARSED_SLM;
+      }
+      return parseSlm(assistantMessage.content);
     } catch (error: any) {
       console.error('Error parsing SLM content:', error.message);
-      return { markdown: {}, steps: [] };
+      return EMPTY_PARSED_SLM;
     }
   }, [assistantMessage.content]);
 

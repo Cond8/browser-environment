@@ -9,7 +9,7 @@ import { JsonEditor } from './json-editor';
 type EditorType = 'json' | 'js' | 'dsl';
 
 export const EditorWrapper = () => {
-  const [editorType, setEditorType] = useState<EditorType>('dsl');
+  const [editorType, setEditorType] = useState<EditorType>('json');
   const jsonContent = useEditorStore(state => state.content);
 
   const renderEditor = () => {

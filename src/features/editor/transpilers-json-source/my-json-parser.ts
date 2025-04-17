@@ -1,5 +1,6 @@
 // src/features/editor/transpilers-json-source/my-json-parser.ts
 import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
+import { createDefaultWorkflowStep } from '@/utils/workflow-helpers';
 import { jsonrepair } from 'jsonrepair';
 import { transformToInterface } from './my-json-fixer';
 
@@ -35,29 +36,45 @@ function isPureMarkdown(content: string): boolean {
 }
 
 export function processJsonChunk(chunk: string): WorkflowStep {
+  // Handle empty or invalid input more gracefully
   if (!chunk || typeof chunk !== 'string') {
-    throw new Error('Invalid chunk provided');
+    console.warn('Null or non-string chunk provided to processJsonChunk');
+    return createDefaultWorkflowStep('EmptyContent', 'process_empty', 'Process empty content');
+  }
+
+  // Trim the chunk for better handling
+  const trimmedChunk = chunk.trim();
+
+  if (!trimmedChunk) {
+    console.warn('Empty chunk provided to processJsonChunk');
+    return createDefaultWorkflowStep('EmptyContent', 'process_empty', 'Process empty content');
   }
 
   // Check if content is purely markdown without JSON
-  if (isPureMarkdown(chunk)) {
-    return {
-      name: 'MarkdownContent',
-      module: 'format',
-      functionName: 'process_markdown',
-      goal: 'Process markdown content',
-      params: {
-        content: { type: 'string', description: 'Markdown content to process' },
-      },
-      returns: {
-        output: { type: 'string', description: 'Processed markdown content' },
-      },
-    };
+  if (isPureMarkdown(trimmedChunk)) {
+    return createDefaultWorkflowStep(
+      'MarkdownContent',
+      'process_markdown',
+      'Process markdown content',
+    );
+  }
+
+  // Check if it's a partial JSON that doesn't have a closing brace
+  const hasOpenBrace = trimmedChunk.includes('{');
+  const hasCloseBrace = trimmedChunk.includes('}');
+
+  if (hasOpenBrace && !hasCloseBrace) {
+    console.warn('Partial JSON chunk detected (no closing brace)');
+    return createDefaultWorkflowStep(
+      'PartialJson',
+      'process_partial',
+      'Process partial JSON content',
+    );
   }
 
   // First try to extract JSON from markdown if present
-  const extractedJson = extractJsonFromMarkdown(chunk);
-  const contentToParse = extractedJson || chunk;
+  const extractedJson = extractJsonFromMarkdown(trimmedChunk);
+  const contentToParse = extractedJson || trimmedChunk;
 
   // Try direct parse
   let parsedContent = parseJsonWithErrorHandling(contentToParse);
@@ -92,16 +109,5 @@ export function processJsonChunk(chunk: string): WorkflowStep {
 
   // If all else fails, return a default workflow step
   console.warn('Failed to parse JSON content, returning default workflow step');
-  return {
-    name: 'DefaultWorkflow',
-    module: 'transform',
-    functionName: 'process_data',
-    goal: 'Process input data',
-    params: {
-      input: { type: 'string', description: 'Input data to process' },
-    },
-    returns: {
-      output: { type: 'string', description: 'Processed output data' },
-    },
-  };
+  return createDefaultWorkflowStep('DefaultWorkflow', 'process_data', 'Process input data');
 }

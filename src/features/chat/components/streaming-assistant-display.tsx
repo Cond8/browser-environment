@@ -33,7 +33,9 @@ export const StreamingAssistantDisplay = () => {
 
   // Create a new StreamingAssistantMessage on each render when the streamMessage changes
   const assistantMessage = useMemo(() => {
-    return StreamingAssistantMessage.fromContent(streamMessage || '');
+    // Ensure we have valid content before creating a message
+    const content = streamMessage?.trim() || '';
+    return StreamingAssistantMessage.fromContent(content);
   }, [streamMessage]);
 
   if (!isStreaming) {

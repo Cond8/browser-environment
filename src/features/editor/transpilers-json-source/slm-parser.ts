@@ -1,5 +1,6 @@
 // src/features/editor/transpilers-json-source/slm-parser.ts
 import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
+import { EMPTY_PARSED_SLM, ParsedSlm } from '@/utils/workflow-helpers';
 import { jsonrepair } from 'jsonrepair';
 
 interface SlmSection {
@@ -8,20 +9,10 @@ interface SlmSection {
   parsed?: WorkflowStep;
 }
 
-interface ParsedSlm {
-  markdown: {
-    goal?: string;
-    inputs?: string;
-    outputs?: string;
-    plan?: string[];
-  };
-  steps: WorkflowStep[];
-}
-
 export function parseSlm(content: string): ParsedSlm {
   if (!content || typeof content !== 'string') {
     console.warn('Invalid content provided to parseSlm');
-    return { markdown: {}, steps: [] };
+    return EMPTY_PARSED_SLM;
   }
 
   const sections: SlmSection[] = [];
@@ -137,13 +128,24 @@ export function parseSlm(content: string): ParsedSlm {
   // Handle any remaining content
   if (buffer && currentSection) {
     if (inJsonBlock) {
-      // Try to repair the JSON if it's incomplete
+      // Force repair for final incomplete JSON blocks
       try {
+        if (braceDepth > 0) {
+          // Add missing closing braces if needed
+          buffer += '}'.repeat(braceDepth);
+        }
+
         const repaired = jsonrepair(buffer);
         currentSection.content = repaired;
-        currentSection.parsed = JSON.parse(repaired) as WorkflowStep;
+        try {
+          currentSection.parsed = JSON.parse(repaired) as WorkflowStep;
+        } catch (parseError) {
+          // If parse still fails, just treat as markdown
+          currentSection.type = 'markdown';
+          currentSection.content = buffer.trim();
+        }
       } catch (e) {
-        // Instead of throwing, treat it as markdown
+        // If repair fails, treat it as markdown
         currentSection.type = 'markdown';
         currentSection.content = buffer.trim();
       }
@@ -160,19 +162,25 @@ export function parseSlm(content: string): ParsedSlm {
     try {
       // Try direct parsing first
       currentSection.content = buffer.trim();
-      currentSection.parsed = JSON.parse(buffer.trim()) as WorkflowStep;
-    } catch (e) {
-      // If direct parsing fails, try to repair the JSON
       try {
-        const repaired = jsonrepair(buffer.trim());
-        currentSection.content = repaired;
-        currentSection.parsed = JSON.parse(repaired) as WorkflowStep;
-      } catch (repairError) {
-        console.error('Failed to parse or repair JSON:', repairError);
-        // Instead of throwing, treat it as markdown
-        currentSection.type = 'markdown';
-        currentSection.content = buffer.trim();
+        currentSection.parsed = JSON.parse(buffer.trim()) as WorkflowStep;
+      } catch (directParseError) {
+        // If direct parsing fails, try to repair the JSON
+        try {
+          const repaired = jsonrepair(buffer.trim());
+          currentSection.content = repaired;
+          currentSection.parsed = JSON.parse(repaired) as WorkflowStep;
+        } catch (repairError) {
+          console.warn('Failed to parse or repair JSON:', repairError);
+          // Instead of throwing, treat it as markdown
+          currentSection.type = 'markdown';
+          currentSection.content = buffer.trim();
+        }
       }
+    } catch (error) {
+      console.warn('Error in finishJsonBlock:', error);
+      currentSection.type = 'markdown';
+      currentSection.content = buffer.trim();
     }
 
     sections.push(currentSection);
@@ -184,7 +192,12 @@ export function parseSlm(content: string): ParsedSlm {
 
   // Process sections into final structure
   const result: ParsedSlm = {
-    markdown: {},
+    markdown: {
+      goal: undefined,
+      inputs: undefined,
+      outputs: undefined,
+      plan: undefined,
+    },
     steps: [],
   };
 
