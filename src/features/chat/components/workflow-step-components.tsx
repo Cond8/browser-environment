@@ -132,6 +132,3 @@ export const WorkflowStepDisplay = ({ step, className, isInterface }: WorkflowSt
     </div>
   );
 };
-
-// For backward compatibility - aliasing PartialWorkflowStepDisplay to WorkflowStepDisplay
-export const PartialWorkflowStepDisplay = WorkflowStepDisplay;

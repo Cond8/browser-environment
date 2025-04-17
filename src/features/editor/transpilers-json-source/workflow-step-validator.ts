@@ -1,15 +1,6 @@
 // src/features/editor/transpilers-json-source/workflow-step-validator.ts
 import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import { z } from 'zod';
-export class WorkflowStepValidationError extends Error {
-  constructor(
-    message: string,
-    public readonly field?: string,
-  ) {
-    super(message);
-    this.name = 'WorkflowStepValidationError';
-  }
-}
 
 // Default values for required fields
 const DEFAULT_NAME = 'WorkflowStep';
@@ -25,7 +16,7 @@ const propertySchema = z.object({
 
 const propertiesSchema = z.record(propertySchema);
 
-const paramsSchema = z
+export const paramsSchema = z
   .union([
     propertiesSchema,
     z.object({
@@ -41,7 +32,7 @@ const paramsSchema = z
     return val as Record<string, { type: string; description: string }>;
   });
 
-const returnsSchema = z
+export const returnsSchema = z
   .union([
     propertiesSchema,
     z.object({
@@ -57,7 +48,7 @@ const returnsSchema = z
     return val as Record<string, { type: string; description: string }>;
   });
 
-const workflowStepSchema = z.object({
+export const workflowStepSchema = z.object({
   name: z.string().min(1).default(DEFAULT_NAME),
   module: z.string().min(1).default(DEFAULT_MODULE),
   functionName: z.string().min(1).default(DEFAULT_FUNCTION),
