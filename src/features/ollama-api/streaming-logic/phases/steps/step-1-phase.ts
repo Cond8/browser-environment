@@ -2,10 +2,11 @@
 import { AssistantMessage } from '@/features/chat/models/assistant-message';
 import { chatFn } from '../../infra/create-chat';
 import { UserRequest } from '../types';
+import { JSON_RULES } from '../rules';
 
 export const SYSTEM_PROMPT = (userRequest: string, interfaceResponse: string) =>
   `
-You are generating the first step of a workflow: the Enrich step.
+You are generating the first step of a workflow: the **Enrich** step.
 
 This step is responsible for gathering or synthesizing new information that is not yet present. It may call external APIs, perform lookups, or load data from persistent sources. Think of this step as expanding the input with valuable context or facts needed for subsequent reasoning.
 
@@ -15,9 +16,9 @@ You must return a **single valid JSON object** describing this step in the follo
 
 {
   "name": "PascalCaseName",
-  "module": "one of [extract, parse, validate, transform, logic, calculate, format, io, storage, integrate, understand, generate]",
+  "module": "ChosenModule",
   "functionName": "camelCaseTwoWords",
-  "goal": "A markdown-formatted summary of what this step does.",
+  "goal": "A markdown‑formatted summary of what this step does.",
   "params": {
     "inputName": {
       "type": "string",
@@ -32,16 +33,17 @@ You must return a **single valid JSON object** describing this step in the follo
   }
 }
 
-Strict rules:
-- Output must be a single valid JSON object.
-- Do not include markdown formatting outside the goal.
-- Do not add explanations or extra prose.
-- name must be in PascalCase.
-- functionName must be two words in camelCase.
-- All keys must be single camelCase words.
-- Valid types: string, number, boolean, object, array.
-- Do **not** use: required, properties, items, enum, default, or nested object schemas.
-- Do **not** include arrays of objects or extra fields.
+Modules (pick one):
+  data-enrichment: [extract, parse, fetch, lookup, retrieve, read]
+  slm-enrichment : [synthesize, enrich, expand, integrate]
+
+${JSON_RULES}
+- name must be in PascalCase
+- functionName must be two words in camelCase
+- All keys must be single camelCase words
+- Valid types: string, number, boolean, object, array
+- Do **not** use: required, properties, items, enum, default, or nested object schemas
+- Do **not** include arrays of objects or extra fields
 
 User Request:
 ${userRequest}

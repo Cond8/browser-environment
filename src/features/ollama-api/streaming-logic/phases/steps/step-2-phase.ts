@@ -3,33 +3,27 @@ import { AssistantMessage } from '@/features/chat/models/assistant-message';
 import { chatFn } from '../../infra/create-chat';
 import { UserRequest } from '../types';
 import { STEP_1_MESSAGES } from './step-1-phase';
+import { JSON_RULES } from '../rules';
 
 export const STEP_2_PROMPT = () =>
   `
 Generate the second step: **Logic**.
 
-This step should:
-- Take the enriched data from the previous step as input
-- Perform analysis, comparison, or filtering operations
-- Make a clear decision or derive a specific insight
-- Return a focused, processed result that's ready for formatting
+This step:
+- Uses enriched input from step 1
+- Performs reasoning: filtering, comparison, classification
+- Returns a decision, judgment, or narrowed result
 
-The output should be more focused than the input, unless the logic itself requires producing structured data.
+Modules (pick one):
+  logic: [filter, compare, match, decide, choose, group, map]
+  slm  : [infer, classify, analyze]
 
-Use the same JSON structure as the Enrich step, but focus on logical operations rather than data gathering.
-
-Respond with a single valid JSON object wrapped in markdown code fences.
+${JSON_RULES}
 `.trim();
 
 export const STEP_2_MESSAGES = (assistantMessage: AssistantMessage) => [
-  {
-    role: 'assistant',
-    content: assistantMessage.getStepString(1),
-  },
-  {
-    role: 'user',
-    content: STEP_2_PROMPT(),
-  },
+  { role: 'assistant', content: assistantMessage.getStepString(1) },
+  { role: 'user', content: STEP_2_PROMPT() },
 ];
 
 export async function* secondStepPhase(

@@ -1,6 +1,7 @@
 // src/features/ollama-api/streaming/phases/steps/step-3-phase.ts
 import { AssistantMessage } from '@/features/chat/models/assistant-message';
 import { chatFn } from '../../infra/create-chat';
+import { JSON_RULES } from '../rules';
 import { UserRequest } from '../types';
 import { STEP_1_MESSAGES } from './step-1-phase';
 import { STEP_2_MESSAGES } from './step-2-phase';
@@ -9,28 +10,20 @@ export const STEP_3_PROMPT = () =>
   `
 Generate the third step: **Format**.
 
-This step should:
-- Take the processed data from the Logic step
-- Structure it into a clear, human-readable format
-- Ensure all necessary information is present and properly organized
-- Prepare the final output for delivery or display
+This step:
+- Uses output from the Logic step
+- Structures it for delivery: clean, readable, well‑organized
+- No new logic or data
 
-The focus is purely on presentation - no new data gathering or logical operations should be introduced.
+Modules (pick one):
+  format: [format, stringify, summarize, render, compile, prepare]
 
-Use the same JSON structure as previous steps, but focus on formatting and presentation aspects.
-
-Respond with a single valid JSON object wrapped in markdown code fences.
+${JSON_RULES}
 `.trim();
 
 export const STEP_3_MESSAGES = (assistantMessage: AssistantMessage) => [
-  {
-    role: 'assistant',
-    content: assistantMessage.getStepString(2),
-  },
-  {
-    role: 'user',
-    content: STEP_3_PROMPT(),
-  },
+  { role: 'assistant', content: assistantMessage.getStepString(2) },
+  { role: 'user', content: STEP_3_PROMPT() },
 ];
 
 export async function* thirdStepPhase(
