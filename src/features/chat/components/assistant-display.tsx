@@ -4,13 +4,15 @@ import { cn } from '@/lib/utils';
 import { memo, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { AssistantMessage } from '../models/assistant-message';
+import { AssistantMessage, WorkflowStep } from '../models/assistant-message';
 import { markdownComponents } from './markdown-components';
 import { WorkflowStepDisplay } from './workflow-step-components';
 
 interface AssistantDisplayProps {
   assistantMessage: AssistantMessage;
 }
+
+type Chunk = string | WorkflowStep;
 
 const MarkdownRenderer = memo(({ content }: { content: string }) => (
   <div className={cn('prose dark:prose-invert max-w-none p-4')}>
@@ -21,47 +23,80 @@ const MarkdownRenderer = memo(({ content }: { content: string }) => (
 ));
 
 export const AssistantDisplay = ({ assistantMessage }: AssistantDisplayProps) => {
-  const { content } = assistantMessage;
+  const chunks = useMemo<Chunk[]>(
+    () => extractJsonChunks(assistantMessage.content ?? ''),
+    [assistantMessage.content],
+  );
 
-  console.log('content', assistantMessage);
-
-  if (!content) {
-    return null;
-  }
-
-  const jsonChunks = useMemo(() => {
-    const chunks: (string | any)[] = [];
-    content.split('```json').forEach(chunk => {
-      if (chunk.includes('```')) {
-        const [json, text] = chunk.split('```');
-        try {
-          chunks.push(processJsonChunk(json));
-        } catch (e) {
-          console.error('error', e);
-          chunks.push(json);
-        }
-        chunks.push(text);
-      } else {
-        chunks.push(chunk);
-      }
-    });
-    return chunks;
-  }, [content]);
+  console.log({ chunks });
 
   let interfaceShown = true;
 
   return (
     <div>
-      {jsonChunks.map((chunk, index) => {
+      {chunks.map((chunk, i) => {
         if (typeof chunk === 'string') {
-          return <MarkdownRenderer key={index} content={chunk} />;
+          return <MarkdownRenderer key={i} content={chunk} />;
         }
-        const In = <WorkflowStepDisplay key={index} step={chunk} isInterface={interfaceShown} />;
-        if (interfaceShown) {
-          interfaceShown = false;
-        }
-        return In;
+        const view = <WorkflowStepDisplay key={i} step={chunk} isInterface={interfaceShown} />;
+        interfaceShown = false;
+        return view;
       })}
     </div>
   );
 };
+
+// src/utils/extract-json-chunks.ts
+export function extractJsonChunks(content: string): Chunk[] {
+  const chunks: Chunk[] = [];
+  let buffer = '';
+  let insideJson = false;
+  let braceDepth = 0;
+
+  const flushBuffer = () => {
+    const trimmed = buffer.trim();
+    if (trimmed) {
+      try {
+        chunks.push(processJsonChunk(trimmed));
+      } catch {
+        chunks.push(trimmed); // fallback to raw markdown
+      }
+    }
+    buffer = '';
+  };
+
+  for (const line of content.split('\n')) {
+    if (line.trim().startsWith('```json')) {
+      insideJson = true;
+      braceDepth = 0;
+      continue;
+    }
+    if (line.trim().startsWith('```') && insideJson) {
+      insideJson = false;
+      flushBuffer();
+      continue;
+    }
+
+    if (insideJson) {
+      buffer += line + '\n';
+    } else if (line.trim().startsWith('{')) {
+      insideJson = true;
+      braceDepth = 1;
+      buffer = line + '\n';
+    } else if (insideJson) {
+      buffer += line + '\n';
+      if (line.includes('{')) braceDepth++;
+      if (line.includes('}')) braceDepth--;
+      if (braceDepth === 0) {
+        insideJson = false;
+        flushBuffer();
+      }
+    } else {
+      chunks.push(line + '\n');
+    }
+  }
+
+  flushBuffer(); // catch any leftovers
+
+  return chunks.filter(Boolean);
+}

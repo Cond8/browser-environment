@@ -3,7 +3,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 import { AssistantMessage } from '../../models/assistant-message';
-import { ThreadMessage, useChatStore } from '../../store/chat-store';
+import { ThreadMessage } from '../../models/message';
+import { useChatStore } from '../../store/chat-store';
 import { AssistantDisplay } from '../assistant-display';
 import { EmptyChatState } from '../empty/empty-chat-state';
 import { StreamingAssistantDisplay } from '../streaming-assistant-display';
@@ -31,12 +32,11 @@ export const ChatContent = () => {
   return (
     <ScrollArea className="flex-1">
       <div className="flex flex-col max-w-2xl mx-auto w-full break-words px-6 py-4 space-y-4">
-        {currentThread.messages.map((message: ThreadMessage, idx: number) => {
-          // Determine message error
-
+        {currentThread.messages.map((message: ThreadMessage) => {
+          const key = `${message.role}-${message.timestamp}`;
           return (
             <div
-              key={idx}
+              key={key}
               className={cn(
                 'w-full border-b',
                 message.role === 'user' ? 'bg-card' : 'bg-background',
@@ -58,6 +58,5 @@ export const ChatContent = () => {
 };
 
 const isAssistantMessage = (message: ThreadMessage): message is AssistantMessage => {
-  console.log('isAssistantMessage', message);
   return message.role === 'assistant';
 };

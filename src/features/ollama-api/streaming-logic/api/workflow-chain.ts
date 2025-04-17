@@ -1,4 +1,5 @@
 import { AssistantMessage } from '@/features/chat/models/assistant-message';
+import { UserMessage } from '@/features/chat/models/message';
 import { useChatStore } from '../../../chat/store/chat-store';
 import { alignmentPhase } from '../phases/alignment-phase';
 import { interfacePhase } from '../phases/interface-phase';
@@ -43,7 +44,8 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
     });
   }
 
-  const userRequest = messages[0].content;
+  const userMessage = messages[0] as UserMessage;
+  const userRequest = userMessage.content;
   const userReq: UserRequest = {
     userRequest: typeof userRequest === 'string' ? userRequest : JSON.stringify(userRequest),
     alignmentResponse: '',

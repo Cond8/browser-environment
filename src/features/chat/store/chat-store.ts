@@ -1,12 +1,9 @@
 // src/features/chat/store/chat-store.ts
 import { nanoid } from 'nanoid';
-import { Message } from 'ollama/browser';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { AssistantMessage } from '../models/assistant-message';
-
-export type ThreadMessage = Message | AssistantMessage;
+import { AssistantMessage, ThreadMessage, UserMessage } from '../models/message';
 
 export interface Thread {
   id: string;
@@ -22,7 +19,7 @@ export interface ChatStore {
 
   getCurrentThread: () => Thread | null;
   setCurrentThread: (threadId: Thread['id'] | null) => void;
-  createThread: (userMessage: Message) => void;
+  createThread: (userMessage: UserMessage) => void;
   resetThread: () => void;
 
   // Message management
@@ -56,7 +53,7 @@ export const useChatStore = create<ChatStore>()(
         return currentId ? get().threads[currentId] : null;
       },
 
-      createThread: (userMessage: Message) => {
+      createThread: (userMessage: UserMessage) => {
         const id = nanoid();
         set(state => {
           state.threads[id] = {
@@ -67,6 +64,7 @@ export const useChatStore = create<ChatStore>()(
             timestamp: Date.now(),
           };
           state.currentThreadId = id;
+          console.log('Created thread:', state.threads[id]);
         });
       },
 
@@ -79,14 +77,17 @@ export const useChatStore = create<ChatStore>()(
       addThreadMessage: (message: ThreadMessage): void => {
         set(state => {
           state.threads[state.currentThreadId!].messages.push(message);
+          console.log('Added message to thread:', message);
         });
       },
 
       // Legacy methods with backward compatibility
       addUserMessage: (message: string): void => {
-        const userMessage: Message = {
+        const userMessage: UserMessage = {
+          id: nanoid(),
           role: 'user',
           content: message,
+          timestamp: Date.now(),
         };
 
         if (!get().currentThreadId) {

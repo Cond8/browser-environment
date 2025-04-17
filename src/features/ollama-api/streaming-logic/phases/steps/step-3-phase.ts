@@ -10,8 +10,7 @@ export const STEP_3_PROMPT = () =>
 Generate the third step: format.
 
 Use the same structure as before. This step prepares the final output.
-Reminder to put code fences around json blocks.
-Output a single valid JSON object only.
+Reminder to put code fences around the JSON object.
 `.trim();
 
 export const STEP_3_MESSAGES = (assistantMessage: AssistantMessage) => [

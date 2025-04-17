@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/features/chat/store/chat-store';
-import { useStreamSourceStore } from '@/features/ollama-api/streaming/infra/stream-source-store';
+import { useStreamSourceStore } from '@/features/ollama-api/streaming-logic/infra/stream-source-store';
 import { Send, StopCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAbortEventBusStore } from '../../store/abort-eventbus-store';
@@ -78,7 +78,6 @@ export function UserInput() {
   };
 
   const handleButtonSubmit = () => {
-    console.log('[UserInput] Button submit triggered');
     handleSubmit({ preventDefault: () => {} } as React.FormEvent);
   };
 
@@ -95,7 +94,6 @@ export function UserInput() {
   };
 
   const handleStop = () => {
-    console.log('[UserInput] Stop button clicked');
     triggerAbort();
     stopLoading();
   };

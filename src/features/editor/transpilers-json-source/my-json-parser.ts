@@ -11,27 +11,69 @@ function parseJsonWithErrorHandling(jsonStr: string): WorkflowStep | null {
   }
 }
 
-export function processJsonChunk(chunk: string): WorkflowStep {
+function extractJsonFromMarkdown(content: string): string | null {
+  // Look for JSON code blocks
+  const jsonBlockMatch = content.match(/```json\n([\s\S]*?)\n```/);
+  if (jsonBlockMatch) {
+    return jsonBlockMatch[1].trim();
+  }
 
-  // Try a simplified approach combining all tiers
-  let parsedContent = null;
+  // Look for standalone JSON objects
+  const jsonMatch = content.match(/\{[\s\S]*?\}/);
+  if (jsonMatch) {
+    return jsonMatch[0].trim();
+  }
+
+  return null;
+}
+
+function isPureMarkdown(content: string): boolean {
+  // Check if content contains markdown elements but no JSON
+  const hasMarkdown = /^#|^-|^\*|^```|^>/.test(content);
+  const hasJson = /```json|{[\s\S]*?}/.test(content);
+  return hasMarkdown && !hasJson;
+}
+
+export function processJsonChunk(chunk: string): WorkflowStep {
+  // Check if content is purely markdown without JSON
+  if (isPureMarkdown(chunk)) {
+    throw new Error('Content is purely markdown without any JSON content');
+  }
+
+  // First try to extract JSON from markdown if present
+  const extractedJson = extractJsonFromMarkdown(chunk);
+  const contentToParse = extractedJson || chunk;
 
   // Try direct parse
-  parsedContent = parseJsonWithErrorHandling(chunk);
+  let parsedContent = parseJsonWithErrorHandling(contentToParse);
 
-  // Try with repair if needed
-  if (!parsedContent) {
-    const repairedJson = jsonrepair(chunk);
-    parsedContent = parseJsonWithErrorHandling(repairedJson);
+
+  if (parsedContent) {
+    return parsedContent;
   }
 
-  // Try transformation if needed
-  if (!parsedContent) {
-    const transformed = transformToInterface(chunk);
-    parsedContent = parseJsonWithErrorHandling(transformed);
+  // Try repair
+  const repairedJson = jsonrepair(contentToParse);
+
+  // Try parse repaired JSON
+  parsedContent = parseJsonWithErrorHandling(repairedJson);
+
+  if (parsedContent) {
+    return parsedContent;
   }
 
-  // If we successfully parsed JSON content, return it as a JSON chunk
+  // Try transformation
+  const transformed = transformToInterface(contentToParse);
+  parsedContent = parseJsonWithErrorHandling(transformed);
+
+  if (parsedContent) {
+    return parsedContent;
+  }
+
+  // Try repair and transformation
+  const transformedRepaired = transformToInterface(repairedJson);
+  parsedContent = parseJsonWithErrorHandling(transformedRepaired);
+
   if (parsedContent) {
     return parsedContent;
   }

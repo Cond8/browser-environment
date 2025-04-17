@@ -1,5 +1,5 @@
 // src/features/chat/store/abort-eventbus-store.ts
-import { useStreamSourceStore } from '@/features/ollama-api/streaming/infra/stream-source-store';
+import { useStreamSourceStore } from '@/features/ollama-api/streaming-logic/infra/stream-source-store';
 import { create } from 'zustand';
 
 type AbortCallback = () => void;

@@ -15,7 +15,6 @@ export const EditorWrapper = () => {
   const renderEditor = () => {
     switch (editorType) {
       case 'dsl':
-        console.log('[EditorWrapper] DSL content:', jsonContent);
         return <DslEditor jsonContent={jsonContent} />;
       case 'json':
         return <JsonEditor jsonContent={jsonContent} />;

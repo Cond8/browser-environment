@@ -1,5 +1,5 @@
 // src/features/chat/components/streaming-assistant-display.tsx
-import { useStreamSourceStore } from '@/features/ollama-api/streaming/infra/stream-source-store';
+import { useStreamSourceStore } from '@/features/ollama-api/streaming-logic/infra/stream-source-store';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
