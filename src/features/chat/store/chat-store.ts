@@ -3,7 +3,8 @@ import { nanoid } from 'nanoid';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { AssistantMessage, ThreadMessage, UserMessage } from '../models/message';
+import { AssistantMessage as AssistantMessageClass } from '../models/assistant-message';
+import { ThreadMessage, UserMessage } from '../models/message';
 
 export interface Thread {
   id: string;
@@ -25,7 +26,7 @@ export interface ChatStore {
   // Message management
   addThreadMessage: (message: ThreadMessage) => void;
   addUserMessage: (message: string) => void;
-  addAssistantMessage: (message: AssistantMessage) => void;
+  addAssistantMessage: (message: AssistantMessageClass) => void;
 
   getAllMessages: () => ThreadMessage[];
   getMessagesUntil: (message: ThreadMessage) => ThreadMessage[];
@@ -97,7 +98,7 @@ export const useChatStore = create<ChatStore>()(
         }
       },
 
-      addAssistantMessage: (message: AssistantMessage): void => {
+      addAssistantMessage: (message: AssistantMessageClass): void => {
         get().addThreadMessage(message);
       },
 
@@ -147,7 +148,35 @@ export const useChatStore = create<ChatStore>()(
       name: 'chat-storage',
       partialize: state => ({
         threads: state.threads,
+        currentThreadId: state.currentThreadId,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state?.threads) {
+          const newThreads: Record<string, Thread> = {};
+          Object.entries(state.threads).forEach(([threadId, thread]) => {
+            const newMessages = thread.messages.map(msg => {
+              if ((msg as any).role === 'assistant') {
+                const plain: any = msg;
+                const reconstructed = new AssistantMessageClass();
+                reconstructed.id = plain.id;
+                reconstructed.timestamp = plain.timestamp;
+                reconstructed.tool_calls = plain.tool_calls;
+                reconstructed.images = plain.images;
+                reconstructed.error = plain.error;
+                reconstructed.addAlignmentResponse(plain._alignmentResponse || '');
+                reconstructed.addInterfaceResponse(plain._interfaceResponse || '');
+                reconstructed.addStepEnrichResponse(plain._stepEnrichResponse || '');
+                reconstructed.addStepLogicResponse(plain._stepLogicResponse || '');
+                reconstructed.addStepFormatResponse(plain._stepFormatResponse || '');
+                return reconstructed;
+              }
+              return msg as ThreadMessage;
+            });
+            newThreads[threadId] = { ...thread, messages: newMessages };
+          });
+          state.threads = newThreads;
+        }
+      },
     },
   ),
 );

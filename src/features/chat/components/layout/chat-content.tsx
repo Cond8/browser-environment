@@ -9,10 +9,12 @@ import { AssistantDisplay } from '../assistant-display';
 import { EmptyChatState } from '../empty/empty-chat-state';
 import { StreamingAssistantDisplay } from '../streaming-assistant-display';
 import { UserDisplay } from '../user-display';
+import { useStreamSourceStore } from '@/features/ollama-api/streaming-logic/infra/stream-source-store';
 
 export const ChatContent = () => {
   const currentThread = useChatStore().getCurrentThread();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const streamMessage = useStreamSourceStore(state => state.message);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -23,7 +25,7 @@ export const ChatContent = () => {
       scrollToBottom();
     }, 100);
     return () => clearTimeout(timer);
-  }, [currentThread?.messages.length]);
+  }, [currentThread?.messages.length, streamMessage]);
 
   if (!currentThread) {
     return <EmptyChatState />;

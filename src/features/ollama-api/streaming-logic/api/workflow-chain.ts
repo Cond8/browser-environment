@@ -51,6 +51,9 @@ export class WorkflowValidationError extends WorkflowChainError {
 }
 
 export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantMessage, unknown> {
+  // Reset the editor state at the start of the workflow
+  useEditorStore.getState().setFilePath(null);
+
   const chatStore = useChatStore.getState();
   const messages = chatStore.getAllMessages();
 
@@ -118,7 +121,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
     /* ===========================
      * ===== ENRICH STEP ========
      * =========================== */
-    console.log('firstStepPhase (enrich)');
+    console.log('firstStepPhase (enrich)'); 
     const enrichStep = yield* retryableAsyncGenerator(
       () => firstStepPhase(userReq, assistantMessage),
       retryOptions,
