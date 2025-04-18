@@ -34,6 +34,7 @@ export const useEditorStore = create<EditorState>()(
           if (filepath === null) {
             state.filePath = null;
             state.isLocalOnly = true;
+            state.content = [];
           } else {
             state.filePath = filepath;
             state.isLocalOnly = false;

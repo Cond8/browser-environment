@@ -15,18 +15,26 @@ export type RetryableGeneratorOptions = {
 
 export async function* retryableAsyncGenerator(
   generatorFactory: () => AsyncGenerator<string, string, unknown>,
-  options: RetryableGeneratorOptions,
+  options: RetryableGeneratorOptions & { maxRetries?: number },
 ): AsyncGenerator<string, string, unknown> {
+  /**
+   * Enhanced retry logic:
+   * - If shouldRecover returns true, fallback is used and generator ends.
+   * - If shouldRecover returns false, automatically retry up to maxRetries (default 3).
+   * - If max retries are reached, throw the error.
+   */
   const {
     shouldRecover = () => false,
     fallbackValue = (acc: string) => acc,
     registerRetryTrigger,
     maxChunkSize = 10_000,
+    maxRetries = 3,
   } = options;
 
   let result: IteratorResult<string, string> | null = null;
   let lastError: unknown = null;
   let accumulatedChunks = '';
+  let retryCount = 0;
 
   const queue: (() => void)[] = [];
   const waitForRetry = () => new Promise<void>(resolve => queue.push(resolve));
@@ -65,11 +73,19 @@ export async function* retryableAsyncGenerator(
         if (shouldRecover(err)) {
           result = { done: true, value: fallbackValue(accumulatedChunks) };
         } else {
+          retryCount++;
+          if (retryCount > maxRetries) {
+            throw err;
+          }
+          // Automatically trigger retry
           lastError = err;
+          // Optionally log retry attempt
+          console.warn(`retryableAsyncGenerator: Retry attempt ${retryCount} due to error:`, err);
+          // Wait for retry
           await waitForRetry();
         }
       }
-    } while (lastError != null);
+    } while (lastError != null && retryCount <= maxRetries);
   } finally {
     unregister();
   }
