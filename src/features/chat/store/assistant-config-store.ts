@@ -33,8 +33,8 @@ export const useAssistantConfigStore = create<AssistantState>()(
   persist(
     immer(set => ({
       parameters: { ...defaultParameters },
-      selectedModel: 'phi4-mini:latest',
-      ollamaUrl: 'http://localhost:11434',
+      selectedModel: 'gpt-4-nano',
+      ollamaUrl: 'https://cond8.dev/api/openai/proxy',
 
       setUrl: url => {
         set(state => {

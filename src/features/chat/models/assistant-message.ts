@@ -20,7 +20,6 @@ export class AssistantMessage implements BaseAssistantMessage {
   _stepEnrichResponse: string = '';
   _stepAnalyzeResponse: string = '';
   _stepDecideResponse: string = '';
-  _stepLogicResponse: string = '';
   _stepFormatResponse: string = '';
 
   constructor() {
@@ -49,10 +48,6 @@ export class AssistantMessage implements BaseAssistantMessage {
 
   addStepDecideResponse(response: string) {
     this._stepDecideResponse = response;
-  }
-
-  addStepLogicResponse(response: string) {
-    this._stepLogicResponse = response;
   }
 
   addStepFormatResponse(response: string) {
@@ -85,8 +80,6 @@ export class AssistantMessage implements BaseAssistantMessage {
     this._stepAnalyzeResponse = chunks[3];
     this._stepDecideResponse = chunks[4];
     this._stepFormatResponse = chunks[5];
-    this._stepLogicResponse = chunks[3];
-    this._stepFormatResponse = chunks[4];
   }
 
   get workflow(): WorkflowStep[] {

@@ -2,13 +2,43 @@
 import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import { jsonToDsl } from './json-to-dsl';
 
-export const jsonToJs = (json: WorkflowStep[]): string => {
-  if (!json || json.length === 0) {
+function toCamelCase(moduleName: string): string {
+  return moduleName.replace(/[-_](\w)/g, (_, c) => c.toUpperCase());
+}
+
+function capitalizeFirst(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/**
+ * Sanitize a string to a valid JS identifier by stripping invalid chars and ensuring it doesn't start with a digit.
+ */
+function sanitizeIdentifier(name: string): string {
+  let id = name.replace(/[^A-Za-z0-9_$]/g, '');
+  if (/^[0-9]/.test(id)) id = '_' + id;
+  return id;
+}
+
+/**
+ * Transpile an array of WorkflowStep definitions into a formatted TypeScript string.
+ * @param json Array of WorkflowStep objects defining the workflow.
+ * @returns A formatted TypeScript implementation of the workflow.
+ */
+export function jsonToJs(json: WorkflowStep[]): string {
+  if (!Array.isArray(json)) {
+    throw new TypeError('jsonToJs expects an array of WorkflowStep');
+  }
+  if (json.length === 0) {
     return '';
   }
 
   // Get the main workflow step (first one typically)
   const mainStep = json[0];
+  // Derive sanitized, camelCase identifiers for workflow
+  const rawName = mainStep.name;
+  const safeName = sanitizeIdentifier(rawName);
+  const workflowProp = toCamelCase(safeName);
+  const workflowVar = `${workflowProp}Workflow`;
 
   // Start building the JS output
   let output = `export { CoreRedprint, StrictKVStoreService, createDirector, createRole } from '@cond8/core';\n\n`;
@@ -17,9 +47,9 @@ export const jsonToJs = (json: WorkflowStep[]): string => {
   output += jsonToDsl(mainStep) + '\n';
 
   // Create the main workflow director
-  output += `export const ${mainStep.name}Workflow = createDirector(
-  '${mainStep.name}',
-  '${mainStep.goal}',
+  output += `export const ${workflowVar} = createDirector(
+  ${JSON.stringify(rawName)},
+  ${JSON.stringify(mainStep.goal)},
 ).init(input => ({
   conduit: new AppConduit(input),
   recorder: null,
@@ -37,7 +67,7 @@ export const jsonToJs = (json: WorkflowStep[]): string => {
   output += `  return c8;\n});\n\n`;
 
   // Add workflow steps
-  output += `// Workflow Steps\n${mainStep.name}Workflow(\n`;
+  output += `// Workflow Steps\n${workflowVar}(\n`;
 
   // Process each step (starting from the second step if it exists)
   const stepsToProcess = json.slice(1);
@@ -63,6 +93,9 @@ export const jsonToJs = (json: WorkflowStep[]): string => {
 
     // Add service method call
     if (step.module && step.functionName) {
+      // Derive service property name
+      const safeModule = sanitizeIdentifier(step.module);
+      const serviceProp = toCamelCase(safeModule);
       output += `\n    const { `;
 
       // Add return properties
@@ -70,7 +103,7 @@ export const jsonToJs = (json: WorkflowStep[]): string => {
         output += Object.keys(step.returns).join(', ');
       }
 
-      output += ` } =\n      c8.${step.module}.${step.functionName}(`;
+      output += ` } =\n      c8.${serviceProp}.${step.functionName}(`;
 
       // Add parameters to method call
       if (step.params) {
@@ -117,11 +150,11 @@ export const jsonToJs = (json: WorkflowStep[]): string => {
   if (finalReturns) {
     const finalReturnKeys = Object.keys(finalReturns);
     if (finalReturnKeys.length > 0) {
-      output += `export default ${mainStep.name}Workflow.fin(c8 => c8.var('${finalReturnKeys[0]}'));\n\n`;
+      output += `export default ${workflowVar}.fin(c8 => c8.var(${JSON.stringify(finalReturnKeys[0])}));\n\n`;
     }
   }
 
-  // Add service classes
+  // No Prettier config loading in browser/standalone. All options must be provided inline.
   const services = new Set<string>();
   json.forEach(step => {
     if (step.module) {
@@ -131,7 +164,10 @@ export const jsonToJs = (json: WorkflowStep[]): string => {
 
   // Create service classes
   services.forEach(service => {
-    const capitalizedService = service.charAt(0).toUpperCase() + service.slice(1);
+    // Sanitize and camelCase module names
+    const safeModule = sanitizeIdentifier(service);
+    const serviceProp = toCamelCase(safeModule);
+    const capitalizedService = capitalizeFirst(serviceProp);
     output += `class ${capitalizedService}Service extends CoreBlueprint {
   constructor(key) {
     super(key);
@@ -195,9 +231,7 @@ export const jsonToJs = (json: WorkflowStep[]): string => {
         output += 'result';
       }
 
-      output += ` };
-  }
-\n`;
+      output += ` };\n  }\n\n`;
     });
 
     output += `}\n\n`;
@@ -213,11 +247,13 @@ export const jsonToJs = (json: WorkflowStep[]): string => {
 
   // Add service instances
   services.forEach(service => {
-    const capitalizedService = service.charAt(0).toUpperCase() + service.slice(1);
-    output += `  ${service} = new ${capitalizedService}Service('${service}');\n`;
+    // Sanitize and camelCase module names
+    const safeModule = sanitizeIdentifier(service);
+    const serviceProp = toCamelCase(safeModule);
+    output += `  ${serviceProp} = new ${capitalizeFirst(serviceProp)}Service('${service}');\n`;
   });
 
   output += `}\n`;
 
   return output;
-};
+}

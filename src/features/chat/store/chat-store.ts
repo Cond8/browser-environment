@@ -166,7 +166,6 @@ export const useChatStore = create<ChatStore>()(
                 reconstructed.addAlignmentResponse(plain._alignmentResponse || '');
                 reconstructed.addInterfaceResponse(plain._interfaceResponse || '');
                 reconstructed.addStepEnrichResponse(plain._stepEnrichResponse || '');
-                reconstructed.addStepLogicResponse(plain._stepLogicResponse || '');
                 reconstructed.addStepFormatResponse(plain._stepFormatResponse || '');
                 return reconstructed;
               }
