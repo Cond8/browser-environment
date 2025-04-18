@@ -6,20 +6,22 @@ import { processJsonChunk } from '@/features/editor/transpilers-json-source/my-j
 import { validateWorkflowStep } from '@/features/editor/transpilers-json-source/workflow-step-validator';
 import { useChatStore } from '../../../chat/store/chat-store';
 import { useVFSStore } from '../../../vfs/store/vfs-store';
+import { chatFn } from '../infra/create-chat';
 import {
   retryableAsyncGenerator,
   RetryableGeneratorOptions,
 } from '../infra/retryable-async-generator';
-import { alignmentPhase } from '../phases/alignment-phase';
-import { interfacePhase } from '../phases/interface-phase';
-import { generateEnrichFunction } from '../phases/js/step-1-code';
-import { generateAnalyzeFunction } from '../phases/js/step-2-code';
-import { generateDecideFunction } from '../phases/js/step-3-code';
-import { generateFormatFunction } from '../phases/js/step-4-code';
-import { firstStepPhase } from '../phases/steps/step-1-phase';
-import { secondStepPhase } from '../phases/steps/step-2-phase';
-import { thirdStepPhase } from '../phases/steps/step-3-phase';
-import { fourthStepPhase } from '../phases/steps/step-4-phase';
+import { ALIGNMENT_MESSAGES } from '../phases/alignment-phase';
+import { INTERFACE_MESSAGES } from '../phases/interface-phase';
+import { STEP_1_CODE_MESSAGES } from '../phases/js/step-1-code';
+import { STEP_2_CODE_MESSAGES } from '../phases/js/step-2-code';
+import { STEP_3_CODE_MESSAGES } from '../phases/js/step-3-code';
+import { STEP_4_CODE_MESSAGES } from '../phases/js/step-4-code';
+import { generateCodeFunction } from '../phases/js/wrapper';
+import { STEP_1_PHASE_MESSAGES } from '../phases/steps/step-1-phase';
+import { STEP_2_PHASE_MESSAGES } from '../phases/steps/step-2-phase';
+import { STEP_3_PHASE_MESSAGES } from '../phases/steps/step-3-phase';
+import { STEP_4_PHASE_MESSAGES } from '../phases/steps/step-4-phase';
 import { UserRequest, WorkflowPhase, WorkflowStep } from '../phases/types';
 
 export class WorkflowChainError extends Error {
@@ -93,7 +95,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
     maxChunkSize: 10_000,
   };
 
-  function pushStep(step: string): WorkflowStep {
+  function pushStepToEditor(step: string): WorkflowStep {
     const editorStore = useEditorStore.getState();
     const validated = validateWorkflowStep(processJsonChunk(step));
     const currentContent = editorStore.content || [];
@@ -108,99 +110,113 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
   }
 
   try {
-    /* ============================
-     * ===== ALIGNMENT PHASE =====
+    /**============================
+     * ===== ALIGNMENT PHASE ======
      * ============================ */
     console.log('alignmentPhase');
     const alignmentResult = yield* retryableAsyncGenerator(
-      () => alignmentPhase(userReq),
+      () => chatFn({ messages: ALIGNMENT_MESSAGES(userReq) }),
       retryOptions,
     );
     console.log('alignmentResult', { alignmentResult });
     assistantMessage.addAlignmentResponse(alignmentResult);
 
-    /* =============================
-     * ===== INTERFACE PHASE ======
+    /**=============================
+     * ===== INTERFACE PHASE =======
      * ============================= */
     console.log('interfacePhase');
     const interfaceResult = yield* retryableAsyncGenerator(
-      () => interfacePhase(userReq, assistantMessage),
+      () => chatFn({ messages: INTERFACE_MESSAGES(userReq, assistantMessage) }),
       retryOptions,
     );
     assistantMessage.addInterfaceResponse(interfaceResult);
-    pushStep(interfaceResult);
+    pushStepToEditor(interfaceResult);
 
-    /* ===========================
-     * ===== ENRICH STEP ========
-     * =========================== */
-    console.log('firstStepPhase (enrich)');
-    const enrichStep = yield* retryableAsyncGenerator(
-      () => firstStepPhase(userReq, assistantMessage),
-      retryOptions,
-    );
-    assistantMessage.addStepEnrichResponse(enrichStep);
-    const validatedEnrich = pushStep(enrichStep);
-
-    const enrichCode = yield* retryableAsyncGenerator(
-      () => generateEnrichFunction(validatedEnrich),
-      retryOptions,
-    );
-    assistantMessage.addStepEnrichCode(enrichCode);
-    pushStep(enrichCode);
-
-    /* ===========================
-     * ===== ANALYZE STEP ========
-     * =========================== */
-    console.log('secondStepPhase (analyze)');
-    const analyzeStep = yield* retryableAsyncGenerator(
-      () => secondStepPhase(userReq, assistantMessage),
-      retryOptions,
-    );
-    assistantMessage.addStepAnalyzeResponse?.(analyzeStep);
-    const validatedAnalyze = pushStep(analyzeStep);
-
-    const analyzeCode = yield* retryableAsyncGenerator(
-      () => generateAnalyzeFunction(validatedAnalyze, assistantMessage),
-      retryOptions,
-    );
-    assistantMessage.addStepAnalyzeCode(analyzeCode);
-    pushStepToVfs(validatedAnalyze, analyzeCode);
-
-    /* ===========================
-     * ===== DECIDE STEP ========
-     * =========================== */
-    console.log('thirdStepPhase (decide)');
-    const decideStep = yield* retryableAsyncGenerator(
-      () => thirdStepPhase(userReq, assistantMessage),
-      retryOptions,
-    );
-    assistantMessage.addStepDecideResponse?.(decideStep);
-    const validatedDecide = pushStep(decideStep);
-
-    const decideCode = yield* retryableAsyncGenerator(
-      () => generateDecideFunction(validatedDecide, assistantMessage),
-      retryOptions,
-    );
-    assistantMessage.addStepDecideCode(decideCode);
-    pushStepToVfs(validatedDecide, decideCode);
-
-    /* ============================
-     * ===== FORMAT STEP =========
+    /**============================
+     * ===== LOGIC STEPS LOOP =====
      * ============================ */
-    console.log('fourthStepPhase (format)');
-    const formatStep = yield* retryableAsyncGenerator(
-      () => fourthStepPhase(userReq, assistantMessage),
-      retryOptions,
-    );
-    assistantMessage.addStepFormatResponse(formatStep);
-    const validatedFormat = pushStep(formatStep);
 
-    const formatCode = yield* retryableAsyncGenerator(
-      () => generateFormatFunction(validatedFormat, assistantMessage),
-      retryOptions,
-    );
-    assistantMessage.addStepFormatCode(formatCode);
-    pushStepToVfs(validatedFormat, formatCode);
+    const stepDefs = [
+      {
+        name: 'enrich',
+        phaseMessages: () => STEP_1_PHASE_MESSAGES(userReq, assistantMessage),
+        codeMessages: () => STEP_1_CODE_MESSAGES(assistantMessage.getStep(1)),
+        addResponse: (dsl: string) => assistantMessage.addStepEnrichResponse(dsl),
+        addCode: (code: string) => assistantMessage.addStepEnrichCode(code),
+      },
+      {
+        name: 'analyze',
+        phaseMessages: () => [
+          ...STEP_1_PHASE_MESSAGES(userReq, assistantMessage),
+          ...STEP_2_PHASE_MESSAGES(assistantMessage),
+        ],
+        codeMessages: () => [
+          ...STEP_1_CODE_MESSAGES(assistantMessage.getStep(1)),
+          ...STEP_2_CODE_MESSAGES(assistantMessage),
+        ],
+        addResponse: (dsl: string) => assistantMessage.addStepAnalyzeResponse(dsl),
+        addCode: (code: string) => assistantMessage.addStepAnalyzeCode(code),
+      },
+      {
+        name: 'decide',
+        phaseMessages: () => [
+          ...STEP_1_PHASE_MESSAGES(userReq, assistantMessage),
+          ...STEP_2_PHASE_MESSAGES(assistantMessage),
+          ...STEP_3_PHASE_MESSAGES(assistantMessage),
+        ],
+        codeMessages: () => [
+          ...STEP_1_CODE_MESSAGES(assistantMessage.getStep(1)),
+          ...STEP_2_CODE_MESSAGES(assistantMessage),
+          ...STEP_3_CODE_MESSAGES(assistantMessage),
+        ],
+        addResponse: (dsl: string) => assistantMessage.addStepDecideResponse?.(dsl),
+        addCode: (code: string) => assistantMessage.addStepDecideCode(code),
+      },
+      {
+        name: 'format',
+        phaseMessages: () => [
+          ...STEP_1_PHASE_MESSAGES(userReq, assistantMessage),
+          ...STEP_2_PHASE_MESSAGES(assistantMessage),
+          ...STEP_3_PHASE_MESSAGES(assistantMessage),
+          ...STEP_4_PHASE_MESSAGES(assistantMessage),
+        ],
+        codeMessages: () => [
+          ...STEP_1_CODE_MESSAGES(assistantMessage.getStep(1)),
+          ...STEP_2_CODE_MESSAGES(assistantMessage),
+          ...STEP_3_CODE_MESSAGES(assistantMessage),
+          ...STEP_4_CODE_MESSAGES(assistantMessage),
+        ],
+        addResponse: (dsl: string) => assistantMessage.addStepFormatResponse(dsl),
+        addCode: (code: string) => assistantMessage.addStepFormatCode(code),
+      },
+    ];
+
+    const validatedSteps: WorkflowStep[] = [];
+
+    for (const def of stepDefs) {
+      console.log(`stepPhase (${def.name})`);
+
+      const dsl = yield* retryableAsyncGenerator(
+        () => chatFn({ messages: def.phaseMessages() }),
+        retryOptions,
+      );
+      def.addResponse(dsl);
+
+      const validated = pushStepToEditor(dsl);
+      validatedSteps.push(validated);
+
+      const code = yield* retryableAsyncGenerator(
+        () => generateCodeFunction(() => chatFn({ messages: def.codeMessages() }), validated),
+        retryOptions,
+      );
+      def.addCode(code);
+
+      pushStepToVfs(validated, code);
+    }
+
+    /**===========================
+     * ===== END OF WORKFLOW =====
+     * =========================== */
 
     return assistantMessage;
   } catch (error) {

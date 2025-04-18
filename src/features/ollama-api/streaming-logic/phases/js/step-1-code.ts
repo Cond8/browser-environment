@@ -1,12 +1,10 @@
 import { Message } from 'ollama';
-import { useVFSStore } from '../../../../vfs/store/vfs-store';
-import { chatFn } from '../../infra/create-chat';
 import { WorkflowStep } from '../types';
 
 const examples: string[] = [
   'async function fetchUserProfile(userId) {\n  const response = await fetch(`/api/users/${userId}`);\n  return await response.json();\n}',
-  'function generateRandomToken(length) {\n  return Array.from({length}, () => Math.floor(Math.random()*36).toString(36)).join(\'\');\n}',
-  'function loadConfig() {\n  return require(\'./config.json\');\n}',
+  "function generateRandomToken(length) {\n  return Array.from({length}, () => Math.floor(Math.random()*36).toString(36)).join('');\n}",
+  "function loadConfig() {\n  return require('./config.json');\n}",
 ];
 
 const SYSTEM_PROMPT = (): string => `
@@ -61,7 +59,7 @@ function
 `;
 };
 
-export const STEP_1_MESSAGES = (step: WorkflowStep): Message[] => [
+export const STEP_1_CODE_MESSAGES = (step: WorkflowStep): Message[] => [
   {
     role: 'system',
     content: SYSTEM_PROMPT(),
@@ -71,14 +69,3 @@ export const STEP_1_MESSAGES = (step: WorkflowStep): Message[] => [
     content: USER_PROMPT(step),
   },
 ];
-
-export async function* generateEnrichFunction(
-  step: WorkflowStep,
-): AsyncGenerator<string, string, unknown> {
-  const code = useVFSStore.getState().getServiceImplementation(step);
-  if (code) {
-    yield code;
-    return '';
-  }
-  return yield* chatFn({ messages: STEP_1_MESSAGES(step) });
-}

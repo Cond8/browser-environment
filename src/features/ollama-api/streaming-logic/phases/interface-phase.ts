@@ -1,8 +1,7 @@
 // src/features/ollama-api/streaming-logic/phases/interface-phase.ts
 import { AssistantMessage } from '@/features/chat/models/assistant-message';
-import { chatFn } from '../infra/create-chat';
+import { UserRequest } from '@/features/ollama-api/streaming-logic/phases/types';
 import { JSON_RULES } from './rules';
-import { UserRequest } from './types';
 
 export const INTERFACE_PROMPT = (userRequest: string) =>
   `
@@ -48,21 +47,16 @@ ${userRequest}
 Output a single, complete JSON object. Surrounded by \`\`\`json and \`\`\`.
 `.trim();
 
-export async function* interfacePhase(
-  userReq: UserRequest,
+export const INTERFACE_MESSAGES = (
+  userRequest: UserRequest,
   assistantMessage: AssistantMessage,
-): AsyncGenerator<string, string, unknown> {
-  console.log('interfacePhase', { userReq, assistantMessage });
-  return yield* chatFn({
-    messages: [
-      {
-        role: 'system',
-        content: INTERFACE_PROMPT(userReq.userRequest),
-      },
-      {
-        role: 'user',
-        content: assistantMessage.alignmentResponse,
-      },
-    ],
-  });
-}
+) => [
+  {
+    role: 'system',
+    content: INTERFACE_PROMPT(userRequest.userRequest),
+  },
+  {
+    role: 'user',
+    content: assistantMessage.alignmentResponse,
+  },
+];

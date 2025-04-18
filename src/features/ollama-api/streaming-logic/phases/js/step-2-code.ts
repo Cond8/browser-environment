@@ -1,9 +1,7 @@
+// src/features/ollama-api/streaming-logic/phases/js/step-2-code.ts
 import { Message } from 'ollama';
 import { AssistantMessage } from '../../../../chat/models/assistant-message';
-import { useVFSStore } from '../../../../vfs/store/vfs-store';
-import { chatFn } from '../../infra/create-chat';
 import { WorkflowStep } from '../types';
-import { STEP_1_MESSAGES } from './step-1-code';
 
 const examples: string[] = [
   'function calculateAverage(numbers) {\n  return numbers.reduce((a, b) => a + b, 0) / numbers.length;\n}',
@@ -53,30 +51,13 @@ function
 `;
 };
 
-export const STEP_2_MESSAGES = (
-  step: WorkflowStep,
-  assistantMessage: AssistantMessage,
-): Message[] => [
+export const STEP_2_CODE_MESSAGES = (assistantMessage: AssistantMessage): Message[] => [
   {
     role: 'system',
     content: assistantMessage.getEnrichCode(),
   },
   {
     role: 'user',
-    content: USER_PROMPT(step),
+    content: USER_PROMPT(assistantMessage.getStep(2)),
   },
 ];
-
-export async function* generateAnalyzeFunction(
-  step: WorkflowStep,
-  assistantMessage: AssistantMessage,
-): AsyncGenerator<string, string, unknown> {
-  const code = useVFSStore.getState().getServiceImplementation(step);
-  if (code) {
-    yield code;
-    return '';
-  }
-  return yield* chatFn({
-    messages: [...STEP_1_MESSAGES(step), ...STEP_2_MESSAGES(step, assistantMessage)],
-  });
-}

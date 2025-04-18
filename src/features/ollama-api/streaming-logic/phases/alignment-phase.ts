@@ -1,5 +1,5 @@
 // src/features/ollama-api/streaming-logic/phases/alignment-phase.ts
-import { chatFn } from '../infra/create-chat';
+import { Message } from 'ollama';
 import { UserRequest } from './types';
 
 export const ALIGNMENT_PROMPT = () =>
@@ -40,19 +40,13 @@ Be precise. Use markdown formatting. No bullet points inside the plan. Keep each
 ## Task: Analyze Request
 `.trim();
 
-export async function* alignmentPhase(
-  userReq: UserRequest,
-): AsyncGenerator<string, string, unknown> {
-  return yield* chatFn({
-    messages: [
-      {
-        role: 'system',
-        content: ALIGNMENT_PROMPT(),
-      },
-      {
-        role: 'user',
-        content: userReq.userRequest,
-      },
-    ],
-  });
-}
+export const ALIGNMENT_MESSAGES = (userReq: UserRequest): Message[] => [
+  {
+    role: 'system',
+    content: ALIGNMENT_PROMPT(),
+  },
+  {
+    role: 'user',
+    content: userReq.userRequest,
+  },
+];

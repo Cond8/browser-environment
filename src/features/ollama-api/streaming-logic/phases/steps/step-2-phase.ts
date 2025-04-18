@@ -3,9 +3,9 @@ import { AssistantMessage } from '@/features/chat/models/assistant-message';
 import { chatFn } from '../../infra/create-chat';
 import { JSON_RULES } from '../rules';
 import { UserRequest } from '../types';
-import { STEP_1_MESSAGES } from './step-1-phase';
+import { STEP_1_PHASE_MESSAGES } from './step-1-phase';
 
-export const STEP_2_PROMPT = () =>
+export const STEP_2_PHASE_PROMPT = () =>
   `
 Generate the second step: **Analyze**.
 
@@ -21,12 +21,12 @@ Modules (pick one):
 ${JSON_RULES}
 `.trim();
 
-export const STEP_2_MESSAGES = (assistantMessage: AssistantMessage) => [
+export const STEP_2_PHASE_MESSAGES = (assistantMessage: AssistantMessage) => [
   {
     role: 'assistant',
     content: assistantMessage.getStepString(1),
   },
-  { role: 'user', content: STEP_2_PROMPT() },
+  { role: 'user', content: STEP_2_PHASE_PROMPT() },
 ];
 
 export async function* secondStepPhase(
@@ -34,6 +34,9 @@ export async function* secondStepPhase(
   assistantMessage: AssistantMessage,
 ): AsyncGenerator<string, string, unknown> {
   return yield* chatFn({
-    messages: [...STEP_1_MESSAGES(userReq, assistantMessage), ...STEP_2_MESSAGES(assistantMessage)],
+    messages: [
+      ...STEP_1_PHASE_MESSAGES(userReq, assistantMessage),
+      ...STEP_2_PHASE_MESSAGES(assistantMessage),
+    ],
   });
 }

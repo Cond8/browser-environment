@@ -59,6 +59,10 @@ export class AssistantMessage implements BaseAssistantMessage {
     this._stepFormatResponse = response;
   }
 
+  getFormatResponse(): string {
+    return this._stepFormatResponse;
+  }
+
   addStepEnrichCode(code: string) {
     this._stepEnrichCode = code;
   }
@@ -150,11 +154,7 @@ export class AssistantMessage implements BaseAssistantMessage {
   getStep(num: number): WorkflowStep {
     const workflow = this.workflow;
     if (num < 0 || num >= workflow.length) {
-      return createDefaultWorkflowStep(
-        'MissingStep',
-        'empty_step',
-        `Placeholder for missing step ${num}`,
-      );
+      throw new Error(`Invalid step number: ${num}`);
     }
     return workflow[num];
   }
