@@ -34,7 +34,7 @@ You must return a **single valid JSON object** describing this step in the follo
 }
 
 Modules (pick one):
-  data-enrichment: [extract, parse, fetch, lookup, retrieve, read]
+  data-enrichment: [parse, fetch, lookup, retrieve, read]
   slm-enrichment : [synthesize, enrich, expand, integrate]
 
 ${JSON_RULES}

@@ -7,16 +7,16 @@ import { STEP_1_MESSAGES } from './step-1-phase';
 
 export const STEP_2_PROMPT = () =>
   `
-Generate the second step: **Logic**.
+Generate the second step: **Analyze**.
 
 This step:
 - Uses enriched input from step 1
-- Performs reasoning: filtering, comparison, classification
-- Returns a decision, judgment, or narrowed result
+- Performs pure, side-effect-free calculations, data transformations, or insight extraction
+- No branching, filtering, or control flow—just analysis
 
 Modules (pick one):
-  logic: [filter, compare, match, decide, choose, group, map]
-  slm  : [infer, classify, analyze]
+  analyze: [compute, extract, summarize, transform, calculate, measure, score]
+  slm  : [analyze, interpret, derive]
 
 ${JSON_RULES}
 `.trim();

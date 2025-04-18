@@ -18,6 +18,8 @@ export class AssistantMessage implements BaseAssistantMessage {
   _alignmentResponse: string = '';
   _interfaceResponse: string = '';
   _stepEnrichResponse: string = '';
+  _stepAnalyzeResponse: string = '';
+  _stepDecideResponse: string = '';
   _stepLogicResponse: string = '';
   _stepFormatResponse: string = '';
 
@@ -41,6 +43,14 @@ export class AssistantMessage implements BaseAssistantMessage {
     this._stepEnrichResponse = response;
   }
 
+  addStepAnalyzeResponse(response: string) {
+    this._stepAnalyzeResponse = response;
+  }
+
+  addStepDecideResponse(response: string) {
+    this._stepDecideResponse = response;
+  }
+
   addStepLogicResponse(response: string) {
     this._stepLogicResponse = response;
   }
@@ -62,7 +72,8 @@ export class AssistantMessage implements BaseAssistantMessage {
       this._alignmentResponse,
       this._interfaceResponse,
       this._stepEnrichResponse,
-      this._stepLogicResponse,
+      this._stepAnalyzeResponse,
+      this._stepDecideResponse,
       this._stepFormatResponse,
     ].filter(Boolean);
   }
@@ -71,6 +82,9 @@ export class AssistantMessage implements BaseAssistantMessage {
     this._alignmentResponse = chunks[0];
     this._interfaceResponse = chunks[1];
     this._stepEnrichResponse = chunks[2];
+    this._stepAnalyzeResponse = chunks[3];
+    this._stepDecideResponse = chunks[4];
+    this._stepFormatResponse = chunks[5];
     this._stepLogicResponse = chunks[3];
     this._stepFormatResponse = chunks[4];
   }

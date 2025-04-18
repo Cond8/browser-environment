@@ -14,6 +14,7 @@ import { interfacePhase } from '../phases/interface-phase';
 import { firstStepPhase } from '../phases/steps/step-1-phase';
 import { secondStepPhase } from '../phases/steps/step-2-phase';
 import { thirdStepPhase } from '../phases/steps/step-3-phase';
+import { fourthStepPhase } from '../phases/steps/step-4-phase';
 import { UserRequest, WorkflowPhase } from '../phases/types';
 
 function pushStepToEditorStore(step: string): void {
@@ -128,23 +129,34 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
     assistantMessage.addStepEnrichResponse(enrichStep);
     pushStepToEditorStore(enrichStep);
 
-    /* ==========================
-     * ===== LOGIC STEP ========
-     * ========================== */
-    console.log('secondStepPhase (logic)');
-    const logicStep = yield* retryableAsyncGenerator(
+    /* ===========================
+     * ===== ANALYZE STEP ========
+     * =========================== */
+    console.log('secondStepPhase (analyze)');
+    const analyzeStep = yield* retryableAsyncGenerator(
       () => secondStepPhase(userReq, assistantMessage),
       retryOptions,
     );
-    assistantMessage.addStepLogicResponse(logicStep);
-    pushStepToEditorStore(logicStep);
+    assistantMessage.addStepAnalyzeResponse?.(analyzeStep); // Add this method if needed
+    pushStepToEditorStore(analyzeStep);
+
+    /* ===========================
+     * ===== DECIDE STEP ========
+     * =========================== */
+    console.log('thirdStepPhase (decide)');
+    const decideStep = yield* retryableAsyncGenerator(
+      () => thirdStepPhase(userReq, assistantMessage),
+      retryOptions,
+    );
+    assistantMessage.addStepDecideResponse?.(decideStep); // Add this method if needed
+    pushStepToEditorStore(decideStep);
 
     /* ============================
      * ===== FORMAT STEP =========
      * ============================ */
-    console.log('thirdStepPhase (format)');
+    console.log('fourthStepPhase (format)');
     const formatStep = yield* retryableAsyncGenerator(
-      () => thirdStepPhase(userReq, assistantMessage),
+      () => fourthStepPhase(userReq, assistantMessage),
       retryOptions,
     );
     assistantMessage.addStepFormatResponse(formatStep);

@@ -66,18 +66,16 @@ function normalizeModuleName(moduleName: string): string {
 
   // Handle common module patterns
   const modules = [
-    'extract',
-    'parse',
-    'validate',
-    'transform',
-    'logic',
-    'calculate',
-    'format',
-    'io',
-    'storage',
-    'integrate',
-    'understand',
-    'generate',
+    // Enrich step synonyms
+    'extract', 'fetch', 'lookup', 'retrieve', 'synthesize', 'expand', 'integrate',
+    // Analyze step synonyms
+    'compute', 'summarize', 'transform', 'calculate', 'measure', 'score', 'interpret', 'derive',
+    // Decide step synonyms
+    'select', 'filter', 'branch', 'classify', 'choose', 'match', 'group', 'route', 'pick',
+    // Format step synonyms
+    'stringify', 'render', 'compile', 'prepare',
+    // Other common modules
+    'parse', 'validate', 'io', 'storage', 'understand', 'generate',
   ];
 
   // Return the module name if it's already valid

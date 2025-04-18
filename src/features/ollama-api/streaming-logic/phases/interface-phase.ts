@@ -16,7 +16,7 @@ Return a **single JSON object** with this exact structure:
 
 {
   "name": "PascalCaseWorkflowName",
-  "module": "one of [extract, parse, validate, transform, logic, calculate, format, io, storage, integrate, understand, generate]",
+  "module": "one of [modules]",
   "functionName": "doubleWordedCamelCaseName",
   "goal": "A markdown-formatted summary of what the workflow does.",
   "params": {

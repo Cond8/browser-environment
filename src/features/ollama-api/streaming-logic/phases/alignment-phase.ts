@@ -4,11 +4,12 @@ import { UserRequest } from './types';
 
 export const ALIGNMENT_PROMPT = () =>
   `
-You are a workflow analyst. Every task must be broken down into exactly three linear steps:
+You are a workflow analyst. Every task must be broken down into exactly four linear steps:
 
-1. **Enrich** — Fetch required external data or side effects  
-2. **Logic** — Analyze the inputs and make decisions  
-3. **Format** — Shape the final output into a returnable result
+1. **Enrich** — Fetch required external data or trigger side effects (API calls, DB reads, etc.)
+2. **Analyze** — Interpret, transform, or extract insights from the data (pure, side-effect-free calculations)
+3. **Decide** — Determine an outcome, select a branch, or control the flow (branching, filtering, outcome selection)
+4. **Format** — Shape the final output into a returnable result (final formatting, structuring, or rendering)
 
 ---
 
@@ -25,11 +26,12 @@ Analyze the following request and return a structured response in this format:
 - [List each expected output field]
 
 ### Plan
-Use exactly three steps, labeled 1–3:
+Use exactly four steps, labeled 1–4:
 
 1. **Enrich** [...]
-2. **Logic** [...]
-3. **Format** [...]
+2. **Analyze** [...]
+3. **Decide** [...]
+4. **Format** [...]
 
 ---
 
