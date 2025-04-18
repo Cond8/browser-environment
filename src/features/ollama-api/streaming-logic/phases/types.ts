@@ -17,12 +17,13 @@ export interface AssistantJsonChunk {
 
 export type AssistantChunk = AssistantTextChunk | AssistantJsonChunk;
 
+export type IoType = Record<string, { type: string; description: string }>;
+
 export interface WorkflowStep {
   name: string;
   module: string;
   functionName: string;
   goal: string;
-  params: any;
-  returns: any;
-  rawContent?: string; // Optional raw content for storing unparsed JSON
+  params: IoType;
+  returns: IoType;
 }

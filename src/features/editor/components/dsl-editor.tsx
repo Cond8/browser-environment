@@ -54,10 +54,10 @@ const jsdocDslTheme: editor.IStandaloneThemeData = {
 };
 
 export const DslEditor = ({ jsonContent }: DslEditorProps) => {
-  const editorRef = useRef<any>(null);
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const joinDsl = (jc: WorkflowStep[]) => jc.map(step => jsonToDsl(step)).join('\n');
 
-  const handleEditorDidMount = (editor: any) => {
+  const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
     console.log('[DslEditor] Editor mounted');
     editorRef.current = editor;
     editorRef.current.setValue(joinDsl(jsonContent));

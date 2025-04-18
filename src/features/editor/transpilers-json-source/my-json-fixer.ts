@@ -1,3 +1,5 @@
+import { IoType } from "@/features/ollama-api/streaming-logic/phases/types";
+
 // src/features/editor/transpilers-json-source/my-json-fixer.ts
 export function transformToInterface(input: string): string {
   try {
@@ -54,10 +56,10 @@ export function transformToInterface(input: string): string {
     }
 
     // Ensure params and returns have correct structure
-    const ensureParamStructure = (obj: any, paramType: 'params' | 'returns') => {
+    const ensureParamStructure = (obj: IoType, paramType: 'params' | 'returns') => {
       try {
         const result: Record<string, { type: string; description: string }> = {};
-        Object.entries(obj).forEach(([key, value]: [string, any]) => {
+        Object.entries(obj).forEach(([key, value]: [string, { type: string; description: string }]) => {
           if (typeof value !== 'object' || value === null) {
             throw new Error(`Invalid ${paramType} structure for key '${key}': must be an object`);
           }

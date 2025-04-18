@@ -94,9 +94,9 @@ export const markdownComponents = {
       try {
         const jsonObj = JSON.parse(children);
         formattedContent = JSON.stringify(jsonObj, null, 2);
-      } catch (e) {
+      } catch (e: unknown) {
         // If parsing fails, use original content
-        console.debug('JSON parsing failed, using original content');
+        console.debug('JSON parsing failed, using original content', (e as Error)?.message);
       }
     }
 

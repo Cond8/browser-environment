@@ -37,8 +37,8 @@ export const AssistantDisplay = ({
         return EMPTY_PARSED_SLM;
       }
       return parseSlm(assistantMessage.content);
-    } catch (error: any) {
-      console.error('Error parsing SLM content:', error.message);
+    } catch (error: unknown) {
+      console.error('Error parsing SLM content:', (error as Error)?.message);
       return EMPTY_PARSED_SLM;
     }
   }, [assistantMessage.content]);

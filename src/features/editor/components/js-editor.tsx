@@ -3,15 +3,16 @@ import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types
 import Editor from '@monaco-editor/react';
 import { useEffect, useRef } from 'react';
 import { jsonToJs } from '../transpilers-dsl-source/json-to-js';
+import { editor } from 'monaco-editor';
 
 export interface JsEditorProps {
   jsonContent: WorkflowStep[];
 }
 
 export const JsEditor = ({ jsonContent }: JsEditorProps) => {
-  const editorRef = useRef<any>(null);
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 
-  const handleEditorDidMount = (editor: any) => {
+  const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
     console.log('[JsEditor] Editor mounted');
     editorRef.current = editor;
     editorRef.current.setValue(jsonToJs(jsonContent));

@@ -8,7 +8,7 @@ import { AssistantMessage as BaseAssistantMessage } from './message';
 
 export class AssistantMessage implements BaseAssistantMessage {
   id: string;
-  role: 'assistant' = 'assistant';
+  role: 'assistant' = 'assistant' as const;
   timestamp: number = Date.now();
 
   tool_calls?: ToolCall[];

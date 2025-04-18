@@ -91,11 +91,10 @@ function normalizeModuleName(moduleName: string): string {
   return DEFAULT_MODULE;
 }
 
-export function validateWorkflowStep(step: unknown): WorkflowStep {
+export function validateWorkflowStep(step: WorkflowStep): WorkflowStep {
   try {
     // Check if step has interface property
-    const withInterface = step as { interface?: Record<string, any> };
-    const dataToValidate = withInterface.interface || step;
+    const dataToValidate = step;
 
     // Apply schema validation with defaults
     const validated = workflowStepSchema.parse(dataToValidate);
@@ -109,12 +108,8 @@ export function validateWorkflowStep(step: unknown): WorkflowStep {
       module: validated.module,
       functionName: validated.functionName,
       goal: validated.goal,
-      params:
-        'properties' in validated.params ? (validated.params.properties as any) : validated.params,
-      returns:
-        'properties' in validated.returns
-          ? (validated.returns.properties as any)
-          : validated.returns,
+      params: validated.params,
+      returns: validated.returns,
     } as WorkflowStep;
 
     // Ensure params and returns have at least one entry

@@ -155,8 +155,8 @@ export const useChatStore = create<ChatStore>()(
           const newThreads: Record<string, Thread> = {};
           Object.entries(state.threads).forEach(([threadId, thread]) => {
             const newMessages = thread.messages.map(msg => {
-              if ((msg as any).role === 'assistant') {
-                const plain: any = msg;
+              if ((msg as AssistantMessageClass).role === 'assistant') {
+                const plain = msg as AssistantMessageClass;
                 const reconstructed = new AssistantMessageClass();
                 reconstructed.id = plain.id;
                 reconstructed.timestamp = plain.timestamp;

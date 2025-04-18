@@ -22,8 +22,6 @@ export const useStreamSourceStore = create<StreamSourceState>()(
       set({ isStreaming: true, message: '' });
       console.log('startWorkflowChain');
 
-      let rawSlmBuffer = '';
-
       let finalAssistantMessage: AssistantMessage | undefined = undefined;
 
       try {
@@ -36,9 +34,6 @@ export const useStreamSourceStore = create<StreamSourceState>()(
             finalAssistantMessage = value;
             break;
           }
-
-          // Accumulate the raw SLM
-          rawSlmBuffer += value;
 
           // Update UI state
           set(state => {
@@ -57,12 +52,12 @@ export const useStreamSourceStore = create<StreamSourceState>()(
         }
 
         return finalAssistantMessage;
-      } catch (error: any) {
-        console.error('Error in workflow chain:', error.message);
+      } catch (error: unknown) {
+        console.error('Error in workflow chain:', (error as Error).message);
         set(state => {
           state.isStreaming = false;
         });
-        throw error;
+        throw error as Error;
       }
     },
   })),

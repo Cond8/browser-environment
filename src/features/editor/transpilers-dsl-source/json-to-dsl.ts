@@ -1,32 +1,18 @@
 // src/features/editor/transpilers-dsl-source/json-to-dsl.ts
 import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 
-const getTypeFromSchema = (schema: any): string => {
+const getTypeFromSchema = (schema: { type: string } | undefined): string => {
   if (!schema) return 'any';
 
   if (schema.type) {
-    if (schema.type === 'array') {
-      const itemsType = getTypeFromSchema(schema.items);
-      return `${itemsType}[]`;
-    }
-    if (schema.type === 'object' && schema.properties) {
-      const props = Object.entries(schema.properties)
-        .map(([key, value]) => `${key}: ${getTypeFromSchema(value)}`)
-        .join(', ');
-      return `{ ${props} }`;
-    }
     return schema.type;
-  }
-
-  if (schema.$ref) {
-    return schema.$ref.split('/').pop() || 'any';
   }
 
   return 'any';
 };
 
-const getDescriptionFromSchema = (schema: any): string => {
-  return schema.description || '';
+const getDescriptionFromSchema = (schema: { description: string } | undefined): string => {
+  return schema?.description || '';
 };
 
 export const jsonToDsl = (json: WorkflowStep) => {
@@ -47,9 +33,11 @@ export const jsonToDsl = (json: WorkflowStep) => {
   }
 
   if (json.returns) {
-    const type = getTypeFromSchema(json.returns);
-    const description = getDescriptionFromSchema(json.returns);
-    dsl += ` * @returns {${type}} ${description}\n`;
+    Object.entries(json.returns).forEach(([returnName, returnSchema]) => {
+      const type = getTypeFromSchema(returnSchema);
+      const description = getDescriptionFromSchema(returnSchema);
+      dsl += ` * @returns {${type}} ${returnName} - ${description}\n`;
+    });
   }
 
   dsl += ' */';

@@ -139,12 +139,14 @@ export function parseSlm(content: string): ParsedSlm {
         currentSection.content = repaired;
         try {
           currentSection.parsed = JSON.parse(repaired) as WorkflowStep;
-        } catch (parseError) {
+        } catch (parseError: unknown) {
+          console.log('[SLM Parser] Failed to parse JSON:', (parseError as Error)?.message);
           // If parse still fails, just treat as markdown
           currentSection.type = 'markdown';
           currentSection.content = buffer.trim();
         }
-      } catch (e) {
+      } catch (repairError: unknown) {
+        console.log('[SLM Parser] Failed to repair JSON:', (repairError as Error)?.message);
         // If repair fails, treat it as markdown
         currentSection.type = 'markdown';
         currentSection.content = buffer.trim();
@@ -164,7 +166,7 @@ export function parseSlm(content: string): ParsedSlm {
       currentSection.content = buffer.trim();
       try {
         currentSection.parsed = JSON.parse(buffer.trim()) as WorkflowStep;
-      } catch (directParseError) {
+      } finally {
         // If direct parsing fails, try to repair the JSON
         try {
           const repaired = jsonrepair(buffer.trim());
@@ -227,7 +229,7 @@ export function parseSlm(content: string): ParsedSlm {
         const current = result.markdown[currentMarkdownSection];
         if (typeof current === 'string') {
           // For string types (goal, inputs, outputs)
-          result.markdown[currentMarkdownSection] = (current + '\n' + content) as any;
+          result.markdown[currentMarkdownSection] = (current + '\n' + content) as (string & string[]);
         } else if (Array.isArray(current)) {
           // For array types (plan)
           // Do nothing here since we've already processed the plan items

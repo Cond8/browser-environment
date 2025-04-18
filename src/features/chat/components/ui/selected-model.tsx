@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { ChevronDown } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { fetchModels } from '../../../ollama-api/fetch-models';
 import { useAssistantConfigStore } from '../../store/assistant-config-store';
 import { ModelResponse } from 'ollama/browser';
@@ -19,7 +19,7 @@ export function SelectedModel() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadModels = async () => {
+  const loadModels = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -30,11 +30,16 @@ export function SelectedModel() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [ollamaUrl]);
 
   useEffect(() => {
-    loadModels();
-  }, [ollamaUrl]);
+    const handler = setTimeout(() => {
+      loadModels();
+    }, 400); // 400ms debounce
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [ollamaUrl, loadModels]);
 
   const renderModelList = () => {
     if (isLoading) {
