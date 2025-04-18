@@ -5,24 +5,19 @@ import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types
 
 type VFSStore = {
   workflows: Record<string, WorkflowStep[]>; // first step is interface
-  serviceCodeMap: Record<string, string>;    // identity -> code
+  serviceCodeMap: Record<string, string>;    // signature -> code
 
   addWorkflow: (id: string, steps: WorkflowStep[]) => void;
-  addServiceImplementation: (
-      identity: Omit<WorkflowStep, 'goal'>,
-      code: string
-  ) => void;
-  getServiceImplementation: (
-      identity: Omit<WorkflowStep, 'goal'>
-  ) => string | undefined;
+  addServiceImplementation: (signature: WorkflowStep, code: string) => void;
+  getServiceImplementation: (signature: WorkflowStep) => string | undefined;
 };
 
-function getIdentityKey(identity: Omit<WorkflowStep, 'goal'>): string {
+function getSignatureKey(signature: WorkflowStep): string {
   return JSON.stringify({
-    module: identity.module,
-    functionName: identity.functionName,
-    params: Object.keys(identity.params).sort(),
-    returns: Object.keys(identity.returns).sort(),
+    module: signature.module,
+    functionName: signature.functionName,
+    params: Object.keys(signature.params).sort(),
+    returns: Object.keys(signature.returns).sort(),
   });
 }
 
@@ -39,8 +34,8 @@ export const useVFSStore = create<VFSStore>((set, get) => ({
     }));
   },
 
-  addServiceImplementation: (identity, code) => {
-    const key = getIdentityKey(identity);
+  addServiceImplementation: (signature, code) => {
+    const key = getSignatureKey(signature);
     set(state => ({
       serviceCodeMap: {
         ...state.serviceCodeMap,
@@ -49,8 +44,8 @@ export const useVFSStore = create<VFSStore>((set, get) => ({
     }));
   },
 
-  getServiceImplementation: (identity) => {
-    const key = getIdentityKey(identity);
+  getServiceImplementation: (signature) => {
+    const key = getSignatureKey(signature);
     return get().serviceCodeMap[key];
   },
 }));

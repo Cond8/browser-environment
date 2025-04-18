@@ -4,6 +4,7 @@ import { UserMessage } from '@/features/chat/models/message';
 import { useEditorStore } from '@/features/editor/stores/editor-store';
 import { processJsonChunk } from '@/features/editor/transpilers-json-source/my-json-parser';
 import { validateWorkflowStep } from '@/features/editor/transpilers-json-source/workflow-step-validator';
+import { useVFSStore } from '@/features/vfs/store/vfs-store';
 import { useChatStore } from '../../../chat/store/chat-store';
 import {
   retryableAsyncGenerator,
@@ -11,18 +12,12 @@ import {
 } from '../infra/retryable-async-generator';
 import { alignmentPhase } from '../phases/alignment-phase';
 import { interfacePhase } from '../phases/interface-phase';
+import { generateFunctionImplementation } from '../phases/js/generate-function-implementation';
 import { firstStepPhase } from '../phases/steps/step-1-phase';
 import { secondStepPhase } from '../phases/steps/step-2-phase';
 import { thirdStepPhase } from '../phases/steps/step-3-phase';
-import { UserRequest, WorkflowPhase } from '../phases/types';
 import { fourthStepPhase } from '../phases/steps/step-4-phase';
-
-function pushStepToEditorStore(step: string): void {
-  const editorStore = useEditorStore.getState();
-  const validated = validateWorkflowStep(processJsonChunk(step));
-  const currentContent = editorStore.content || [];
-  editorStore.setContent([...currentContent, validated]);
-}
+import { UserRequest, WorkflowPhase } from '../phases/types';
 
 export class WorkflowChainError extends Error {
   public metadata: unknown[];
@@ -95,6 +90,30 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
     maxChunkSize: 10_000,
   };
 
+  async function* pushStep(step: string): AsyncGenerator<string, string, unknown> {
+    const editorStore = useEditorStore.getState();
+    const validated = validateWorkflowStep(processJsonChunk(step));
+    const currentContent = editorStore.content || [];
+    editorStore.setContent([...currentContent, validated]);
+
+    // Now push code to VFSStore
+    const vfs = useVFSStore.getState();
+
+    let code = vfs.getServiceImplementation(validated);
+    if (!code) {
+      code = yield* retryableAsyncGenerator(
+        () => generateFunctionImplementation(validated),
+        retryOptions,
+      );
+    }
+
+    if (code) {
+      vfs.addServiceImplementation(validated, code);
+    }
+
+    return code;
+  }
+
   try {
     /* ============================
      * ===== ALIGNMENT PHASE =====
@@ -116,7 +135,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
       retryOptions,
     );
     assistantMessage.addInterfaceResponse(interfaceResult);
-    pushStepToEditorStore(interfaceResult);
+    yield* pushStep(interfaceResult);
 
     /* ===========================
      * ===== ENRICH STEP ========
@@ -127,7 +146,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
       retryOptions,
     );
     assistantMessage.addStepEnrichResponse(enrichStep);
-    pushStepToEditorStore(enrichStep);
+    yield* pushStep(enrichStep);
 
     /* ===========================
      * ===== ANALYZE STEP ========
@@ -137,8 +156,8 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
       () => secondStepPhase(userReq, assistantMessage),
       retryOptions,
     );
-    assistantMessage.addStepAnalyzeResponse?.(analyzeStep); // Add this method if needed
-    pushStepToEditorStore(analyzeStep);
+    assistantMessage.addStepAnalyzeResponse?.(analyzeStep);
+    yield* pushStep(analyzeStep);
 
     /* ===========================
      * ===== DECIDE STEP ========
@@ -148,8 +167,8 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
       () => thirdStepPhase(userReq, assistantMessage),
       retryOptions,
     );
-    assistantMessage.addStepDecideResponse?.(decideStep); // Add this method if needed
-    pushStepToEditorStore(decideStep);
+    assistantMessage.addStepDecideResponse?.(decideStep);
+    yield* pushStep(decideStep);
 
     /* ============================
      * ===== FORMAT STEP =========
@@ -160,7 +179,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
       retryOptions,
     );
     assistantMessage.addStepFormatResponse(formatStep);
-    pushStepToEditorStore(formatStep);
+    yield* pushStep(formatStep);
 
     return assistantMessage;
   } catch (error) {
