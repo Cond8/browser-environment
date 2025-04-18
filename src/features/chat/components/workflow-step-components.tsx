@@ -40,7 +40,13 @@ export const WorkflowStepDisplay = ({
   const [expanded, setExpanded] = useState(isStreaming);
   const hasDetails =
     Object.keys(step).length > 2 ||
-    !!(step.module || step.functionName || step.params || step.returns || (step as unknown as { rawContent: string }).rawContent);
+    !!(
+      step.module ||
+      step.functionName ||
+      step.params ||
+      step.returns ||
+      (step as unknown as { rawContent: string }).rawContent
+    );
 
   // Check if we have raw content (for displaying raw JSON)
 
@@ -113,7 +119,10 @@ export const WorkflowStepDisplay = ({
           {(step as unknown as { rawContent: string }).rawContent && ( // backwards compatibility
             <div className="bg-muted rounded-md p-3 overflow-auto max-h-[300px]">
               <pre className="text-xs whitespace-pre-wrap">
-                {(step as unknown as { rawContent: string }).rawContent /* backwards compatibility */}
+                {
+                  (step as unknown as { rawContent: string })
+                    .rawContent /* backwards compatibility */
+                }
               </pre>
             </div>
           )}

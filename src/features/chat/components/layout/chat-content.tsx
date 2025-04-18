@@ -1,5 +1,6 @@
 // src/features/chat/components/layout/chat-content.tsx
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useStreamSourceStore } from '@/features/ollama-api/streaming-logic/infra/stream-source-store';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
 import { AssistantMessage } from '../../models/assistant-message';
@@ -9,7 +10,6 @@ import { AssistantDisplay } from '../assistant-display';
 import { EmptyChatState } from '../empty/empty-chat-state';
 import { StreamingAssistantDisplay } from '../streaming-assistant-display';
 import { UserDisplay } from '../user-display';
-import { useStreamSourceStore } from '@/features/ollama-api/streaming-logic/infra/stream-source-store';
 
 export const ChatContent = () => {
   const currentThread = useChatStore().getCurrentThread();

@@ -1,6 +1,9 @@
 // src/features/ollama-api/streaming-logic/api/workflow-chain.ts
 import { AssistantMessage } from '@/features/chat/models/assistant-message';
 import { UserMessage } from '@/features/chat/models/message';
+import { useEditorStore } from '@/features/editor/stores/editor-store';
+import { processJsonChunk } from '@/features/editor/transpilers-json-source/my-json-parser';
+import { validateWorkflowStep } from '@/features/editor/transpilers-json-source/workflow-step-validator';
 import { useChatStore } from '../../../chat/store/chat-store';
 import {
   retryableAsyncGenerator,
@@ -12,9 +15,6 @@ import { firstStepPhase } from '../phases/steps/step-1-phase';
 import { secondStepPhase } from '../phases/steps/step-2-phase';
 import { thirdStepPhase } from '../phases/steps/step-3-phase';
 import { UserRequest, WorkflowPhase } from '../phases/types';
-import { useEditorStore } from '@/features/editor/stores/editor-store';
-import { processJsonChunk } from '@/features/editor/transpilers-json-source/my-json-parser';
-import { validateWorkflowStep } from '@/features/editor/transpilers-json-source/workflow-step-validator';
 
 function pushStepToEditorStore(step: string) {
   const editorStore = useEditorStore.getState();
@@ -22,7 +22,6 @@ function pushStepToEditorStore(step: string) {
   const currentContent = editorStore.content || [];
   editorStore.setContent([...currentContent, validated]);
 }
-
 
 export class WorkflowChainError extends Error {
   public metadata: unknown[];
@@ -121,7 +120,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
     /* ===========================
      * ===== ENRICH STEP ========
      * =========================== */
-    console.log('firstStepPhase (enrich)'); 
+    console.log('firstStepPhase (enrich)');
     const enrichStep = yield* retryableAsyncGenerator(
       () => firstStepPhase(userReq, assistantMessage),
       retryOptions,

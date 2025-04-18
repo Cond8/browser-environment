@@ -1,3 +1,4 @@
+// src/features/chat/models/streaming-assistant-message.ts
 import { useRetryEventBusStore } from '@/features/ollama-api/stores/retry-event-bus-store';
 import { MAX_RETRY_ERROR } from '@/features/ollama-api/streaming-logic/infra/retryable-async-generator';
 import { WorkflowPhase } from '@/features/ollama-api/streaming-logic/phases/types';

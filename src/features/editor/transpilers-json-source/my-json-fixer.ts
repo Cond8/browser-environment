@@ -1,4 +1,5 @@
-import { IoType } from "@/features/ollama-api/streaming-logic/phases/types";
+// src/features/editor/transpilers-json-source/my-json-fixer.ts
+import { IoType } from '@/features/ollama-api/streaming-logic/phases/types';
 
 // src/features/editor/transpilers-json-source/my-json-fixer.ts
 export function transformToInterface(input: string): string {
@@ -59,15 +60,17 @@ export function transformToInterface(input: string): string {
     const ensureParamStructure = (obj: IoType, paramType: 'params' | 'returns') => {
       try {
         const result: Record<string, { type: string; description: string }> = {};
-        Object.entries(obj).forEach(([key, value]: [string, { type: string; description: string }]) => {
-          if (typeof value !== 'object' || value === null) {
-            throw new Error(`Invalid ${paramType} structure for key '${key}': must be an object`);
-          }
-          result[key] = {
-            type: value.type || 'string',
-            description: value.description || `Description for ${key}`,
-          };
-        });
+        Object.entries(obj).forEach(
+          ([key, value]: [string, { type: string; description: string }]) => {
+            if (typeof value !== 'object' || value === null) {
+              throw new Error(`Invalid ${paramType} structure for key '${key}': must be an object`);
+            }
+            result[key] = {
+              type: value.type || 'string',
+              description: value.description || `Description for ${key}`,
+            };
+          },
+        );
         return result;
       } catch (paramError) {
         throw new Error(`Failed to process ${paramType}: ${(paramError as Error).message}`);

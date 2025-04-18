@@ -229,7 +229,7 @@ export function parseSlm(content: string): ParsedSlm {
         const current = result.markdown[currentMarkdownSection];
         if (typeof current === 'string') {
           // For string types (goal, inputs, outputs)
-          result.markdown[currentMarkdownSection] = (current + '\n' + content) as (string & string[]);
+          result.markdown[currentMarkdownSection] = (current + '\n' + content) as string & string[];
         } else if (Array.isArray(current)) {
           // For array types (plan)
           // Do nothing here since we've already processed the plan items

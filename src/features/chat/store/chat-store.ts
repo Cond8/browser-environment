@@ -150,7 +150,7 @@ export const useChatStore = create<ChatStore>()(
         threads: state.threads,
         currentThreadId: state.currentThreadId,
       }),
-      onRehydrateStorage: () => (state) => {
+      onRehydrateStorage: () => state => {
         if (state?.threads) {
           const newThreads: Record<string, Thread> = {};
           Object.entries(state.threads).forEach(([threadId, thread]) => {

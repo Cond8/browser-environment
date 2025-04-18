@@ -1,3 +1,4 @@
+// src/utils/workflow-helpers.ts
 import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 
 /**

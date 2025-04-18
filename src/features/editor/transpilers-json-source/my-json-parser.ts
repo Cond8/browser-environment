@@ -8,7 +8,9 @@ function parseJsonWithErrorHandling(jsonStr: string): WorkflowStep | null {
   try {
     return JSON.parse(jsonStr) as WorkflowStep;
   } catch (error: unknown) {
-    console.log('[MY JSON Parser] Failed to parse JSON directly:', (error as Error)?.message, {jsonStr});
+    console.log('[MY JSON Parser] Failed to parse JSON directly:', (error as Error)?.message, {
+      jsonStr,
+    });
     return null;
   }
 }
