@@ -140,13 +140,13 @@ export function parseSlm(content: string): ParsedSlm {
         try {
           currentSection.parsed = JSON.parse(repaired) as WorkflowStep;
         } catch (parseError: unknown) {
-          console.log('[SLM Parser] Failed to parse JSON:', (parseError as Error)?.message);
+          void parseError;
           // If parse still fails, just treat as markdown
           currentSection.type = 'markdown';
           currentSection.content = buffer.trim();
         }
       } catch (repairError: unknown) {
-        console.log('[SLM Parser] Failed to repair JSON:', (repairError as Error)?.message);
+        void repairError;
         // If repair fails, treat it as markdown
         currentSection.type = 'markdown';
         currentSection.content = buffer.trim();

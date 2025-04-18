@@ -16,7 +16,7 @@ import { secondStepPhase } from '../phases/steps/step-2-phase';
 import { thirdStepPhase } from '../phases/steps/step-3-phase';
 import { UserRequest, WorkflowPhase } from '../phases/types';
 
-function pushStepToEditorStore(step: string) {
+function pushStepToEditorStore(step: string): void {
   const editorStore = useEditorStore.getState();
   const validated = validateWorkflowStep(processJsonChunk(step));
   const currentContent = editorStore.content || [];
