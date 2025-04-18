@@ -4,20 +4,23 @@ import { UserMessage } from '@/features/chat/models/message';
 import { useEditorStore } from '@/features/editor/stores/editor-store';
 import { processJsonChunk } from '@/features/editor/transpilers-json-source/my-json-parser';
 import { validateWorkflowStep } from '@/features/editor/transpilers-json-source/workflow-step-validator';
-import { useVFSStore } from '@/features/vfs/store/vfs-store';
 import { useChatStore } from '../../../chat/store/chat-store';
+import { useVFSStore } from '../../../vfs/store/vfs-store';
 import {
   retryableAsyncGenerator,
   RetryableGeneratorOptions,
 } from '../infra/retryable-async-generator';
 import { alignmentPhase } from '../phases/alignment-phase';
 import { interfacePhase } from '../phases/interface-phase';
-import { generateFunctionImplementation } from '../phases/js/generate-function-implementation';
+import { generateEnrichFunction } from '../phases/js/step-1-code';
+import { generateAnalyzeFunction } from '../phases/js/step-2-code';
+import { generateDecideFunction } from '../phases/js/step-3-code';
+import { generateFormatFunction } from '../phases/js/step-4-code';
 import { firstStepPhase } from '../phases/steps/step-1-phase';
 import { secondStepPhase } from '../phases/steps/step-2-phase';
 import { thirdStepPhase } from '../phases/steps/step-3-phase';
 import { fourthStepPhase } from '../phases/steps/step-4-phase';
-import { UserRequest, WorkflowPhase } from '../phases/types';
+import { UserRequest, WorkflowPhase, WorkflowStep } from '../phases/types';
 
 export class WorkflowChainError extends Error {
   public metadata: unknown[];
@@ -90,28 +93,18 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
     maxChunkSize: 10_000,
   };
 
-  async function* pushStep(step: string): AsyncGenerator<string, string, unknown> {
+  function pushStep(step: string): WorkflowStep {
     const editorStore = useEditorStore.getState();
     const validated = validateWorkflowStep(processJsonChunk(step));
     const currentContent = editorStore.content || [];
     editorStore.setContent([...currentContent, validated]);
 
-    // Now push code to VFSStore
-    const vfs = useVFSStore.getState();
+    return validated;
+  }
 
-    let code = vfs.getServiceImplementation(validated);
-    if (!code) {
-      code = yield* retryableAsyncGenerator(
-        () => generateFunctionImplementation(validated),
-        retryOptions,
-      );
-    }
-
-    if (code) {
-      vfs.addServiceImplementation(validated, code);
-    }
-
-    return code;
+  function pushStepToVfs(step: WorkflowStep, code: string): void {
+    if (code === '') return;
+    useVFSStore.getState().addServiceImplementation(step, code);
   }
 
   try {
@@ -135,7 +128,7 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
       retryOptions,
     );
     assistantMessage.addInterfaceResponse(interfaceResult);
-    yield* pushStep(interfaceResult);
+    pushStep(interfaceResult);
 
     /* ===========================
      * ===== ENRICH STEP ========
@@ -146,7 +139,14 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
       retryOptions,
     );
     assistantMessage.addStepEnrichResponse(enrichStep);
-    yield* pushStep(enrichStep);
+    const validatedEnrich = pushStep(enrichStep);
+
+    const enrichCode = yield* retryableAsyncGenerator(
+      () => generateEnrichFunction(validatedEnrich),
+      retryOptions,
+    );
+    assistantMessage.addStepEnrichCode(enrichCode);
+    pushStep(enrichCode);
 
     /* ===========================
      * ===== ANALYZE STEP ========
@@ -157,7 +157,14 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
       retryOptions,
     );
     assistantMessage.addStepAnalyzeResponse?.(analyzeStep);
-    yield* pushStep(analyzeStep);
+    const validatedAnalyze = pushStep(analyzeStep);
+
+    const analyzeCode = yield* retryableAsyncGenerator(
+      () => generateAnalyzeFunction(validatedAnalyze, assistantMessage),
+      retryOptions,
+    );
+    assistantMessage.addStepAnalyzeCode(analyzeCode);
+    pushStepToVfs(validatedAnalyze, analyzeCode);
 
     /* ===========================
      * ===== DECIDE STEP ========
@@ -168,7 +175,14 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
       retryOptions,
     );
     assistantMessage.addStepDecideResponse?.(decideStep);
-    yield* pushStep(decideStep);
+    const validatedDecide = pushStep(decideStep);
+
+    const decideCode = yield* retryableAsyncGenerator(
+      () => generateDecideFunction(validatedDecide, assistantMessage),
+      retryOptions,
+    );
+    assistantMessage.addStepDecideCode(decideCode);
+    pushStepToVfs(validatedDecide, decideCode);
 
     /* ============================
      * ===== FORMAT STEP =========
@@ -179,7 +193,14 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
       retryOptions,
     );
     assistantMessage.addStepFormatResponse(formatStep);
-    yield* pushStep(formatStep);
+    const validatedFormat = pushStep(formatStep);
+
+    const formatCode = yield* retryableAsyncGenerator(
+      () => generateFormatFunction(validatedFormat, assistantMessage),
+      retryOptions,
+    );
+    assistantMessage.addStepFormatCode(formatCode);
+    pushStepToVfs(validatedFormat, formatCode);
 
     return assistantMessage;
   } catch (error) {

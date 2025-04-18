@@ -1,10 +1,10 @@
 // src/features/chat/models/assistant-message.ts
+import { AssistantMessage as BaseAssistantMessage } from '@/features/chat/models/assistant-message';
 import { processJsonChunk } from '@/features/editor/transpilers-json-source/my-json-parser';
 import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import { createDefaultWorkflowStep } from '@/utils/workflow-helpers';
 import { nanoid } from 'nanoid';
 import { ToolCall } from 'ollama';
-import { AssistantMessage as BaseAssistantMessage } from './message';
 
 export class AssistantMessage implements BaseAssistantMessage {
   id: string;
@@ -21,6 +21,11 @@ export class AssistantMessage implements BaseAssistantMessage {
   _stepAnalyzeResponse: string = '';
   _stepDecideResponse: string = '';
   _stepFormatResponse: string = '';
+
+  _stepEnrichCode: string = '';
+  _stepAnalyzeCode: string = '';
+  _stepDecideCode: string = '';
+  _stepFormatCode: string = '';
 
   constructor() {
     this.id = nanoid();
@@ -54,6 +59,38 @@ export class AssistantMessage implements BaseAssistantMessage {
     this._stepFormatResponse = response;
   }
 
+  addStepEnrichCode(code: string) {
+    this._stepEnrichCode = code;
+  }
+
+  addStepAnalyzeCode(code: string) {
+    this._stepAnalyzeCode = code;
+  }
+
+  addStepDecideCode(code: string) {
+    this._stepDecideCode = code;
+  }
+
+  addStepFormatCode(code: string) {
+    this._stepFormatCode = code;
+  }
+
+  getEnrichCode(): string {
+    return this._stepEnrichCode;
+  }
+
+  getAnalyzeCode(): string {
+    return this._stepAnalyzeCode;
+  }
+
+  getDecideCode(): string {
+    return this._stepDecideCode;
+  }
+
+  getFormatCode(): string {
+    return this._stepFormatCode;
+  }
+
   setError(error: Error) {
     this.error = error;
   }
@@ -67,9 +104,13 @@ export class AssistantMessage implements BaseAssistantMessage {
       this._alignmentResponse,
       this._interfaceResponse,
       this._stepEnrichResponse,
+      this._stepEnrichCode,
       this._stepAnalyzeResponse,
+      this._stepAnalyzeCode,
       this._stepDecideResponse,
+      this._stepDecideCode,
       this._stepFormatResponse,
+      this._stepFormatCode,
     ].filter(Boolean);
   }
 
@@ -77,9 +118,13 @@ export class AssistantMessage implements BaseAssistantMessage {
     this._alignmentResponse = chunks[0];
     this._interfaceResponse = chunks[1];
     this._stepEnrichResponse = chunks[2];
-    this._stepAnalyzeResponse = chunks[3];
-    this._stepDecideResponse = chunks[4];
-    this._stepFormatResponse = chunks[5];
+    this._stepEnrichCode = chunks[3];
+    this._stepAnalyzeResponse = chunks[4];
+    this._stepAnalyzeCode = chunks[5];
+    this._stepDecideResponse = chunks[6];
+    this._stepDecideCode = chunks[7];
+    this._stepFormatResponse = chunks[8];
+    this._stepFormatCode = chunks[9];
   }
 
   get workflow(): WorkflowStep[] {
