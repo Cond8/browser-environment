@@ -4,9 +4,9 @@ import { chatFn } from '../../infra/create-chat';
 import { WorkflowStep } from '../types';
 
 const examples: string[] = [
-  'function add(a, b) { return a + b; }',
-  'function greet(name) { return `Hello, ${name}!`; }',
-  'function getItems() { return ["apple", "banana", "orange"]; }',
+  'async function fetchUserProfile(userId) {\n  const response = await fetch(`/api/users/${userId}`);\n  return await response.json();\n}',
+  'function generateRandomToken(length) {\n  return Array.from({length}, () => Math.floor(Math.random()*36).toString(36)).join(\'\');\n}',
+  'function loadConfig() {\n  return require(\'./config.json\');\n}',
 ];
 
 const SYSTEM_PROMPT = (): string => `

@@ -6,9 +6,9 @@ import { useVFSStore } from '../../../../vfs/store/vfs-store';
 import { AssistantMessage } from '../../../../chat/models/assistant-message';
 
 const examples: string[] = [
-  'function add(a, b) { return a + b; }',
-  'function greet(name) { return `Hello, ${name}!`; }',
-  'function getItems() { return ["apple", "banana", "orange"]; }',
+  'function formatDate(date) {\n  return new Date(date).toLocaleDateString();\n}',
+  'function formatUserSummary(user) {\n  return `${user.name} (${user.email}) - Joined: ${user.joined}`;\n}',
+  'function toCSV(items) {\n  return items.map(row => row.join(\',\')).join(\'\\n\');\n}',
 ];
 
 const USER_PROMPT = (step: WorkflowStep): string => {

@@ -6,9 +6,9 @@ import { WorkflowStep } from '../types';
 import { STEP_1_MESSAGES } from './step-1-code';
 
 const examples: string[] = [
-  'function add(a, b) { return a + b; }',
-  'function greet(name) { return `Hello, ${name}!`; }',
-  'function getItems() { return ["apple", "banana", "orange"]; }',
+  'function calculateAverage(numbers) {\n  return numbers.reduce((a, b) => a + b, 0) / numbers.length;\n}',
+  'function sumObjectValues(obj) {\n  return Object.values(obj).reduce((a, b) => a + b, 0);\n}',
+  'function extractUniqueWords(text) {\n  return Array.from(new Set(text.split(/\\W+/).filter(Boolean)));\n}',
 ];
 
 const USER_PROMPT = (step: WorkflowStep): string => {

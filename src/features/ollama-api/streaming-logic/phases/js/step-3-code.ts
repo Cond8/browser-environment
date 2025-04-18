@@ -6,9 +6,9 @@ import { WorkflowStep } from '../types';
 import { STEP_1_MESSAGES } from './step-1-code';
 
 const examples: string[] = [
-  'function add(a, b) { return a + b; }',
-  'function greet(name) { return `Hello, ${name}!`; }',
-  'function getItems() { return ["apple", "banana", "orange"]; }',
+  'function filterAdults(users) {\n  return users.filter(user => user.age >= 18);\n}',
+  'function selectTopScoringItem(items) {\n  return items.reduce((top, item) => item.score > top.score ? item : top, items[0]);\n}',
+  'function classifySentiment(score) {\n  if (score > 0.5) return "positive";\n  if (score < -0.5) return "negative";\n  return "neutral";\n}',
 ];
 
 const USER_PROMPT = (step: WorkflowStep): string => {
