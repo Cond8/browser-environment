@@ -14,8 +14,8 @@ import { interfacePhase } from '../phases/interface-phase';
 import { firstStepPhase } from '../phases/steps/step-1-phase';
 import { secondStepPhase } from '../phases/steps/step-2-phase';
 import { thirdStepPhase } from '../phases/steps/step-3-phase';
-import { fourthStepPhase } from '../phases/steps/step-4-phase';
 import { UserRequest, WorkflowPhase } from '../phases/types';
+import { fourthStepPhase } from '../phases/steps/step-4-phase';
 
 function pushStepToEditorStore(step: string): void {
   const editorStore = useEditorStore.getState();
