@@ -166,14 +166,15 @@ export function parseSlm(content: string): ParsedSlm {
       currentSection.content = buffer.trim();
       try {
         currentSection.parsed = JSON.parse(buffer.trim()) as WorkflowStep;
-      } finally {
+      } catch (parseError: unknown) {
+        void parseError;
         // If direct parsing fails, try to repair the JSON
         try {
           const repaired = jsonrepair(buffer.trim());
           currentSection.content = repaired;
           currentSection.parsed = JSON.parse(repaired) as WorkflowStep;
         } catch (repairError) {
-          console.warn('Failed to parse or repair JSON:', repairError);
+          void repairError;
           // Instead of throwing, treat it as markdown
           currentSection.type = 'markdown';
           currentSection.content = buffer.trim();

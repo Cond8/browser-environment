@@ -74,6 +74,7 @@ export const StreamingAssistantDisplay = () => {
       FallbackComponent={ErrorFallback}
       onReset={() => {
         // Reset the retry count when the error boundary resets
+        console.log('[Streaming Assistant Display] Reset and Retry Triggered');
         useRetryEventBusStore.getState().resetRetryCount('step');
       }}
     >

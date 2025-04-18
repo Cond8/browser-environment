@@ -128,8 +128,7 @@ export function validateWorkflowStep(step: WorkflowStep): WorkflowStep {
 
     return transformed;
   } catch (error) {
-    console.error('Validation failed:', error);
-
+    console.log('Triggering retry for workflow step validation error', (error as Error).message);
     useRetryEventBusStore.getState().triggerRetry('interface');
 
     throw new Error('Failed to validate workflow step, triggering retry');
