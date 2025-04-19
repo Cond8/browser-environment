@@ -1,36 +1,27 @@
 // src/features/ollama-api/streaming-logic/phases/steps/step-4-phase.ts
 import { AssistantMessage } from '@/features/chat/models/assistant-message';
 import { chatFn } from '../../infra/create-chat';
-import { JSON_RULES } from '../rules';
+
 import { UserRequest } from '../types';
 import { STEP_1_PHASE_MESSAGES } from './step-1-phase';
 import { STEP_2_PHASE_MESSAGES } from './step-2-phase';
 import { STEP_3_PHASE_MESSAGES } from './step-3-phase';
 
-export const STEP_4_PHASE_PROMPT = () =>
-  `
-Generate the fourth step: **Format**.
+import { usePromptStore } from '../../stores/prompt-store';
 
-This step:
-- Uses output from the Decide step
-- Structures it for delivery: clean, readable, well‑organized
-- No new logic or data
+export function getStep4Prompt() {
+  return usePromptStore.getState().step4Prompt;
+}
 
-Modules (pick one):
-  format: [stringify, summarize, render, compile, prepare]
-
-${JSON_RULES}
-
-Output a single, complete JSON object. Surrounded by \`\`\`json and \`\`\`.
-`.trim();
 
 export const STEP_4_PHASE_MESSAGES = (assistantMessage: AssistantMessage) => [
   {
     role: 'assistant',
     content: assistantMessage.getStepString(3),
   },
-  { role: 'user', content: STEP_4_PHASE_PROMPT() },
+  { role: 'user', content: getStep4Prompt() },
 ];
+
 
 export async function* fourthStepPhase(
   userReq: UserRequest,

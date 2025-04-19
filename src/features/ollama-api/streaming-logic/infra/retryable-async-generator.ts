@@ -11,6 +11,11 @@ export type RetryableGeneratorOptions = {
   fallbackValue?: (accumulated: string) => string;
   registerRetryTrigger: (callback: () => void) => () => void; // returns unregister
   maxChunkSize?: number;
+  /**
+   * Optional callback invoked on each retry attempt for observability (e.g., UI feedback).
+   * Receives the error and the current retry attempt (1-based).
+   */
+  onRetry?: (error: unknown, attempt: number) => void;
 };
 
 export async function* retryableAsyncGenerator(
@@ -65,12 +70,18 @@ export async function* retryableAsyncGenerator(
           yield chunk;
         }
 
-        result = await generator.next();
+        // Some generators may return a final value via `.next()` after completion
+        // Guard this call and explain why it's here
+        if (!result) {
+          result = await generator.next();
+        }
         if (accumulatedChunks && (!result.value || result.value === '')) {
           result = { done: true, value: fallbackValue(accumulatedChunks) };
         }
       } catch (err) {
         if (shouldRecover(err)) {
+          // If we should recover, use fallback and exit the generator.
+          console.warn('Recoverable error detected. Using fallback value and exiting generator.', err);
           result = { done: true, value: fallbackValue(accumulatedChunks) };
         } else {
           retryCount++;
@@ -81,6 +92,8 @@ export async function* retryableAsyncGenerator(
           lastError = err;
           // Optionally log retry attempt
           console.warn(`retryableAsyncGenerator: Retry attempt ${retryCount} due to error:`, err);
+          // Invoke onRetry callback if provided
+          options.onRetry?.(err, retryCount);
           // Wait for retry
           await waitForRetry();
         }
