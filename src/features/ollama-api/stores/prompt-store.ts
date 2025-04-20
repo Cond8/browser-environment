@@ -121,41 +121,56 @@ interface PromptStore {
    * @param value The new value of the prompt
    */
   setPromptByKey: (key: PromptKey, value: string) => void;
+  resetKey: (key: PromptKey) => void;
+  resetAll: () => void;
 }
 
 const usePromptStore = create<PromptStore>()(
   persist(
-    immer((set) => ({
+    immer(set => ({
       // Default values for each prompt phase
-      jsCodeTemplate: 'Write a JavaScript function to {{userRequest}}',
+      jsCodeTemplate: '',
       jsCodeOutput: '',
-      jsFunctionName: 'myFunction',
-      jsFunctionDescription: 'A JavaScript function to {{userRequest}}',
+      jsFunctionName: '',
+      jsFunctionDescription: '',
       jsFunctionParameters: '',
-      jsFunctionReturnType: 'void',
-      alignmentStyle: 'standard',
-      alignmentIndentation: '  ',
-      alignmentNewline: '\n',
-      interfaceDefinition: 'Define an interface for {{interfaceResponse}}',
+      jsFunctionReturnType: '',
+
+      alignmentStyle: '',
+      alignmentIndentation: '',
+      alignmentNewline: '',
+
+      interfaceDefinition: '',
       interfaceResponse: '',
-      interfaceName: 'MyInterface',
-      interfaceDescription: 'An interface for {{interfaceResponse}}',
+      interfaceName: '',
+      interfaceDescription: '',
       interfaceProperties: '',
-      rulesDefinition: 'Define rules for {{interfaceResponse}}',
-      rulesName: 'MyRules',
-      rulesDescription: 'Rules for {{interfaceResponse}}',
+
+      rulesDefinition: '',
+      rulesName: '',
+      rulesDescription: '',
       rulesConditions: '',
 
       // Setters for string-keyed updates
       setPromptByKey: (key, value) =>
-        set((state) => {
+        set(state => {
           state[key] = value;
+        }),
+      resetKey: key =>
+        set(state => {
+          state[key] = '';
+        }),
+      resetAll: () =>
+        set(state => {
+          Object.keys(state).forEach(key => {
+            state[key as PromptKey] = '';
+          });
         }),
     })),
     {
       name: 'prompt-store', // name of the item in localStorage
-    }
-  )
+    },
+  ),
 );
 
 export default usePromptStore;
