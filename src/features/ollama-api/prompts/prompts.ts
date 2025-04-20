@@ -1,8 +1,7 @@
 // src/features/ollama-api/prompts/prompts.ts
-import { createPrompt } from './createPrompt';
 
 export const DEFAULT_SYSTEM_PROMPTS = {
-  ALIGNMENT: createPrompt`
+  ALIGNMENT: `
     You are a workflow analyst. Every task must be broken down into exactly four linear steps:
 
     1. **Enrich** — Code-driven: Fetch required external data or trigger side effects (API calls, DB reads, etc.)
@@ -38,7 +37,7 @@ export const DEFAULT_SYSTEM_PROMPTS = {
     Only **Analyze** and **Decide** use LLM prompts — be explicit about what the prompt should do.
   `,
 
-  INTERFACE: createPrompt`
+  INTERFACE: `
     You are a function interface definer. Your job is to return a **single JSON object** inside a \`\`\`json markdown code block.
 
     This object defines a callable interface for a system task based on the given request.
@@ -74,9 +73,9 @@ export const DEFAULT_SYSTEM_PROMPTS = {
     - You may infer types as needed (e.g., string, number, boolean, array, object).
     - Do not include any commentary outside the code block.
 
-    User Request: ${({ userReq }) => userReq}
+    User Request: {{userReq}}
   `,
-  STEPS: createPrompt`
+  STEPS: `
     You are a function interface definer. Your task is to define the function interface for a specific step in a multi-stage system workflow.
 
     The step you're defining will be one of: **Enrich**, **Analyze**, **Decide**, or **Format**.
@@ -125,17 +124,17 @@ export const DEFAULT_SYSTEM_PROMPTS = {
     ---
     User Request:
 
-    ${({ userReq }) => userReq}
+    {{userReq}}
 
     ---
-    Step Name: \`${({ step }) => step}\`
+    Step Name: \`{{step}}\`
 
     ---
     Assistant Alignment:
 
-    ${({ assistantResponse }) => assistantResponse.alignment?.String}
+    {{assistantResponse.alignment.String}}
   `,
-  CODEGEN: createPrompt`
+  CODEGEN: `
     You are a JavaScript code generator. Your job is to implement workflow steps in code, based on interface definitions from a structured system.
 
     The system has four phases: **Enrich**, **Analyze**, **Decide**, and **Format**.
@@ -149,9 +148,9 @@ export const DEFAULT_SYSTEM_PROMPTS = {
 };
 
 export const DEFAULT_USER_PROMPTS = {
-  ALIGNMENT: createPrompt`${({ userReq }) => userReq}`,
-  INTERFACE: createPrompt`${({ assistantResponse }) => assistantResponse.interface?.String}`,
-  ENRICH: createPrompt`
+  ALIGNMENT: `{{ userReq }}`,
+  INTERFACE: `{{ assistantResponse.workflowInterface.String }}`,
+  ENRICH: `
     You are a function interface definer. Your job is to define the **Enrich step** — the first step in a multi-stage system workflow.
 
     This is a **code-driven step** whose goal is to fetch, prepare, or gather data using only the provided input parameters.
@@ -204,14 +203,14 @@ export const DEFAULT_USER_PROMPTS = {
      ---
      Interface:
 
-     ${({ assistantResponse }) => assistantResponse.interface?.String}
+     {{ assistantResponse.workflowInterface.String }}
      ---
      Enrich in the alignment:
 
-     ${({ assistantResponse }) => assistantResponse.alignment?.enrich}
+     {{ assistantResponse.alignment.enrich }}
   `,
 
-  ANALYZE: createPrompt`
+  ANALYZE: `
     Define the **Analyze step** — the second step in the workflow.
 
     This step is **LLM-driven**, and its purpose is to interpret, transform, or extract meaning from the output of the Enrich step.
@@ -227,22 +226,15 @@ export const DEFAULT_USER_PROMPTS = {
     ---
     Available data:
 
-    ${({ assistantResponse }) =>
-      JSON.stringify(
-        {
-          ...assistantResponse.interface?.params,
-          ...assistantResponse.enrich?.returns,
-        },
-        null,
-        2,
-      )}
+    {{ assistantResponse.workflowInterface.params }}
+    {{ assistantResponse.enrich.returns }}
     ---
     Analyze in the alignment:
 
-    ${({ assistantResponse }) => assistantResponse.alignment?.analyze}
+    {{ assistantResponse.alignment.analyze }}
   `,
 
-  DECIDE: createPrompt`
+  DECIDE: `
     Define the **Decide step** — the third step in the workflow.
 
     This step is **hybrid**, combining an LLM prompt with optional branching logic in code.
@@ -259,22 +251,16 @@ export const DEFAULT_USER_PROMPTS = {
     ---
     Available data:
 
-    ${({ assistantResponse }) =>
-      JSON.stringify(
-        {
-          ...assistantResponse.interface?.params,
-          ...assistantResponse.enrich?.returns,
-          ...assistantResponse.analyze?.returns,
-        },
-        null,
-        2,
-      )}
+    {{ assistantResponse.workflowInterface.params }}
+    {{ assistantResponse.enrich.returns }}
+    {{ assistantResponse.analyze.returns }}
+
     ---
     Decide in the alignment:
 
-    ${({ assistantResponse }) => assistantResponse.alignment?.decide}
+    {{ assistantResponse.alignment.decide }}
   `,
-  FORMAT: createPrompt`
+  FORMAT: `
     Define the **Format step** — the final step in the workflow.
 
     This step is **code-driven**, responsible for shaping or finalizing the output result.
@@ -290,19 +276,17 @@ export const DEFAULT_USER_PROMPTS = {
     ---
     Available data:
 
-    ${({ assistantResponse }) =>
-      JSON.stringify(
-        {
-          ...assistantResponse.interface?.params,
-          ...assistantResponse.enrich?.returns,
-          ...assistantResponse.analyze?.returns,
-          ...assistantResponse.decide?.returns,
-        },
-        null,
-        2,
-      )}
+    {{ assistantResponse.workflowInterface.params }}
+    {{ assistantResponse.enrich.returns }}
+    {{ assistantResponse.analyze.returns }}
+    {{ assistantResponse.decide.returns }}
+
+    ---
+    Format in the alignment:
+
+    {{ assistantResponse.alignment.format }}
     `,
-  CODEGEN_ENRICH: createPrompt`
+  CODEGEN_ENRICH: `
     You are a JavaScript code generator. Implement the **Enrich step** of a multi-phase workflow system.
 
     This step is **code-driven**: use the provided inputs to fetch, resolve, or prepare external data using APIs, services, or simple transformation logic.
@@ -327,11 +311,11 @@ export const DEFAULT_USER_PROMPTS = {
     The interface below defines the structure of the step: inputs, outputs, and purpose.
 
     \`\`\`javascript
-    ${({ assistantResponse }) => assistantResponse.enrich?.jsDocs}
-    ${({ assistantResponse }) => assistantResponse.enrich?.jsEnclosure}
+    {{ assistantResponse.enrich.jsDocs }}
+    {{ assistantResponse.enrich.jsEnclosure }}
     \`\`\`
   `,
-  CODEGEN_ANALYZE: createPrompt`
+  CODEGEN_ANALYZE: `
     Implement the **Analyze step** in the workflow.
 
     This step is **LLM-driven**: use a prompt to interpret, transform, or extract meaning from the provided inputs.
@@ -350,11 +334,11 @@ export const DEFAULT_USER_PROMPTS = {
     Interface:
 
     \`\`\`javascript
-    ${({ assistantResponse }) => assistantResponse.analyze?.jsDocs}
-    ${({ assistantResponse }) => assistantResponse.analyze?.jsEnclosure}
+    {{ assistantResponse.analyze.jsDocs }}
+    {{ assistantResponse.analyze.jsEnclosure }}
     \`\`\`
   `,
-  CODEGEN_DECIDE: createPrompt`
+  CODEGEN_DECIDE: `
     Implement the **Decide step** in the workflow.
 
     This step is **hybrid**: use an LLM to suggest or rank options, and optionally apply code logic to handle the result.
@@ -374,12 +358,12 @@ export const DEFAULT_USER_PROMPTS = {
     Interface:
 
     \`\`\`javascript
-    ${({ assistantResponse }) => assistantResponse.decide?.jsDocs}
-    ${({ assistantResponse }) => assistantResponse.decide?.jsEnclosure}
+    {{ assistantResponse.decide.jsDocs }}
+    {{ assistantResponse.decide.jsEnclosure }}
     \`\`\`
   `,
 
-  CODEGEN_FORMAT: createPrompt`
+  CODEGEN_FORMAT: `
     Implement the **Format step** — the final step in the workflow.
 
     This step is **code-driven**: clean, finalize, and return the final structured result based on earlier decisions.
@@ -398,17 +382,17 @@ export const DEFAULT_USER_PROMPTS = {
     Interface:
 
     \`\`\`javascript
-    ${({ assistantResponse }) => assistantResponse.format?.jsDocs}
-    ${({ assistantResponse }) => assistantResponse.format?.jsEnclosure}
+    {{ assistantResponse.format.jsDocs }}
+    {{ assistantResponse.format.jsEnclosure }}
     \`\`\`
   `,
 };
 
-export const ASSISTANT_PROMPTS = {
-  ENRICH: createPrompt`${({ assistantResponse }) => assistantResponse.enrich?.String}`,
-  ANALYZE: createPrompt`${({ assistantResponse }) => assistantResponse.analyze?.String}`,
-  DECIDE: createPrompt`${({ assistantResponse }) => assistantResponse.decide?.String}`,
-  CODEGEN_ENRICH: createPrompt`${({ assistantResponse }) => assistantResponse.enrich?.code}`,
-  CODEGEN_ANALYZE: createPrompt`${({ assistantResponse }) => assistantResponse.analyze?.code}`,
-  CODEGEN_DECIDE: createPrompt`${({ assistantResponse }) => assistantResponse.decide?.code}`,
+export const DEFAULT_ASSISTANT_PROMPTS = {
+  ENRICH: `{{ assistantResponse.enrich.String }}`,
+  ANALYZE: `{{ assistantResponse.analyze.String }}`,
+  DECIDE: `{{ assistantResponse.decide.String }}`,
+  CODEGEN_ENRICH: `{{ assistantResponse.enrich.code }}`,
+  CODEGEN_ANALYZE: `{{ assistantResponse.analyze.code }}`,
+  CODEGEN_DECIDE: `{{ assistantResponse.decide.code }}`,
 };
