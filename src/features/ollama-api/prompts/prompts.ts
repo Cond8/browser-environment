@@ -1,3 +1,4 @@
+// src/features/ollama-api/prompts/prompts.ts
 import { createPrompt } from './createPrompt';
 
 export const DEFAULT_SYSTEM_PROMPTS = {
@@ -132,7 +133,7 @@ export const DEFAULT_SYSTEM_PROMPTS = {
     ---
     Assistant Alignment:
 
-    ${({ assistantResponse }) => assistantResponse.alignment}
+    ${({ assistantResponse }) => assistantResponse.alignment?.String}
   `,
   CODEGEN: createPrompt`
     You are a JavaScript code generator. Your job is to implement workflow steps in code, based on interface definitions from a structured system.
@@ -149,7 +150,7 @@ export const DEFAULT_SYSTEM_PROMPTS = {
 
 export const DEFAULT_USER_PROMPTS = {
   ALIGNMENT: createPrompt`${({ userReq }) => userReq}`,
-  INTERFACE: createPrompt`${({ assistantResponse }) => assistantResponse.alignment.String}`,
+  INTERFACE: createPrompt`${({ assistantResponse }) => assistantResponse.interface?.String}`,
   ENRICH: createPrompt`
     You are a function interface definer. Your job is to define the **Enrich step** — the first step in a multi-stage system workflow.
 
@@ -203,11 +204,11 @@ export const DEFAULT_USER_PROMPTS = {
      ---
      Interface:
 
-     ${({ assistantResponse }) => JSON.stringify(assistantResponse.interface, null, 2)}
+     ${({ assistantResponse }) => assistantResponse.interface?.String}
      ---
      Enrich in the alignment:
 
-     ${({ assistantResponse }) => assistantResponse.alignment.enrich}
+     ${({ assistantResponse }) => assistantResponse.alignment?.enrich}
   `,
 
   ANALYZE: createPrompt`
@@ -229,8 +230,8 @@ export const DEFAULT_USER_PROMPTS = {
     ${({ assistantResponse }) =>
       JSON.stringify(
         {
-          ...assistantResponse.interface.params,
-          ...assistantResponse.enrich.returns,
+          ...assistantResponse.interface?.params,
+          ...assistantResponse.enrich?.returns,
         },
         null,
         2,
@@ -238,7 +239,7 @@ export const DEFAULT_USER_PROMPTS = {
     ---
     Analyze in the alignment:
 
-    ${({ assistantResponse }) => assistantResponse.alignment.analyze}
+    ${({ assistantResponse }) => assistantResponse.alignment?.analyze}
   `,
 
   DECIDE: createPrompt`
@@ -261,9 +262,9 @@ export const DEFAULT_USER_PROMPTS = {
     ${({ assistantResponse }) =>
       JSON.stringify(
         {
-          ...assistantResponse.interface.params,
-          ...assistantResponse.enrich.returns,
-          ...assistantResponse.analyze.returns,
+          ...assistantResponse.interface?.params,
+          ...assistantResponse.enrich?.returns,
+          ...assistantResponse.analyze?.returns,
         },
         null,
         2,
@@ -271,7 +272,7 @@ export const DEFAULT_USER_PROMPTS = {
     ---
     Decide in the alignment:
 
-    ${({ assistantResponse }) => assistantResponse.alignment.decide}
+    ${({ assistantResponse }) => assistantResponse.alignment?.decide}
   `,
   FORMAT: createPrompt`
     Define the **Format step** — the final step in the workflow.
@@ -292,10 +293,10 @@ export const DEFAULT_USER_PROMPTS = {
     ${({ assistantResponse }) =>
       JSON.stringify(
         {
-          ...assistantResponse.interface.params,
-          ...assistantResponse.enrich.returns,
-          ...assistantResponse.analyze.returns,
-          ...assistantResponse.decide.returns,
+          ...assistantResponse.interface?.params,
+          ...assistantResponse.enrich?.returns,
+          ...assistantResponse.analyze?.returns,
+          ...assistantResponse.decide?.returns,
         },
         null,
         2,
@@ -321,14 +322,13 @@ export const DEFAULT_USER_PROMPTS = {
     - Avoid side effects unrelated to data fetching or preparation
     - Only respond with a valid \`\`\`ts code block (no text before or after)
 
-    ${({ recording, userFilters }) => (recording ? `\n\nRecording: ${userFilters.enrich(recording)}\n\n` : '')}
     ---
     Context:
     The interface below defines the structure of the step: inputs, outputs, and purpose.
 
     \`\`\`javascript
-    ${({ assistantResponse }) => assistantResponse.enrich.jsDocs}
-    ${({ assistantResponse }) => assistantResponse.enrich.jsEnclosure}
+    ${({ assistantResponse }) => assistantResponse.enrich?.jsDocs}
+    ${({ assistantResponse }) => assistantResponse.enrich?.jsEnclosure}
     \`\`\`
   `,
   CODEGEN_ANALYZE: createPrompt`
@@ -350,8 +350,8 @@ export const DEFAULT_USER_PROMPTS = {
     Interface:
 
     \`\`\`javascript
-    ${({ assistantResponse }) => assistantResponse.analyze.dsl}
-    ${({ assistantResponse }) => assistantResponse.analyze.js}
+    ${({ assistantResponse }) => assistantResponse.analyze?.jsDocs}
+    ${({ assistantResponse }) => assistantResponse.analyze?.jsEnclosure}
     \`\`\`
   `,
   CODEGEN_DECIDE: createPrompt`
@@ -374,32 +374,41 @@ export const DEFAULT_USER_PROMPTS = {
     Interface:
 
     \`\`\`javascript
-    ${({ assistantResponse }) => assistantResponse.decide.dsl}
-    ${({ assistantResponse }) => assistantResponse.decide.js}
+    ${({ assistantResponse }) => assistantResponse.decide?.jsDocs}
+    ${({ assistantResponse }) => assistantResponse.decide?.jsEnclosure}
     \`\`\`
   `,
 
   CODEGEN_FORMAT: createPrompt`
-  Implement the **Format step** — the final step in the workflow.
+    Implement the **Format step** — the final step in the workflow.
 
-  This step is **code-driven**: clean, finalize, and return the final structured result based on earlier decisions.
+    This step is **code-driven**: clean, finalize, and return the final structured result based on earlier decisions.
 
-  ---
-  Output must:
-  - Export a (sync or async) function named according to \`functionName\`
-  - Use exactly the keys from \`params\` — no additional arguments
-  - Return an object shaped exactly as described in \`returns\`
-  - Avoid any side effects — this is pure output shaping
-  - Use the \`goal\` as a comment above the function
+    ---
+    Output must:
+    - Export a (sync or async) function named according to \`functionName\`
+    - Use exactly the keys from \`params\` — no additional arguments
+    - Return an object shaped exactly as described in \`returns\`
+    - Avoid any side effects — this is pure output shaping
+    - Use the \`goal\` as a comment above the function
 
-  Respond with only a \`\`\`ts code block — no extra explanation.
+    Respond with only a \`\`\`ts code block — no extra explanation.
 
-  ---
-  Interface:
+    ---
+    Interface:
 
-  \`\`\`javascript
-  ${({ assistantResponse }) => assistantResponse.format.dsl}
-  ${({ assistantResponse }) => assistantResponse.format.js}
-  \`\`\`
+    \`\`\`javascript
+    ${({ assistantResponse }) => assistantResponse.format?.jsDocs}
+    ${({ assistantResponse }) => assistantResponse.format?.jsEnclosure}
+    \`\`\`
   `,
+};
+
+export const ASSISTANT_PROMPTS = {
+  ENRICH: createPrompt`${({ assistantResponse }) => assistantResponse.enrich?.String}`,
+  ANALYZE: createPrompt`${({ assistantResponse }) => assistantResponse.analyze?.String}`,
+  DECIDE: createPrompt`${({ assistantResponse }) => assistantResponse.decide?.String}`,
+  CODEGEN_ENRICH: createPrompt`${({ assistantResponse }) => assistantResponse.enrich?.code}`,
+  CODEGEN_ANALYZE: createPrompt`${({ assistantResponse }) => assistantResponse.analyze?.code}`,
+  CODEGEN_DECIDE: createPrompt`${({ assistantResponse }) => assistantResponse.decide?.code}`,
 };
