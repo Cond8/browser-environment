@@ -5,7 +5,11 @@ import { useEditorStore } from '@/features/editor/stores/editor-store';
 import { processJsonChunk } from '@/features/editor/transpilers-json-source/my-json-parser';
 import { validateWorkflowStep } from '@/features/editor/transpilers-json-source/workflow-step-validator';
 import { useChatStore } from '../../../chat/store/chat-store';
-import { useVFSStore } from '../../../vfs/store/vfs-store';
+import {
+  AlignmentResponse,
+  AssistantResponse,
+  GeneratedStep,
+} from '../../prompts/assistant-response';
 import { chatFn } from '../infra/create-chat';
 import {
   retryableAsyncGenerator,
@@ -13,16 +17,7 @@ import {
 } from '../infra/retryable-async-generator';
 import { ALIGNMENT_MESSAGES } from '../phases/alignment-phase';
 import { INTERFACE_MESSAGES } from '../phases/interface-phase';
-import { STEP_1_CODE_MESSAGES } from '../phases/js/step-1-code';
-import { STEP_2_CODE_MESSAGES } from '../phases/js/step-2-code';
-import { STEP_3_CODE_MESSAGES } from '../phases/js/step-3-code';
-import { STEP_4_CODE_MESSAGES } from '../phases/js/step-4-code';
-import { generateCodeFunction } from '../phases/js/wrapper';
-import { STEP_1_PHASE_MESSAGES } from '../phases/steps/step-1-phase';
-import { STEP_2_PHASE_MESSAGES } from '../phases/steps/step-2-phase';
-import { STEP_3_PHASE_MESSAGES } from '../phases/steps/step-3-phase';
-import { STEP_4_PHASE_MESSAGES } from '../phases/steps/step-4-phase';
-import { UserRequest, WorkflowPhase, WorkflowStep } from '../phases/types';
+import { WorkflowPhase, WorkflowStep } from '../phases/types';
 
 export class WorkflowChainError extends Error {
   public metadata: unknown[];
@@ -64,12 +59,10 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
   }
 
   const userMessage = messages[0] as UserMessage;
-  const userRequest = userMessage.content;
-  const userReq: UserRequest = {
-    userRequest: typeof userRequest === 'string' ? userRequest : JSON.stringify(userRequest),
-  };
+  const userReq = userMessage.content;
 
   const assistantMessage = new AssistantMessage();
+  const assistantResponse = new AssistantResponse();
 
   // Create a retry trigger system
   const retryCallbacks: (() => void)[] = [];
@@ -104,10 +97,10 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
     return validated;
   }
 
-  function pushStepToVfs(step: WorkflowStep, code: string): void {
-    if (code === '') return;
-    useVFSStore.getState().addServiceImplementation(step, code);
-  }
+  // function pushStepToVfs(step: WorkflowStep, code: string): void {
+  //   if (code === '') return;
+  //   useVFSStore.getState().addServiceImplementation(step, code);
+  // }
 
   try {
     /**============================
@@ -115,104 +108,26 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
      * ============================ */
     console.log('alignmentPhase');
     const alignmentResult = yield* retryableAsyncGenerator(
-      () => chatFn({ messages: ALIGNMENT_MESSAGES(userReq) }),
+      () => chatFn({ messages: ALIGNMENT_MESSAGES(userReq, assistantResponse) }),
       retryOptions,
     );
     console.log('alignmentResult', { alignmentResult });
-    assistantMessage.addAlignmentResponse(alignmentResult);
+    assistantResponse.alignment = new AlignmentResponse(alignmentResult);
 
     /**=============================
      * ===== INTERFACE PHASE =======
      * ============================= */
     console.log('interfacePhase');
     const interfaceResult = yield* retryableAsyncGenerator(
-      () => chatFn({ messages: INTERFACE_MESSAGES(userReq, assistantMessage) }),
+      () => chatFn({ messages: INTERFACE_MESSAGES(userReq, assistantResponse) }),
       retryOptions,
     );
-    assistantMessage.addInterfaceResponse(interfaceResult);
+    assistantResponse.workflowInterface = new GeneratedStep(interfaceResult);
     pushStepToEditor(interfaceResult);
 
     /**============================
      * ===== LOGIC STEPS LOOP =====
      * ============================ */
-
-    const stepDefs = [
-      {
-        name: 'enrich',
-        phaseMessages: () => STEP_1_PHASE_MESSAGES(userReq, assistantMessage),
-        codeMessages: () => STEP_1_CODE_MESSAGES(assistantMessage.getStep(1)),
-        addResponse: (dsl: string) => assistantMessage.addStepEnrichResponse(dsl),
-        addCode: (code: string) => assistantMessage.addStepEnrichCode(code),
-      },
-      {
-        name: 'analyze',
-        phaseMessages: () => [
-          ...STEP_1_PHASE_MESSAGES(userReq, assistantMessage),
-          ...STEP_2_PHASE_MESSAGES(assistantMessage),
-        ],
-        codeMessages: () => [
-          ...STEP_1_CODE_MESSAGES(assistantMessage.getStep(1)),
-          ...STEP_2_CODE_MESSAGES(assistantMessage),
-        ],
-        addResponse: (dsl: string) => assistantMessage.addStepAnalyzeResponse(dsl),
-        addCode: (code: string) => assistantMessage.addStepAnalyzeCode(code),
-      },
-      {
-        name: 'decide',
-        phaseMessages: () => [
-          ...STEP_1_PHASE_MESSAGES(userReq, assistantMessage),
-          ...STEP_2_PHASE_MESSAGES(assistantMessage),
-          ...STEP_3_PHASE_MESSAGES(assistantMessage),
-        ],
-        codeMessages: () => [
-          ...STEP_1_CODE_MESSAGES(assistantMessage.getStep(1)),
-          ...STEP_2_CODE_MESSAGES(assistantMessage),
-          ...STEP_3_CODE_MESSAGES(assistantMessage),
-        ],
-        addResponse: (dsl: string) => assistantMessage.addStepDecideResponse?.(dsl),
-        addCode: (code: string) => assistantMessage.addStepDecideCode(code),
-      },
-      {
-        name: 'format',
-        phaseMessages: () => [
-          ...STEP_1_PHASE_MESSAGES(userReq, assistantMessage),
-          ...STEP_2_PHASE_MESSAGES(assistantMessage),
-          ...STEP_3_PHASE_MESSAGES(assistantMessage),
-          ...STEP_4_PHASE_MESSAGES(assistantMessage),
-        ],
-        codeMessages: () => [
-          ...STEP_1_CODE_MESSAGES(assistantMessage.getStep(1)),
-          ...STEP_2_CODE_MESSAGES(assistantMessage),
-          ...STEP_3_CODE_MESSAGES(assistantMessage),
-          ...STEP_4_CODE_MESSAGES(assistantMessage),
-        ],
-        addResponse: (dsl: string) => assistantMessage.addStepFormatResponse(dsl),
-        addCode: (code: string) => assistantMessage.addStepFormatCode(code),
-      },
-    ];
-
-    const validatedSteps: WorkflowStep[] = [];
-
-    for (const def of stepDefs) {
-      console.log(`stepPhase (${def.name})`);
-
-      const dsl = yield* retryableAsyncGenerator(
-        () => chatFn({ messages: def.phaseMessages() }),
-        retryOptions,
-      );
-      def.addResponse(dsl);
-
-      const validated = pushStepToEditor(dsl);
-      validatedSteps.push(validated);
-
-      const code = yield* retryableAsyncGenerator(
-        () => generateCodeFunction(() => chatFn({ messages: def.codeMessages() }), validated),
-        retryOptions,
-      );
-      def.addCode(code);
-
-      pushStepToVfs(validated, code);
-    }
 
     /**===========================
      * ===== END OF WORKFLOW =====

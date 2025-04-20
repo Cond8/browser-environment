@@ -38,7 +38,7 @@ type PromptStore = {
   [K in PromptKey]: string;
 };
 
-const usePromptStore = create<PromptStore>()(
+export const usePromptStore = create<PromptStore>()(
   persist(
     immer((set, get) => {
       const internal: { [K in PromptKey]: string } = {
@@ -82,5 +82,3 @@ const usePromptStore = create<PromptStore>()(
     },
   ),
 );
-
-export default usePromptStore;

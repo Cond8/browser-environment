@@ -1,34 +1,18 @@
 // src/features/ollama-api/streaming-logic/phases/steps/step-2-phase.ts
-import { AssistantMessage } from '@/features/chat/models/assistant-message';
-import { chatFn } from '../../infra/create-chat';
+import { AssistantResponse } from '@/features/ollama-api/prompts/assistant-response';
+import { usePromptStore } from '@/features/ollama-api/stores/prompt-store';
 
-import { UserRequest } from '../types';
-import { STEP_1_PHASE_MESSAGES } from './step-1-phase';
-
-import { usePromptStore } from '../../stores/prompt-store';
-
-export function getStep2Prompt() {
-  return usePromptStore.getState().step2Prompt;
-}
-
-
-export const STEP_2_PHASE_MESSAGES = (assistantMessage: AssistantMessage) => [
+export const STEP_2_PHASE_MESSAGES = (userReq: string, assistantResponse: AssistantResponse) => [
   {
     role: 'assistant',
-    content: assistantMessage.getStepString(1),
+    content: usePromptStore
+      .getState()
+      .makePrompt('assistant_enrich', { userReq, assistantResponse, step: 'Enrich' }),
   },
-  { role: 'user', content: getStep2Prompt() },
+  {
+    role: 'user',
+    content: usePromptStore
+      .getState()
+      .makePrompt('user_analyze', { userReq, assistantResponse, step: 'Analyze' }),
+  },
 ];
-
-
-export async function* secondStepPhase(
-  userReq: UserRequest,
-  assistantMessage: AssistantMessage,
-): AsyncGenerator<string, string, unknown> {
-  return yield* chatFn({
-    messages: [
-      ...STEP_1_PHASE_MESSAGES(userReq, assistantMessage),
-      ...STEP_2_PHASE_MESSAGES(assistantMessage),
-    ],
-  });
-}

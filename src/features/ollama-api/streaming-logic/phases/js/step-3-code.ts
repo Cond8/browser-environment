@@ -1,63 +1,25 @@
 // src/features/ollama-api/streaming-logic/phases/js/step-3-code.ts
 import { Message } from 'ollama';
-import { AssistantMessage } from '../../../../chat/models/assistant-message';
-import { WorkflowStep } from '../types';
 
-const examples: string[] = [
-  'function filterAdults(users) {\n  return users.filter(user => user.age >= 18);\n}',
-  'function selectTopScoringItem(items) {\n  return items.reduce((top, item) => item.score > top.score ? item : top, items[0]);\n}',
-  'function classifySentiment(score) {\n  if (score > 0.5) return "positive";\n  if (score < -0.5) return "negative";\n  return "neutral";\n}',
-];
+import { AssistantResponse } from '@/features/ollama-api/prompts/assistant-response';
+import { usePromptStore } from '../../../stores/prompt-store';
+import { STEP_2_CODE_MESSAGES } from '../js/step-2-code';
 
-const USER_PROMPT = (step: WorkflowStep): string => {
-  const { functionName, goal, params, returns } = step;
-
-  const paramDefs = Object.entries(params)
-    .map(([name, p]) => `- ${name}: ${p.type} — ${p.description}`)
-    .join('\n');
-
-  const returnDefs = Object.entries(returns)
-    .map(([name, r]) => `- ${name}: ${r.type} — ${r.description}`)
-    .join('\n');
-
-  // Optional: Add examples if provided
-  const examplesSection = `\nExamples:\n${examples
-    .map((ex: string, i: number) => `Example ${i + 1}:\n${ex}`)
-    .join('\n')}\n`;
-
-  return `
-You are implementing the **Decide** step of a workflow.
-
-This step uses output from the Analyze step and performs branching, filtering, or outcome selection based on analysis. It determines the final path, classification, or selection for the workflow.
-
-Function goal:
-${goal}
-
-Function signature:
-Name: ${functionName}
-
-Parameters:
-${paramDefs}
-
-Returns:
-${returnDefs}
-${examplesSection}
-Instructions:
-- Write a JavaScript function named "${functionName}" that performs branching, filtering, or outcome selection.
-- Do not include enrichment, pure analysis, or formatting logic here.
-- Output only the function code, nothing else.
-
-function
-`;
-};
-
-export const STEP_3_CODE_MESSAGES = (assistantMessage: AssistantMessage): Message[] => [
+export const STEP_3_CODE_MESSAGES = (
+  userReq: string,
+  assistantResponse: AssistantResponse,
+): Message[] => [
+  ...STEP_2_CODE_MESSAGES(userReq, assistantResponse),
   {
     role: 'system',
-    content: assistantMessage.getAnalyzeCode(),
+    content: usePromptStore
+      .getState()
+      .makePrompt('assistant_codegen_analyze', { userReq, assistantResponse, step: 'Codegen Analyze' }),
   },
   {
     role: 'user',
-    content: USER_PROMPT(assistantMessage.getStep(3)),
+    content: usePromptStore
+      .getState()
+      .makePrompt('user_decide', { userReq, assistantResponse, step: 'Codegen Decide' }),
   },
 ];
