@@ -11,7 +11,7 @@ export abstract class CoreRedprint<T extends object = object> {
   public cache?: StrictKVBlueprint;
   [key: symbol]: CoreBlueprint;
 
-  protected constructor(readonly body: T) {
+  protected constructor(public readonly body: T) {
     this.utils = new ConduitUtils(this);
   }
 

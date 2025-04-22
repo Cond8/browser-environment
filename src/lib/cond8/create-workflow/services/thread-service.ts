@@ -2,7 +2,7 @@
 import { Message } from 'ollama';
 import { CoreBlueprint } from '../../_core';
 
-export class PromptService extends CoreBlueprint {
+export class ThreadService extends CoreBlueprint {
   private messages: Set<Message>;
 
   constructor(key: string) {
@@ -10,26 +10,26 @@ export class PromptService extends CoreBlueprint {
     this.messages = new Set();
   }
 
-  System(prompt: string): void {
+  System(content: string): void {
     const message: Message = {
       role: 'system',
-      content: prompt,
+      content,
     };
     this.messages.add(message);
   }
 
-  User(prompt: string): void {
+  User(content: string): void {
     const message: Message = {
       role: 'user',
-      content: prompt,
+      content,
     };
     this.messages.add(message);
   }
 
-  Assistant(prompt: string): void {
+  Assistant(content: string): void {
     const message: Message = {
       role: 'assistant',
-      content: prompt,
+      content,
     };
     this.messages.add(message);
   }

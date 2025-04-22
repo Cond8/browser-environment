@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/features/chat/store/chat-store';
 import { useStreamSourceStore } from '@/features/ollama-api/streaming-logic/infra/stream-source-store';
+import StartCreateWorkflowDirector from '@/lib/cond8/create-workflow/start-create-workflow';
 import { Send, StopCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAbortEventBusStore } from '../../store/abort-eventbus-store';
@@ -56,7 +57,6 @@ export function UserInput() {
   const triggerAbort = useAbortEventBusStore(state => state.triggerAbort);
   const isLoading = useStreamSourceStore(state => state.isStreaming);
   const setIsLoading = useStreamSourceStore(state => state.setIsStreaming);
-  const startWorkflowChain = useStreamSourceStore(state => state.startWorkflowChain);
   const stopLoading = useAbortEventBusStore(state => state.triggerAbort);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,7 +67,9 @@ export function UserInput() {
     addUserMessage(trimmed);
     setMessage('');
     try {
-      await startWorkflowChain();
+      await StartCreateWorkflowDirector({
+        startPrompt: trimmed,
+      });
     } catch (error) {
       console.error('Unexpected error during workflow chain:', error);
     } finally {

@@ -1,6 +1,6 @@
 // src/lib/cond8/create-workflow/start-create-workflow.ts
 import { createDirector } from '../_core';
-import { WorkflowActors, WorkflowConduit, WorkflowConduitInput } from './workflow-conduit';
+import { WorkflowActors, WorkflowConduit, WorkflowConduitInput } from './conduits/workflow-conduit';
 
 const StartCreateWorkflowDirector = createDirector<WorkflowConduit>(
   'start-create-workflow',
@@ -26,6 +26,13 @@ StartCreateWorkflowDirector(
   WorkflowActors.Prompt.User`
     ${c8 => c8.body.startPrompt}
   `,
+  WorkflowActors.Prompt.Finalize.Set('thread'),
+  WorkflowActors.Chat.StreamResponse.From('thread'),
+  WorkflowActors.Prompt.User`
+    Now that we are aligned. Suggest to me how we can refine the inputs. Then ask me how I want to proceed.
+  `,
+  WorkflowActors.Prompt.Finalize.Set('thread'),
+  WorkflowActors.Chat.StreamResponse.From('thread'),
 );
 
 export default StartCreateWorkflowDirector.fin(c8 => c8);
