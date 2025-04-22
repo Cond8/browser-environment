@@ -12,13 +12,11 @@ export const STEP_4_CODE_MESSAGES = (
   ...STEP_3_CODE_MESSAGES(userReq, assistantResponse),
   {
     role: 'system',
-    content: usePromptStore
-      .getState()
-      .makePrompt('assistant_codegen_decide', {
-        userReq,
-        assistantResponse,
-        step: 'Codegen Decide',
-      }),
+    content: usePromptStore.getState().makePrompt('assistant_codegen_decide', {
+      userReq,
+      assistantResponse,
+      step: 'Codegen Decide',
+    }),
   },
   {
     role: 'user',

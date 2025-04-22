@@ -1,12 +1,12 @@
 // src/lib/cond8/_core/Metadata/filter-meta-hooks.ts
-import { CoreRedprint } from '../CoreDomain/index.ts';
+import { CoreRedprint } from '../CoreDomain/index.js';
 import {
   ActorTestInput,
   ActorTestOutput,
   DirectorTestInput,
   DirectorTestOutput,
   MetaHook,
-} from './hooks.ts';
+} from './hooks.js';
 
 export const filterMetaHooksActor = <C8 extends CoreRedprint>(
   ...metadataRest: unknown[]

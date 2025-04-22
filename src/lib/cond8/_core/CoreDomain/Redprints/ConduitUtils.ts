@@ -1,23 +1,21 @@
 // src/lib/cond8/_core/CoreDomain/Redprints/ConduitUtils.ts
-import {
-  C8Error,
-  CoreBlueprint,
-  CoreRedprint,
-  FullLifecycleBlueprint,
-  LifecycleBlueprint,
-  LifecyclePayload,
-  RecorderEntry,
-} from '@/lib/cond8/_core';
 import { diff } from 'jest-diff';
+import { FullLifecycleBlueprint } from '../../Lifecycle/LifecycleEventHooks.js';
+import { LifecyclePayload } from '../../Lifecycle/Vacuum.js';
+import { C8Error } from '../../Recorder/C8Error.js';
+import { RecorderEntry } from '../../Recorder/create-recorder.js';
+import { CoreBlueprint } from '../Blueprints/CoreBlueprint.js';
+import { LifecycleBlueprint } from '../Blueprints/LifecycleBlueprint.js';
+import { CoreRedprint } from './CoreRedprint.js';
 
-export type ReadonlyState<C8 extends CoreRedprint> = {
-  var: VarUtilsType<C8>;
+export type ReadonlyState = {
+  var: VarUtilsType;
   plain: object;
   [key: string]: unknown;
 };
 
-export type VarUtilsType<C8 extends CoreRedprint> = {
-  <V>(key: PropertyKey, value?: V): V | C8;
+export type VarUtilsType = {
+  <V>(key: PropertyKey, value?: V): V;
   has: (key: PropertyKey) => boolean;
   string: (key: PropertyKey, value?: string) => string;
   number: (key: PropertyKey, value?: number) => number;
@@ -38,7 +36,7 @@ export class ConduitUtils<C8 extends CoreRedprint> {
     return this.#closed;
   }
 
-  get readonly(): ReadonlyState<C8> {
+  get readonly(): ReadonlyState & Record<string, object> {
     const readonly: Record<string, unknown> = {};
     for (const [key, layer] of this._allBlueprintLayers()) {
       readonly[key] = layer.readonly;
@@ -64,6 +62,12 @@ export class ConduitUtils<C8 extends CoreRedprint> {
     return result ?? '[No changes in diff]';
   }
 
+  close(
+    payload: LifecyclePayload<C8>,
+    directorPayload: LifecyclePayload<C8>,
+    error: Error,
+    recording?: RecorderEntry[],
+  ): C8Error<C8>;
   close(
     payload: LifecyclePayload<C8>,
     directorPayload: LifecyclePayload<C8>,
@@ -160,13 +164,13 @@ export class ConduitUtils<C8 extends CoreRedprint> {
     }
   }
 
-  get var(): VarUtilsType<C8> {
-    const defaultVar = <V>(key: PropertyKey, value?: V): V | C8 => {
+  get var(): VarUtilsType {
+    const defaultVar = <V>(key: PropertyKey, value?: V): V => {
       if (value === undefined) {
         return this.c8.locals.get(key) as V;
       }
       this.c8.locals.set(key, value);
-      return this.c8;
+      return value;
     };
 
     const checkedVar =

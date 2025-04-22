@@ -1,11 +1,11 @@
 // src/lib/cond8/_core/CoreInfra/create-actor.ts
-import { CoreRedprint } from '../CoreDomain/index.ts';
-import { LifecyclePayload, Vacuum } from '../Lifecycle/Vacuum.ts';
-import { filterMetaHooksActor } from '../Metadata/filter-meta-hooks.ts';
-import { Recorder } from '../Recorder/create-recorder.ts';
-import { CouldPromise } from '../utils/fn-promise-like.ts';
-import { fnStringify } from '../utils/fn-stringify.ts';
-import { ActorScript, ActorScriptWithTest } from './create-role.ts';
+import { CoreRedprint } from '../CoreDomain/index.js';
+import { LifecyclePayload, Vacuum } from '../Lifecycle/Vacuum.js';
+import { filterMetaHooksActor } from '../Metadata/filter-meta-hooks.js';
+import { Recorder } from '../Recorder/create-recorder.js';
+import { CouldPromise } from '../utils/fn-promise-like.js';
+import { fnStringify } from '../utils/fn-stringify.js';
+import { ActorScript, ActorScriptWithTest } from './create-role.js';
 
 export type StagedActor<C8 extends CoreRedprint> = {
   (c8: C8, recorder: Recorder | undefined, directorPayload: LifecyclePayload<C8>): CouldPromise<C8>;

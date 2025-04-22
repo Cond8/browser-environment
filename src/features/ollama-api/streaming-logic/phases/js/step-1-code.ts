@@ -2,7 +2,7 @@
 import { Message } from 'ollama';
 
 import { AssistantResponse } from '@/features/ollama-api/prompts/assistant-response';
-import {usePromptStore} from '../../../stores/prompt-store';
+import { usePromptStore } from '../../../stores/prompt-store';
 
 export const STEP_1_CODE_MESSAGES = (
   userReq: string,

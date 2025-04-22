@@ -1,8 +1,8 @@
 // src/lib/cond8/_core/Lifecycle/Vacuum.ts
-import { CoreRedprint } from '../CoreDomain/index.ts';
-import { MetaHook } from '../Metadata/hooks.ts';
-import { Recorder } from '../Recorder/create-recorder.ts';
-import { FullLifecycleBlueprint } from './LifecycleEventHooks.ts';
+import { CoreRedprint } from '../CoreDomain/index.js';
+import { MetaHook } from '../Metadata/hooks.js';
+import { Recorder } from '../Recorder/create-recorder.js';
+import { FullLifecycleBlueprint } from './LifecycleEventHooks.js';
 
 export interface LifecyclePayload<C8 extends CoreRedprint = CoreRedprint> {
   event: keyof FullLifecycleBlueprint<C8>;

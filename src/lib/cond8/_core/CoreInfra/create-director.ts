@@ -1,13 +1,13 @@
 // src/lib/cond8/_core/CoreInfra/create-director.ts
-import { CoreBlueprint, CoreRedprint } from '../CoreDomain/index.ts';
-import { LifecyclePayload, Vacuum } from '../Lifecycle/Vacuum.ts';
-import { filterMetaHooksDirector } from '../Metadata/filter-meta-hooks.ts';
-import { MetaHook } from '../Metadata/hooks.ts';
-import { Recorder, RecorderEntry } from '../Recorder/create-recorder.ts';
-import { CouldPromise } from '../utils/fn-promise-like.ts';
-import { fnStringify } from '../utils/fn-stringify.ts';
-import { createActor, StagedActor } from './create-actor.ts';
-import { ActorScript, ActorScriptWithTest } from './create-role.ts';
+import { CoreBlueprint, CoreRedprint } from '../CoreDomain/index.js';
+import { LifecyclePayload, Vacuum } from '../Lifecycle/Vacuum.js';
+import { filterMetaHooksDirector } from '../Metadata/filter-meta-hooks.js';
+import { MetaHook } from '../Metadata/hooks.js';
+import { Recorder, RecorderEntry } from '../Recorder/create-recorder.js';
+import { CouldPromise } from '../utils/fn-promise-like.js';
+import { fnStringify } from '../utils/fn-stringify.js';
+import { createActor, StagedActor } from './create-actor.js';
+import { ActorScript, ActorScriptWithTest } from './create-role.js';
 
 export type C8RO<C8 extends CoreRedprint> = C8['utils']['readonly'];
 export type C8ROPlain<C8 extends CoreRedprint> = C8['utils']['readonly']['plain'];
@@ -181,7 +181,7 @@ export function createDirector<C8 extends CoreRedprint>(
   const toActorScript: ActorScript<C8> = async (inputC8: C8, recorder?: Recorder) => {
     void inputC8.utils.handleEvent('onDirectorEnter', vacuum.add({ c8: inputC8, isTest: false }));
 
-    let outputC8;
+    let outputC8: C8;
 
     try {
       outputC8 = await stagedActors.reduce<Promise<C8>>(async (prevC8Promise, actor) => {

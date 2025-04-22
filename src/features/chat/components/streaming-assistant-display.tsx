@@ -31,14 +31,13 @@ export const StreamingAssistantDisplay = () => {
   const isStreaming = useStreamSourceStore(state => state.isStreaming);
   const streamMessage = useStreamSourceStore(state => state.message);
 
-
   if (!isStreaming) {
     return null;
   }
 
   // Always create a new StreamingAssistantMessage from streamMessage on every render
   const assistantMessage = StreamingAssistantMessage.fromContent(
-    typeof streamMessage === 'string' ? streamMessage : ''
+    typeof streamMessage === 'string' ? streamMessage : '',
   );
 
   return (
@@ -50,10 +49,7 @@ export const StreamingAssistantDisplay = () => {
         useRetryEventBusStore.getState().resetRetryCount('step');
       }}
     >
-      <AssistantDisplay
-        assistantMessage={assistantMessage}
-        isStreaming={isStreaming}
-      />
+      <AssistantDisplay assistantMessage={assistantMessage} isStreaming={isStreaming} />
     </ErrorBoundary>
   );
 };

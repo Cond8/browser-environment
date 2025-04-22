@@ -1,5 +1,5 @@
 // src/lib/cond8/_core/CoreDomain/Blueprints/StrictKVBlueprint-Async.ts
-import { CoreBlueprint } from './CoreBlueprint.ts';
+import { CoreBlueprint } from './CoreBlueprint.js';
 
 export abstract class StrictKVBlueprintAsync<
   K extends PropertyKey = PropertyKey,

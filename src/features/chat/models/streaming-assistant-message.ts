@@ -55,9 +55,7 @@ export class StreamingAssistantMessage extends AssistantMessage {
         JSON.parse(this.currentContent);
       } catch (e: unknown) {
         console.log('Triggering retry for JSON parsing error', (e as Error).message);
-        const canRetry = useRetryEventBusStore
-          .getState()
-          .triggerRetry(phase, (e as Error).message);
+        const canRetry = useRetryEventBusStore.getState().triggerRetry(phase, (e as Error).message);
         if (!canRetry) {
           throw new Error(MAX_RETRY_ERROR);
         }

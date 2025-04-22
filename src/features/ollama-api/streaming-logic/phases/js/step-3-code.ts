@@ -14,7 +14,11 @@ export const STEP_3_CODE_MESSAGES = (
     role: 'system',
     content: usePromptStore
       .getState()
-      .makePrompt('assistant_codegen_analyze', { userReq, assistantResponse, step: 'Codegen Analyze' }),
+      .makePrompt('assistant_codegen_analyze', {
+        userReq,
+        assistantResponse,
+        step: 'Codegen Analyze',
+      }),
   },
   {
     role: 'user',

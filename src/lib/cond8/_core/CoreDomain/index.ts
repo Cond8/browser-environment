@@ -1,9 +1,9 @@
 // src/lib/cond8/_core/CoreDomain/index.ts
-export * from './Blueprints/CoreBlueprint.ts';
-export * from './Blueprints/LifecycleBlueprint.ts';
-export * from './Blueprints/StrictKVBlueprint-Async.ts';
-export * from './Blueprints/StrictKVBlueprint-Sync.ts';
-export * from './Blueprints/StrictKVBlueprint.ts';
-export * from './Redprints/ConduitUtils.ts';
-export * from './Redprints/CoreRedprint.ts';
-export * from './Services/StrictObjectKVService.ts';
+export * from './Blueprints/CoreBlueprint.js';
+export * from './Blueprints/LifecycleBlueprint.js';
+export * from './Blueprints/StrictKVBlueprint-Async.js';
+export * from './Blueprints/StrictKVBlueprint-Sync.js';
+export * from './Blueprints/StrictKVBlueprint.js';
+export * from './Redprints/ConduitUtils.js';
+export * from './Redprints/CoreRedprint.js';
+export * from './Services/StrictObjectKVService.js';

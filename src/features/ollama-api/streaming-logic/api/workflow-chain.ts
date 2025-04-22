@@ -97,11 +97,6 @@ export async function* executeWorkflowChain(): AsyncGenerator<string, AssistantM
     return validated;
   }
 
-  // function pushStepToVfs(step: WorkflowStep, code: string): void {
-  //   if (code === '') return;
-  //   useVFSStore.getState().addServiceImplementation(step, code);
-  // }
-
   try {
     /**============================
      * ===== ALIGNMENT PHASE ======

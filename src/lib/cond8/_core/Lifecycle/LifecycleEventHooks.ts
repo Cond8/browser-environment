@@ -1,63 +1,47 @@
 // src/lib/cond8/_core/Lifecycle/LifecycleEventHooks.ts
-import { CoreRedprint } from '../CoreDomain/index.ts';
-import { Recorder } from '../Recorder/create-recorder.ts';
-import { CouldPromise } from '../utils/fn-promise-like.ts';
-import { LifecyclePayload } from './Vacuum.ts';
+import { CoreRedprint } from '../CoreDomain/index.js';
+import { Recorder } from '../Recorder/create-recorder.js';
+import { CouldPromise } from '../utils/fn-promise-like.js';
+import { LifecyclePayload } from './Vacuum.js';
 
-export abstract class FullLifecycleBlueprint<C8 extends CoreRedprint = CoreRedprint>
-  implements
-    OnEnterHook<C8>,
-    OnExitHook<C8>,
-    OnDirectorEnterHook<C8>,
-    OnDirectorExitHook<C8>,
-    OnActorEnterHook<C8>,
-    OnActorExitHook<C8>,
-    OnActorErrorHook<C8>,
-    OnActorErrorHook<C8>,
-    OnActorAssertStartHook<C8>,
-    OnActorAssertSuccessHook<C8>,
-    OnActorAssertFailHook<C8>,
-    OnDirectorAssertStartHook<C8>,
-    OnDirectorAssertSuccessHook<C8>,
-    OnDirectorAssertFailHook<C8>
-{
-  onActorAssertFail(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
+export abstract class FullLifecycleBlueprint<C8 extends CoreRedprint = CoreRedprint> {
+  onActorAssertFail?(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
     recorder?.('onActorAssertFail', payload);
   }
-  onActorAssertStart(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
+  onActorAssertStart?(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
     recorder?.('onActorAssertStart', payload);
   }
-  onActorAssertSuccess(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
+  onActorAssertSuccess?(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
     recorder?.('onActorAssertSuccess', payload);
   }
-  onActorEnter(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
+  onActorEnter?(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
     recorder?.('onActorEnter', payload);
   }
-  onActorError(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
+  onActorError?(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
     recorder?.('onActorError', payload);
   }
-  onActorExit(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
+  onActorExit?(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
     recorder?.('onActorExit', payload);
   }
-  onDirectorAssertFail(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
+  onDirectorAssertFail?(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
     recorder?.('onDirectorAssertFail', payload);
   }
-  onDirectorAssertStart(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
+  onDirectorAssertStart?(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
     recorder?.('onDirectorAssertStart', payload);
   }
-  onDirectorAssertSuccess(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
+  onDirectorAssertSuccess?(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
     recorder?.('onDirectorAssertSuccess', payload);
   }
-  onDirectorEnter(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
+  onDirectorEnter?(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
     recorder?.('onDirectorEnter', payload);
   }
-  onDirectorExit(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
+  onDirectorExit?(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
     recorder?.('onDirectorExit', payload);
   }
-  onEnter(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
+  onEnter?(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
     recorder?.('onEnter', payload);
   }
-  onExit(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
+  onExit?(payload: LifecyclePayload<C8>, recorder?: Recorder): CouldPromise<void> {
     recorder?.('onExit', payload);
   }
 }

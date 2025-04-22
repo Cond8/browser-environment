@@ -81,7 +81,10 @@ export async function* retryableAsyncGenerator(
       } catch (err) {
         if (shouldRecover(err)) {
           // If we should recover, use fallback and exit the generator.
-          console.warn('Recoverable error detected. Using fallback value and exiting generator.', err);
+          console.warn(
+            'Recoverable error detected. Using fallback value and exiting generator.',
+            err,
+          );
           result = { done: true, value: fallbackValue(accumulatedChunks) };
         } else {
           retryCount++;
