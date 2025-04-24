@@ -1,16 +1,24 @@
 // src/lib/cond8/create-workflow/start-create-workflow.ts
 import { createDirector } from '../../_core';
-import { WorkflowActors, WorkflowConduit, WorkflowConduitInput } from './conduits/workflow-conduit';
+import {
+  WorkflowActors as Actors,
+  WorkflowConduit,
+  WorkflowConduitInput,
+} from './conduits/workflow-conduit';
 
 const StartCreateWorkflowDirector = createDirector<WorkflowConduit>(
   'start-create-workflow',
   'Create a new workflow',
 ).init<WorkflowConduitInput>(input => ({
   conduit: new WorkflowConduit(input),
-}));
+}))(c8 => {
+  const userStartingPrompt = c8.body.startPrompt;
+  c8.var('User Starting Prompt', userStartingPrompt);
+  return c8;
+});
 
 StartCreateWorkflowDirector(
-  WorkflowActors.Prompt.Add.System`
+  Actors.Prompt.Add.System`
     You are a workflow designer. Your primary goal is to achieve alignment with the user by deeply understanding their objectives, constraints, and desired outcomes.
     Follow these stages in order:
 
@@ -23,24 +31,68 @@ StartCreateWorkflowDirector(
 
     At each stage, document your reasoning and explicitly write down the alignment or plan. Ask clarifying questions if anything is unclear. Do not proceed to execution—focus solely on achieving and documenting alignment.
   `,
-  WorkflowActors.Prompt.Add.User`
-    ${c8 => c8.body.startPrompt}
+  Actors.Prompt.Add.User`
+    ${c8 => c8.var('User Starting Prompt')}
   `,
-  WorkflowActors.Prompt.Finalize.Set('thread'),
-  WorkflowActors.Stream.Start,
-  WorkflowActors.Stream.Response.From('thread').Set('message 1'),
+  Actors.Thread.User.From('User Starting Prompt'),
+)(
+  Actors.Prompt.Finalize.Set('thread'),
+  Actors.Stream.Start,
+  Actors.Stream.Response.From('thread').Set('Assistant Alignment Response'),
 
-  WorkflowActors.Prompt.Assistant.from('message 1'),
-  WorkflowActors.Accumulator.Add('message 1'),
-
-  WorkflowActors.Prompt.Add.User`
+  Actors.Prompt.Assistant.from('Assistant Alignment Response'),
+  Actors.Accumulator.From('Assistant Alignment Response'),
+)(
+  Actors.Prompt.Add.User`
     Assume that we're aligned for now. Suggest to me how we can refine the inputs. Then ask me how I want to proceed.
   `,
 
-  WorkflowActors.Prompt.Finalize.Set('thread'),
-  WorkflowActors.Stream.Response.From('thread').Set('message 2'),
-  WorkflowActors.Accumulator.Add('message 2'),
-  WorkflowActors.Stream.Stop,
+  Actors.Prompt.Finalize.Set('thread'),
+  Actors.Stream.Response.From('thread').Set('Assistant Inputs Refinement Query'),
+  Actors.Accumulator.From('Assistant Inputs Refinement Query'),
+)(
+  Actors.Support.Do(
+    Actors.Accumulator.Finalize.Set('assistantAcc'),
+    Actors.Thread.Assistant.From('assistantAcc'),
+    Actors.Stream.Stop,
+    Actors.UserLand.Response.Into('User Refinement Response'),
+    Actors.Prompt.Add.User`
+      either respond with
+      \`\`\`
+      {
+        "action": "Stay at inputs"
+        "response": [Ask more questions about inputs]
+      }
+      \`\`\`
+      OR
+      \`\`\`
+      {
+        "action": "Move on to enrichment"
+        "response": [How can the enrichment become more refined?]
+      }
+      \`\`\`
+
+      The user Refinement response:
+      ${c8 => c8.var.string('User Refinement Response')}
+    `,
+    Actors.Prompt.Finalize.Set('thread'),
+    Actors.Stream.Start,
+    Actors.Stream.Response.From('thread').Set('Assistant Inputs Refinement Response'),
+    Actors.Accumulator.From('Assistant Inputs Refinement Response'),
+    Actors.Thread.Assistant.From('Assistant Inputs Refinement Response'),
+  ).While(c8 => c8.var('Assistant Inputs Refinement Response') === 'Stay at inputs'),
+  Actors.Stream.Stop,
+)(
+  Actors.Accumulator.Summurize().Into('Refined Inputs'),
+  Actors.Accumulator.Reset(),
+  Actors.Prompt.UndoUntil('Assistant Alignment Response'),
+  Actors.Prompt.User`
+    This is what I expect from the inputs.
+    ${c8 => c8.var('Assistant Alignment Response')}
+
+    Now suggest to me how we can enrich the inputs.
+    You already mentioned: ${c8 => c8.var('Assistant Alignment: Enrichment')}
+  `,
 );
 
 export default StartCreateWorkflowDirector.fin(c8 => c8);

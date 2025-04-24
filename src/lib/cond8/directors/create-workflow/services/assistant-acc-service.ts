@@ -8,7 +8,7 @@ export class AssistantAccService extends CoreBlueprint {
   }
 
   get readonly() {
-    return Array.from(this.acc);
+    return this.getAccArray();
   }
 
   add(content: string) {
@@ -20,6 +20,10 @@ export class AssistantAccService extends CoreBlueprint {
   }
 
   getAcc(): string {
-    return Array.from(this.acc).join('\n\n---\n\n');
+    return this.getAccArray().join('\n\n---\n\n');
+  }
+
+  getAccArray(): string[] {
+    return Array.from(this.acc);
   }
 }
