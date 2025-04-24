@@ -1,5 +1,5 @@
 // src/lib/cond8/create-workflow/workflow-conduit.ts
-import { CoreRedprint, StrictObjectKVService } from '../../_core';
+import { CoreRedprint, StrictObjectKVService } from '../../../_core';
 import { createChatActors } from '../actors/chat';
 import { createThreadActors } from '../actors/thread';
 import { ThreadService } from '../services/thread-service';

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/features/chat/store/chat-store';
 import { useStreamSourceStore } from '@/features/ollama-api/streaming-logic/infra/stream-source-store';
-import StartCreateWorkflowDirector from '@/lib/cond8/create-workflow/start-create-workflow';
+import StartCreateWorkflowDirector from '@/lib/cond8/directors/create-workflow/start-create-workflow';
 import { Send, StopCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAbortEventBusStore } from '../../store/abort-eventbus-store';

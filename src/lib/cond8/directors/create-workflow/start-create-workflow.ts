@@ -1,5 +1,5 @@
 // src/lib/cond8/create-workflow/start-create-workflow.ts
-import { createDirector } from '../_core';
+import { createDirector } from '../../_core';
 import { WorkflowActors, WorkflowConduit, WorkflowConduitInput } from './conduits/workflow-conduit';
 
 const StartCreateWorkflowDirector = createDirector<WorkflowConduit>(

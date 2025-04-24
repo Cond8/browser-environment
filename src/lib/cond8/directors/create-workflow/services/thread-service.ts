@@ -1,6 +1,6 @@
 // src/lib/cond8/create-workflow/services/prompt-service.ts
 import { Message } from 'ollama';
-import { CoreBlueprint } from '../../_core';
+import { CoreBlueprint } from '../../../_core';
 
 export class ThreadService extends CoreBlueprint {
   private messages: Set<Message>;

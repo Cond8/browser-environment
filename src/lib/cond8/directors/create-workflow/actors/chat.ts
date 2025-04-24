@@ -1,6 +1,6 @@
 import { Message } from 'ollama';
-import { chatFn } from '../../../../features/ollama-api/streaming-logic/infra/create-chat';
-import { useStreamSourceStore } from '../../../../features/ollama-api/streaming-logic/infra/stream-source-store';
+import { chatFn } from '../../../../../features/ollama-api/streaming-logic/infra/create-chat';
+import { useStreamSourceStore } from '../../../../../features/ollama-api/streaming-logic/infra/stream-source-store';
 import { WorkflowConduit } from '../conduits/workflow-conduit';
 
 export const createChatActors = <C8 extends WorkflowConduit>() => {
