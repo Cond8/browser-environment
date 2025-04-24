@@ -1,6 +1,6 @@
 // src/features/editor/transpilers-dsl-source/json-to-js.ts
-import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import { jsonToDsl } from './json-to-dsl';
+import type { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 
 function toCamelCase(moduleName: string): string {
   return moduleName.replace(/[-_](\w)/g, (_, c) => c.toUpperCase());
@@ -49,7 +49,7 @@ export function jsonToJs(json: WorkflowStep[]): string {
   // Create the main workflow director
   output += `export const ${workflowVar} = createDirector(
   ${JSON.stringify(rawName)},
-  ${JSON.stringify(mainStep.goal)},
+  ${JSON.stringify(mainStep.description)},
 ).init(input => ({
   conduit: new AppConduit(input),
   recorder: null,
@@ -80,7 +80,7 @@ export function jsonToJs(json: WorkflowStep[]): string {
     output += `  // STEP ${index + 1} — ${step.name}\n`;
     output += `  createRole(
     '${step.name}',
-    "${step.goal}",
+    "${step.description}",
   )(c8 => {`;
 
     // Add variables and service calls

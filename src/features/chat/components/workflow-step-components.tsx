@@ -1,7 +1,7 @@
 // src/features/chat/components/workflow-step-components.tsx
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
+import type { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import { cn } from '@/lib/utils';
 import {
   Brackets,
@@ -77,9 +77,9 @@ export const WorkflowStepDisplay = ({
           </div>
 
           {/* Goal Section - Always visible */}
-          {step.goal && (
+          {step.description && (
             <div className="flex items-start gap-2 ml-6">
-              <p className="text-xs text-muted-foreground/90 leading-relaxed">{step.goal}</p>
+              <p className="text-xs text-muted-foreground/90 leading-relaxed">{step.description}</p>
             </div>
           )}
         </div>

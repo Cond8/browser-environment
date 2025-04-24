@@ -1,7 +1,7 @@
 // src/features/editor/transpilers-json-source/my-json-parser.ts
-import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import { jsonrepair } from 'jsonrepair';
 import { transformToInterface } from './my-json-fixer';
+import type { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 
 function parseJsonWithErrorHandling(jsonStr: string): WorkflowStep | null {
   try {

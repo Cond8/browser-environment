@@ -7,7 +7,7 @@ export function dslToJson(dsl: string): WorkflowStep {
 
   const workflow: WorkflowStep = {
     name: '',
-    goal: parsed.description.trim(),
+    description: parsed.description.trim(),
     module: '',
     functionName: '',
     params: {},

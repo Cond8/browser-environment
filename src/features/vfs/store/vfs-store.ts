@@ -1,7 +1,7 @@
 // src/features/vfs/store/vfs-store.ts
 import { create } from 'zustand';
 
-import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
+import type { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 
 type VFSStore = {
   workflows: Record<string, WorkflowStep[]>; // first step is interface

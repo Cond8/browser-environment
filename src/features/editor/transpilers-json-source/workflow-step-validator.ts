@@ -1,6 +1,6 @@
 // src/features/editor/transpilers-json-source/workflow-step-validator.ts
-import { triggerRetry } from '@/features/ollama-api/streaming-logic/infra/global-eventbus';
-import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
+import type { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
+
 import { z } from 'zod';
 
 // Default values for required fields
@@ -53,7 +53,7 @@ export const workflowStepSchema = z.object({
   name: z.string().min(1).default(DEFAULT_NAME),
   module: z.string().min(1).default(DEFAULT_MODULE),
   functionName: z.string().min(1).default(DEFAULT_FUNCTION),
-  goal: z.string().min(1).default(DEFAULT_GOAL),
+  description: z.string().min(1).default(DEFAULT_GOAL),
   params: paramsSchema.default({}),
   returns: returnsSchema.default({}),
 });
@@ -135,7 +135,7 @@ export function validateWorkflowStep(step: WorkflowStep): WorkflowStep {
       name: validated.name,
       module: validated.module,
       functionName: validated.functionName,
-      goal: validated.goal,
+      description: validated.description,
       params: validated.params,
       returns: validated.returns,
     } as WorkflowStep;
@@ -155,9 +155,6 @@ export function validateWorkflowStep(step: WorkflowStep): WorkflowStep {
 
     return transformed;
   } catch (error) {
-    console.log('Triggering retry for workflow step validation error', (error as Error).message);
-    triggerRetry('interface');
-
-    throw new Error('Failed to validate workflow step, triggering retry');
+    throw new Error(`Failed to validate workflow step: ${(error as Error).message}`);
   }
 }

@@ -1,5 +1,5 @@
 // src/features/editor/transpilers-dsl-source/json-to-dsl.ts
-import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
+import type { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 
 const getTypeFromSchema = (schema: { type: string } | undefined): string => {
   if (!schema) return 'any';
@@ -17,7 +17,7 @@ const getDescriptionFromSchema = (schema: { description: string } | undefined): 
 
 export const jsonToDsl = (json: WorkflowStep) => {
   let dsl = `/**
- * ${json.goal}
+ * ${json.description}
  *
  * @name ${json.name}
  * @module ${json.module}

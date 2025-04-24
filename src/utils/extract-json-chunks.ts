@@ -1,6 +1,11 @@
 // src/utils/extract-json-chunks.ts
 import { processJsonChunk } from '@/features/editor/transpilers-json-source/my-json-parser';
-import { AssistantChunk, WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
+import type { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
+
+// Local definition for AssistantChunk (moved from types)
+export type AssistantChunk =
+  | { type: 'text'; content: string }
+  | { type: 'json'; content: string };
 
 export function extractJsonChunks(content: string): AssistantChunk[] {
   const chunks: (string | WorkflowStep)[] = [];

@@ -1,5 +1,5 @@
 // src/features/editor/components/js-editor.tsx
-import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
+import type { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import Editor from '@monaco-editor/react';
 import { editor } from 'monaco-editor';
 import { useEffect, useRef } from 'react';

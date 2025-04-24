@@ -2,11 +2,11 @@
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useChatStore } from '@/features/chat/store/chat-store';
+import { triggerAbort } from '@/features/ollama-api/streaming-logic/infra/global-eventbus';
 import { useStreamSourceStore } from '@/features/ollama-api/streaming-logic/infra/stream-source-store';
 import StartCreateWorkflowDirector from '@/lib/cond8/directors/create-workflow/start-create-workflow';
 import { Send, StopCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useAbortEventBusStore } from '../../store/abort-eventbus-store';
 import { SelectedModel } from './selected-model';
 import { ShortcutsDisplay } from './shortcuts-display';
 
@@ -54,10 +54,8 @@ export function UserInput() {
   }, []);
 
   const addUserMessage = useChatStore(state => state.addUserMessage);
-  const triggerAbort = useAbortEventBusStore(state => state.triggerAbort);
   const isLoading = useStreamSourceStore(state => state.isStreaming);
   const setIsLoading = useStreamSourceStore(state => state.setIsStreaming);
-  const stopLoading = useAbortEventBusStore(state => state.triggerAbort);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,7 +93,7 @@ export function UserInput() {
 
   const handleStop = () => {
     triggerAbort();
-    stopLoading();
+    setIsLoading(false);
   };
 
   return (

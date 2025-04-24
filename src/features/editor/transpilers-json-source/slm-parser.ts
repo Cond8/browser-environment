@@ -1,5 +1,5 @@
 // src/features/editor/transpilers-json-source/slm-parser.ts
-import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
+import type { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import { EMPTY_PARSED_SLM, ParsedSlm } from '@/utils/workflow-helpers';
 import { jsonrepair } from 'jsonrepair';
 
@@ -196,7 +196,7 @@ export function parseSlm(content: string): ParsedSlm {
   // Process sections into final structure
   const result: ParsedSlm = {
     markdown: {
-      goal: undefined,
+      description: undefined,
       inputs: undefined,
       outputs: undefined,
       plan: undefined,
@@ -209,9 +209,9 @@ export function parseSlm(content: string): ParsedSlm {
   for (const section of sections) {
     if (section.type === 'markdown') {
       const content = section.content.trim();
-      if (content.startsWith('### Goal')) {
-        currentMarkdownSection = 'goal';
-        result.markdown.goal = content.replace('### Goal', '').trim();
+      if (content.startsWith('### Description')) {
+        currentMarkdownSection = 'description';
+        result.markdown.description = content.replace('### Description', '').trim();
       } else if (content.startsWith('### Inputs')) {
         currentMarkdownSection = 'inputs';
         result.markdown.inputs = content.replace('### Inputs', '').trim();

@@ -3,7 +3,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useStreamSourceStore } from '@/features/ollama-api/streaming-logic/infra/stream-source-store';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef } from 'react';
-import { AssistantMessage } from '../../models/assistant-message';
 import { ThreadMessage } from '../../models/message';
 import { useChatStore } from '../../store/chat-store';
 import { AssistantDisplay } from '../assistant-display';
@@ -44,8 +43,8 @@ export const ChatContent = () => {
                 message.role === 'user' ? 'bg-card' : 'bg-background',
               )}
             >
-              {isAssistantMessage(message) ? (
-                <AssistantDisplay assistantMessage={message} />
+              {message.role === 'assistant' ? (
+                <AssistantDisplay assistantMessage={message.content} />
               ) : (
                 <UserDisplay content={message.content} />
               )}
@@ -57,8 +56,4 @@ export const ChatContent = () => {
       </div>
     </ScrollArea>
   );
-};
-
-const isAssistantMessage = (message: ThreadMessage): message is AssistantMessage => {
-  return message.role === 'assistant';
 };

@@ -1,7 +1,7 @@
 // src/features/chat/components/empty/recent-threads.tsx
 import { ShortcutsDisplay } from '@/features/chat/components/ui/shortcuts-display';
 import { Clock, Hash, MessageCircle, Trash2 } from 'lucide-react';
-import { AssistantMessage } from '../../models/assistant-message';
+import { AssistantMessage } from '../../models/message';
 import { useChatStore } from '../../store/chat-store';
 
 export const RecentThreads = () => {

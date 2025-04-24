@@ -1,10 +1,13 @@
 // src/features/chat/store/chat-store.ts
+import {
+  AssistantMessage as AssistantMessageClass,
+  ThreadMessage,
+  UserMessage,
+} from '@/features/chat/models/message';
 import { nanoid } from 'nanoid';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { AssistantMessage as AssistantMessageClass } from '../models/assistant-message';
-import { ThreadMessage, UserMessage } from '../models/message';
 
 export interface Thread {
   id: string;
@@ -146,36 +149,6 @@ export const useChatStore = create<ChatStore>()(
     })),
     {
       name: 'chat-storage',
-      partialize: state => ({
-        threads: state.threads,
-        currentThreadId: state.currentThreadId,
-      }),
-      onRehydrateStorage: () => state => {
-        if (state?.threads) {
-          const newThreads: Record<string, Thread> = {};
-          Object.entries(state.threads).forEach(([threadId, thread]) => {
-            const newMessages = thread.messages.map(msg => {
-              if ((msg as AssistantMessageClass).role === 'assistant') {
-                const plain = msg as AssistantMessageClass;
-                const reconstructed = new AssistantMessageClass();
-                reconstructed.id = plain.id;
-                reconstructed.timestamp = plain.timestamp;
-                reconstructed.tool_calls = plain.tool_calls;
-                reconstructed.images = plain.images;
-                reconstructed.error = plain.error;
-                reconstructed.addAlignmentResponse(plain._alignmentResponse || '');
-                reconstructed.addInterfaceResponse(plain._interfaceResponse || '');
-                reconstructed.addStepEnrichResponse(plain._stepEnrichResponse || '');
-                reconstructed.addStepFormatResponse(plain._stepFormatResponse || '');
-                return reconstructed;
-              }
-              return msg as ThreadMessage;
-            });
-            newThreads[threadId] = { ...thread, messages: newMessages };
-          });
-          state.threads = newThreads;
-        }
-      },
     },
   ),
 );
