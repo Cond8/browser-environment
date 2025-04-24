@@ -20,9 +20,6 @@ export const createChatActors = <C8 extends WorkflowConduit>() => {
           c8.stream.addChunk(value);
         }
 
-        console.log({ assistantMessage });
-
-        // c8.thread.Assistant(assistantMessage);
         c8.var(setKey, assistantMessage);
 
         c8.stream.isStreaming = false;
