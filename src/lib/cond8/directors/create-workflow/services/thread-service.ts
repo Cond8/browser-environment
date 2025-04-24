@@ -5,8 +5,8 @@ import { CoreBlueprint } from '../../../_core';
 export class ThreadService extends CoreBlueprint {
   private messages: Set<Message>;
 
-  constructor(key: string) {
-    super(key);
+  constructor() {
+    super('thread');
     this.messages = new Set();
   }
 

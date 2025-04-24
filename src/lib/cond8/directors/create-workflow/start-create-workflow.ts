@@ -10,7 +10,7 @@ const StartCreateWorkflowDirector = createDirector<WorkflowConduit>(
 }));
 
 StartCreateWorkflowDirector(
-  WorkflowActors.Prompt.System`
+  WorkflowActors.AddToThread.System`
     You are a workflow designer. Your primary goal is to achieve alignment with the user by deeply understanding their objectives, constraints, and desired outcomes.
     Follow these stages in order:
 
@@ -23,17 +23,18 @@ StartCreateWorkflowDirector(
 
     At each stage, document your reasoning and explicitly write down the alignment or plan. Ask clarifying questions if anything is unclear. Do not proceed to execution—focus solely on achieving and documenting alignment.
   `,
-  WorkflowActors.Prompt.User`
+  WorkflowActors.AddToThread.User`
     ${c8 => c8.body.startPrompt}
   `,
-  WorkflowActors.Prompt.Finalize.Set('thread'),
-  WorkflowActors.Chat.StreamResponse.From('thread'),
+  WorkflowActors.AddToThread.Finalize.Set('thread'),
+  WorkflowActors.Chat.StreamResponse.From('thread').Set('message 1'),
 
-  WorkflowActors.Prompt.User`
+  WorkflowActors.AddToThread.User`
     Now that we are aligned. Suggest to me how we can refine the inputs. Then ask me how I want to proceed.
   `,
-  WorkflowActors.Prompt.Finalize.Set('thread'),
-  WorkflowActors.Chat.StreamResponse.From('thread'),
+
+  WorkflowActors.AddToThread.Finalize.Set('thread'),
+  WorkflowActors.Chat.StreamResponse.From('thread').Set('message 2'),
 );
 
 export default StartCreateWorkflowDirector.fin(c8 => c8);

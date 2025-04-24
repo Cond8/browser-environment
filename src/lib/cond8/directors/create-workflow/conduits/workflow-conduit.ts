@@ -2,6 +2,8 @@
 import { CoreRedprint, StrictObjectKVService } from '../../../_core';
 import { createChatActors } from '../actors/chat';
 import { createThreadActors } from '../actors/thread';
+import { AssistantAccService } from '../services/assistant-acc-service';
+import { StreamService } from '../services/stream-service';
 import { ThreadService } from '../services/thread-service';
 
 export type WorkflowConduitInput = {
@@ -10,13 +12,15 @@ export type WorkflowConduitInput = {
 
 export class WorkflowConduit extends CoreRedprint<WorkflowConduitInput> {
   public locals = new StrictObjectKVService<PropertyKey, unknown>('locals');
-  public thread = new ThreadService('thread');
+  public thread = new ThreadService();
+  public stream = new StreamService();
+  public assistAcc = new AssistantAccService();
   constructor(input: WorkflowConduitInput) {
     super(input);
   }
 }
 
 export const WorkflowActors = {
-  Prompt: createThreadActors<WorkflowConduit>(),
+  AddToThread: createThreadActors<WorkflowConduit>(),
   Chat: createChatActors<WorkflowConduit>(),
 };
