@@ -1,5 +1,5 @@
 // src/features/chat/models/streaming-assistant-message.ts
-import { useRetryEventBusStore } from '@/features/ollama-api/stores/retry-event-bus-store';
+import { triggerRetry } from '@/features/ollama-api/streaming-logic/infra/global-eventbus';
 import { MAX_RETRY_ERROR } from '@/features/ollama-api/streaming-logic/infra/retryable-async-generator';
 import { WorkflowPhase } from '@/features/ollama-api/streaming-logic/phases/types';
 import { AssistantMessage } from './assistant-message';
@@ -55,7 +55,7 @@ export class StreamingAssistantMessage extends AssistantMessage {
         JSON.parse(this.currentContent);
       } catch (e: unknown) {
         console.log('Triggering retry for JSON parsing error', (e as Error).message);
-        const canRetry = useRetryEventBusStore.getState().triggerRetry(phase, (e as Error).message);
+        const canRetry = triggerRetry(phase, (e as Error).message);
         if (!canRetry) {
           throw new Error(MAX_RETRY_ERROR);
         }

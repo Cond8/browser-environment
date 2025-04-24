@@ -1,5 +1,5 @@
 // src/features/editor/transpilers-json-source/workflow-step-validator.ts
-import { useRetryEventBusStore } from '@/features/ollama-api/stores/retry-event-bus-store';
+import { triggerRetry } from '@/features/ollama-api/streaming-logic/infra/global-eventbus';
 import { WorkflowStep } from '@/features/ollama-api/streaming-logic/phases/types';
 import { z } from 'zod';
 
@@ -156,7 +156,7 @@ export function validateWorkflowStep(step: WorkflowStep): WorkflowStep {
     return transformed;
   } catch (error) {
     console.log('Triggering retry for workflow step validation error', (error as Error).message);
-    useRetryEventBusStore.getState().triggerRetry('interface');
+    triggerRetry('interface');
 
     throw new Error('Failed to validate workflow step, triggering retry');
   }

@@ -1,5 +1,5 @@
 // src/features/chat/components/streaming-assistant-display.tsx
-import { useRetryEventBusStore } from '@/features/ollama-api/stores/retry-event-bus-store';
+import { resetRetryCount } from '@/features/ollama-api/streaming-logic/infra/global-eventbus';
 import { useStreamSourceStore } from '@/features/ollama-api/streaming-logic/infra/stream-source-store';
 
 import { ErrorBoundary } from 'react-error-boundary';
@@ -46,7 +46,7 @@ export const StreamingAssistantDisplay = () => {
       onReset={() => {
         // Reset the retry count when the error boundary resets
         console.log('[Streaming Assistant Display] Reset and Retry Triggered');
-        useRetryEventBusStore.getState().resetRetryCount('step');
+        resetRetryCount('step');
       }}
     >
       <AssistantDisplay assistantMessage={assistantMessage} isStreaming={isStreaming} />

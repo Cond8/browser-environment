@@ -28,6 +28,7 @@ StartCreateWorkflowDirector(
   `,
   WorkflowActors.Prompt.Finalize.Set('thread'),
   WorkflowActors.Chat.StreamResponse.From('thread'),
+
   WorkflowActors.Prompt.User`
     Now that we are aligned. Suggest to me how we can refine the inputs. Then ask me how I want to proceed.
   `,

@@ -1,5 +1,5 @@
 // src/features/ollama-api/streaming-logic/infra/create-chat.ts
-import { useAbortEventBusStore } from '@/features/chat/store/abort-eventbus-store';
+import { registerAbortCallback, unregisterAbortCallback } from './global-eventbus';
 import { useAssistantConfigStore } from '@/features/chat/store/assistant-config-store';
 import { ChatRequest, Ollama } from 'ollama/browser';
 
@@ -19,7 +19,7 @@ export async function* chatFn(
 
   let response = '';
 
-  const abortEvent = useAbortEventBusStore.getState().registerAbortCallback(() => {
+  const abortEvent = registerAbortCallback(() => {
     stream.abort();
   });
 
@@ -30,7 +30,7 @@ export async function* chatFn(
     }
   }
 
-  useAbortEventBusStore.getState().unregisterAbortCallback(abortEvent);
+  unregisterAbortCallback(abortEvent);
 
   return response;
 }
