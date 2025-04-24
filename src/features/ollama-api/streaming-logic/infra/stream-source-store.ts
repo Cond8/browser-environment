@@ -16,13 +16,19 @@ export const useStreamSourceStore = create<StreamSourceState>()(
     setIsStreaming: (isLoading: boolean) => {
       set(state => {
         state.isStreaming = isLoading;
-        state.message = '';
       });
     },
 
-    addChunk: (chunk: string) =>
+    addChunk: (chunk: string) => {
       set(state => {
         state.message += chunk;
-      }),
+      });
+    },
+
+    reset: () => {
+      set(state => {
+        state.message = '';
+      });
+    },
   })),
 );

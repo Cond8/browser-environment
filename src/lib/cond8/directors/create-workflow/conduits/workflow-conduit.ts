@@ -1,7 +1,8 @@
 // src/lib/cond8/create-workflow/workflow-conduit.ts
 import { CoreRedprint, StrictObjectKVService } from '../../../_core';
-import { createChatActors } from '../actors/chat';
-import { createThreadActors } from '../actors/thread';
+import { createAccumulatorActors } from '../actors/accumulator';
+import { createPromptActors } from '../actors/prompt';
+import { createStreamActors } from '../actors/stream';
 import { AssistantAccService } from '../services/assistant-acc-service';
 import { StreamService } from '../services/stream-service';
 import { ThreadService } from '../services/thread-service';
@@ -21,6 +22,7 @@ export class WorkflowConduit extends CoreRedprint<WorkflowConduitInput> {
 }
 
 export const WorkflowActors = {
-  AddToThread: createThreadActors<WorkflowConduit>(),
-  Chat: createChatActors<WorkflowConduit>(),
+  Prompt: createPromptActors<WorkflowConduit>(),
+  Stream: createStreamActors<WorkflowConduit>(),
+  Accumulator: createAccumulatorActors<WorkflowConduit>(),
 };
