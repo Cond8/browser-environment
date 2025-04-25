@@ -1,47 +1,31 @@
 // src/lib/cond8/create-workflow/services/prompt-service.ts
-import { Message } from 'ollama';
+import { AssistantMessage, UserMessage } from '@/features/chat/models/message';
+import { useChatStore } from '@/features/chat/store/chat-store';
 import { CoreBlueprint } from '../../../_core';
 
 export class ThreadService extends CoreBlueprint {
-  private messages: Set<Message>;
+  private source = useChatStore.getState();
 
   constructor() {
     super('thread');
-    this.messages = new Set();
-  }
-
-  System(content: string): void {
-    const message: Message = {
-      role: 'system',
-      content,
-    };
-    this.messages.add(message);
   }
 
   User(content: string): void {
-    const message: Message = {
-      role: 'user',
-      content,
-    };
-    this.messages.add(message);
+    this.source.addUserMessage(content);
   }
 
   Assistant(content: string): void {
-    const message: Message = {
-      role: 'assistant',
-      content,
-    };
-    this.messages.add(message);
+    this.source.addAssistantMessage(content);
   }
 
   /**
    * Outputs the entire thread as an array of messages in order of receival.
    */
-  getThread(): Message[] {
-    return Array.from(this.messages);
+  getThread(): (UserMessage | AssistantMessage)[] {
+    return this.source.getCurrentThread()?.messages || [];
   }
 
-  get readonly(): Message[] {
+  get readonly(): (UserMessage | AssistantMessage)[] {
     return this.getThread();
   }
 }

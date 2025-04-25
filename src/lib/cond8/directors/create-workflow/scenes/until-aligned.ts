@@ -1,7 +1,7 @@
 // Import the core function to create a director (scene orchestrator)
 import { createDirector } from '../../../_core';
 // Import the workflow actors (roles and actions)
-import { WorkflowActors as Actors } from '../conduits/workflow-conduit';
+import { WorkflowActors as Actors, WorkflowConduit } from '../conduits/workflow-conduit';
 
 /**
  * UntilAlignedScene
@@ -14,7 +14,7 @@ import { WorkflowActors as Actors } from '../conduits/workflow-conduit';
  * @returns a director (scene) handling the alignment/refinement loop
  */
 export const UntilAlignedScene = (currentPhase: string, nextPhase: string) =>
-  createDirector(
+  createDirector<WorkflowConduit>(
     'until-aligned', // Unique id for this scene
     `Until aligned in ${currentPhase}`, // Human-readable description
     { nextPhase }, // Pass next phase as context/parameter
@@ -27,6 +27,7 @@ export const UntilAlignedScene = (currentPhase: string, nextPhase: string) =>
     Actors.Stream.Stop,
     // === Await user feedback and store it under a variable keyed by the current phase ===
     UserLand.AwaitFor.Response.Into('User Refinement Response: ' + currentPhase),
+    Actors.Thread.User.From('User Refinement Response: ' + currentPhase),
     // === Prompt the user with instructions for how to respond ===
     Actors.Prompt.Add.User`
       either respond with

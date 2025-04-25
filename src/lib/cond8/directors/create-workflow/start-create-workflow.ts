@@ -29,9 +29,7 @@ const StartCreateWorkflowDirector = createDirector<WorkflowConduit>(
   },
 );
 
-StartCreateWorkflowDirector(
-  // === SYSTEM PROMPT: Set the workflow designer's role and the alignment process ===
-  Actors.Prompt.Add.System`
+const SystemPrompt = Actors.Prompt.Add.System`
     You are a workflow designer. Your primary goal is to achieve alignment with the user by deeply understanding their objectives, constraints, and desired outcomes.
     Follow these stages in order:
 
@@ -43,7 +41,11 @@ StartCreateWorkflowDirector(
     6. Output: Present the written alignment or plan to the user for confirmation before proceeding.
 
     At each stage, document your reasoning and explicitly write down the alignment or plan. Ask clarifying questions if anything is unclear. Do not proceed to execution—focus solely on achieving and documenting alignment.
-  `,
+  `;
+
+StartCreateWorkflowDirector(
+  // === SYSTEM PROMPT: Set the workflow designer's role and the alignment process ===
+  SystemPrompt,
   // === USER PROMPT: Present the user's initial prompt into the workflow ===
   Actors.Prompt.Add.User`
     ${c8 => c8.var('User Starting Prompt')}
@@ -76,11 +78,12 @@ StartCreateWorkflowDirector(
   Actors.Stream.Stop,
 )(
   // === When aligned, summarize and reset accumulators, then transition to enrichment phase ===
-  Actors.Accumulator.Summurize().Into('Refined Inputs'),
-  Actors.Accumulator.Reset(),
-  Actors.Prompt.UndoUntil('Assistant Alignment Response'),
+  Actors.Accumulator.Summurize.Into('Refined Inputs'),
+  Actors.Accumulator.Reset,
+  Actors.Prompt.Reset,
+
   // === Confirm the expected inputs and prompt for enrichment suggestions ===
-  Actors.Prompt.User`
+  Actors.Prompt.Add.User`
     This is what I expect from the inputs.
     ${c8 => c8.var('Assistant Alignment Response')}
 

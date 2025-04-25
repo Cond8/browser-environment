@@ -1,9 +1,5 @@
 // src/features/chat/store/chat-store.ts
-import {
-  AssistantMessage as AssistantMessageClass,
-  ThreadMessage,
-  UserMessage,
-} from '@/features/chat/models/message';
+import { AssistantMessage, ThreadMessage, UserMessage } from '@/features/chat/models/message';
 import { nanoid } from 'nanoid';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -29,7 +25,7 @@ export interface ChatStore {
   // Message management
   addThreadMessage: (message: ThreadMessage) => void;
   addUserMessage: (message: string) => void;
-  addAssistantMessage: (message: AssistantMessageClass) => void;
+  addAssistantMessage: (message: string) => void;
 
   getAllMessages: () => ThreadMessage[];
   getMessagesUntil: (message: ThreadMessage) => ThreadMessage[];
@@ -101,8 +97,14 @@ export const useChatStore = create<ChatStore>()(
         }
       },
 
-      addAssistantMessage: (message: AssistantMessageClass): void => {
-        get().addThreadMessage(message);
+      addAssistantMessage: (message: string): void => {
+        const assistantMessage: AssistantMessage = {
+          id: nanoid(),
+          role: 'assistant',
+          content: message,
+          timestamp: Date.now(),
+        };
+        get().addThreadMessage(assistantMessage);
       },
 
       getRecentThreads: (limit = 5): Thread[] => {
