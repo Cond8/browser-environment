@@ -7,6 +7,7 @@ export interface StreamSourceState {
   setIsStreaming: (isLoading: boolean) => void;
   addChunk: (chunk: string) => void;
   message: string;
+  reset: () => void;
 }
 
 export const useStreamSourceStore = create<StreamSourceState>()(

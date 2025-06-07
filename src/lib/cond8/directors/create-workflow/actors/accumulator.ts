@@ -18,7 +18,7 @@ export const createAccumulatorActors = <C8 extends WorkflowConduit>() => {
     },
   };
 
-  const Summurize = {
+  const Summarize = {
     Into: (setKey: string) => (c8: C8) => {
       c8.var(setKey, c8.assistAcc.getAcc());
       return c8;
@@ -29,6 +29,6 @@ export const createAccumulatorActors = <C8 extends WorkflowConduit>() => {
     From,
     Finalize,
     Reset,
-    Summurize,
+    Summarize,
   };
 };
