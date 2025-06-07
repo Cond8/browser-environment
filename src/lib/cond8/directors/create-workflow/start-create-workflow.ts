@@ -78,7 +78,7 @@ StartCreateWorkflowDirector(
   Actors.Stream.Stop,
 )(
   // === When aligned, summarize and reset accumulators, then transition to enrichment phase ===
-  Actors.Accumulator.Summurize.Into('Refined Inputs'),
+  Actors.Accumulator.Summarize.Into('Refined Inputs'),
   Actors.Accumulator.Reset,
   Actors.Prompt.Reset,
 
